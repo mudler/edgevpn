@@ -93,8 +93,6 @@ func main() {
 	l.Sugar().Info("Start")
 
 	if err := e.Start(); err != nil {
-		l.Sugar().Info("Failed")
-		os.Exit(1)
+		l.Sugar().Fatal(err.Error())
 	}
-
 }
