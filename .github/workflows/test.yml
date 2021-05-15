@@ -1,0 +1,70 @@
+name: Test
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      
+      - name: Build
+        run:
+            go build
+      
+      - name: Generate edgevpnconfig
+        run: |
+              ./edgevpn -g > config.yaml
+
+
+      - name: Upload results
+        uses: actions/upload-artifact@v2
+        with:
+          name: connection
+          path: config.yaml
+          if-no-files-found: error
+      - name: Upload results
+        uses: actions/upload-artifact@v2
+        with:
+          name: edgevpn
+          path: edgevpn
+          if-no-files-found: error
+  
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - ip: "10.1.0.13/24"
+            target_ip: "10.1.0.11"
+          - ip: "10.1.0.11/24"
+            target_ip: "10.1.0.13"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: connection
+          path: ./
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: edgevpn
+          path: ./
+      - name: Ping test
+        run: |
+              chmod +x edgevpn
+              sudo EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=${{ matrix.ip }} ./edgevpn &
+              bash ./.github/test.sh ${{ matrix.target_ip }}
