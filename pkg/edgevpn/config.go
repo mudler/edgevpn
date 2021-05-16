@@ -40,6 +40,8 @@ type Config struct {
 
 	SealKeyLength int
 
+	NetLinkBootstrap bool
+
 	// Handle is a handle consumed by HumanInterfaces to handle received messages
 	Handle func(bool, *hub.Message)
 }
