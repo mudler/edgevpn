@@ -46,6 +46,7 @@ func main() {
 		edgevpn.WithInterfaceAddress(os.Getenv("ADDRESS")),
 		edgevpn.WithInterfaceName(os.Getenv("IFACE")),
 		edgevpn.WithInterfaceType(water.TAP),
+		edgevpn.NetLinkBootstrap(true),
 	}
 
 	opts = append(opts, edgevpn.FromYaml(os.Getenv("EDGEVPNCONFIG")))

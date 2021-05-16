@@ -91,6 +91,13 @@ func ListenAddresses(s string) func(cfg *Config) error {
 	}
 }
 
+func NetLinkBootstrap(b bool) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.NetLinkBootstrap = b
+		return nil
+	}
+}
+
 func Insecure(b bool) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.Insecure = b

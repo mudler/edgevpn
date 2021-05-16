@@ -58,8 +58,10 @@ func (e *EdgeVPN) Start() error {
 
 func (e *EdgeVPN) writePackets(ifce *water.Interface) error {
 
-	if err := e.prepareInterface(); err != nil {
-		return err
+	if e.config.NetLinkBootstrap {
+		if err := e.prepareInterface(); err != nil {
+			return err
+		}
 	}
 
 	mw, err := e.MessageWriter()
