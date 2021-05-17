@@ -38,6 +38,26 @@ Keep that in mind before using it for your prod networks!
 
 But it has a strong pro: it just works everywhere libp2p works!
 
+### Example use case: network-decentralized [k3s](https://github.com/k3s-io/k3s) test cluster
+
+Let's see a practical example, you are developing something for kubernetes and you want to try a multi-node setup, but you have machines available that are only behind NAT (pity!) and you would really like to leverage HW.
+
+If you are not really interested in network performance (again, that's for development purposes only!) then you could use `edgevpn` + [k3s](https://github.com/k3s-io/k3s) in this way:
+
+1) Generate edgevpn config: `edgevpn -g > vpn.yaml`
+2) Start the vpn:
+
+   on node A: `sudo IFACE=edgevpn0 ADDRESS=10.1.0.3/24 EDGEVPNCONFIG=vpn.yml edgevpn`
+   
+   on node B: `sudo IFACE=edgevpn0 ADDRESS=10.1.0.4/24 EDGEVPNCONFIG=vpm.yml edgevpn`
+3) Start k3s:
+ 
+   on node A: `k3s server --flannel-iface=edgevpn0`
+   
+   on node B: `K3S_URL=https://10.1.0.3:6443 K3S_TOKEN=xx k3s agent --flannel-iface=edgevpn0 --node-ip 10.1.0.4`
+
+We have used flannel here, but other CNI should work as well.
+
 ## As a library
 
 EdgeVPN can be used as a library. It is very portable and offers a functional interface:
@@ -67,7 +87,6 @@ e.Start()
 - p2p encryption between peers with libp2p
 - randezvous points dynamically generated from OTP keys
 - extra AES symmetric encryption on top. In case randezvous point is compromised
-
 
 ## Credits
 
