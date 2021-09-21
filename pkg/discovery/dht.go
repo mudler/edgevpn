@@ -84,10 +84,19 @@ func (d *DHT) Run(c *zap.Logger, ctx context.Context, host host.Host) error {
 		return err
 	}
 
-	d.bootstrapPeers(c, ctx, host)
-	d.announceAndConnect(ctx, kademliaDHT, host, d.Rendezvous())
+	connect := func() {
+		d.bootstrapPeers(c, ctx, host)
+		if d.latestRendezvous != "" {
+			d.announceAndConnect(ctx, kademliaDHT, host, d.latestRendezvous)
+		}
+
+		rv := d.Rendezvous()
+		d.announceAndConnect(ctx, kademliaDHT, host, rv)
+	}
 
 	go func() {
+
+		connect()
 
 		t := jitterbug.New(
 			time.Second*time.Duration(d.RefreshDiscoveryTime),
@@ -97,13 +106,7 @@ func (d *DHT) Run(c *zap.Logger, ctx context.Context, host host.Host) error {
 		for {
 			select {
 			case <-t.C:
-				d.bootstrapPeers(c, ctx, host)
-				if d.latestRendezvous != "" {
-					d.announceAndConnect(ctx, kademliaDHT, host, d.latestRendezvous)
-				}
-
-				rv := d.Rendezvous()
-				d.announceAndConnect(ctx, kademliaDHT, host, rv)
+				connect()
 
 			case <-ctx.Done():
 				return
