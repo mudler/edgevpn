@@ -5,10 +5,12 @@ import (
 	"crypto/rand"
 	"io"
 	mrand "math/rand"
+	"net"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
+	conngater "github.com/libp2p/go-libp2p/p2p/net/conngater"
 
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	multiaddr "github.com/multiformats/go-multiaddr"
@@ -33,16 +35,33 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 		return nil, err
 	}
 
+	// Avoid to loopback traffic by trying to connect to nodes in via VPN
+	_, vpnNetwork, err := net.ParseCIDR(e.config.InterfaceAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	cg, err := conngater.NewBasicConnectionGater(nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := cg.BlockSubnet(vpnNetwork); err != nil {
+		return nil, err
+	}
+
 	opts := []libp2p.Option{
 		libp2p.ListenAddrs([]multiaddr.Multiaddr(e.config.ListenAddresses)...),
 		libp2p.Identity(prvKey),
 		libp2p.EnableAutoRelay(),
 		libp2p.EnableNATService(),
+		libp2p.ConnectionGater(cg),
 	}
 
 	for _, d := range e.config.ServiceDiscovery {
 		opts = append(opts, d.Option(ctx))
 	}
+
+	opts = append(opts, e.config.Options...)
 
 	if e.config.Insecure {
 		opts = append(opts, libp2p.NoSecurity)

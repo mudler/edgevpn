@@ -2,23 +2,18 @@ package discovery
 
 import (
 	"context"
-	"time"
 
 	"github.com/libp2p/go-libp2p"
 	"go.uber.org/zap"
 
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p/p2p/discovery"
-
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
+	mdns "github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 )
 
 type MDNS struct {
 	DiscoveryServiceTag string
 }
-
-// DiscoveryInterval is how often we re-publish our mDNS records.
-const DiscoveryInterval = time.Second
 
 // discoveryNotifee gets notified when we find a new peer via mDNS discovery
 type discoveryNotifee struct {
@@ -44,10 +39,7 @@ func (d *MDNS) Option(ctx context.Context) func(c *libp2p.Config) error {
 func (d *MDNS) Run(l *zap.Logger, ctx context.Context, host host.Host) error {
 
 	// setup mDNS discovery to find local peers
-	disc, err := discovery.NewMdnsService(ctx, host, DiscoveryInterval, d.DiscoveryServiceTag)
-	if err != nil {
-		return err
-	}
+	disc := mdns.NewMdnsService(host, d.DiscoveryServiceTag)
 
 	n := discoveryNotifee{h: host, c: l}
 	disc.RegisterNotifee(&n)

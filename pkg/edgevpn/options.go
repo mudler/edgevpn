@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 
 	"github.com/ipfs/go-log/v2"
+	"github.com/libp2p/go-libp2p"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/hub"
 	"github.com/mudler/edgevpn/pkg/utils"
@@ -20,6 +21,13 @@ func IfaceWriter(i *water.Interface) Handler {
 		i.Write([]byte(m.Message))
 		return nil
 	})
+}
+
+func WithLibp2pOptions(i ...libp2p.Option) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.Options = append(cfg.Options, i...)
+		return nil
+	}
 }
 
 func WithInterface(i *water.Interface) func(cfg *Config) error {
