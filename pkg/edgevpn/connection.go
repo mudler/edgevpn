@@ -10,12 +10,23 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
+	quic "github.com/libp2p/go-libp2p-quic-transport"
 	conngater "github.com/libp2p/go-libp2p/p2p/net/conngater"
-
+	"github.com/libp2p/go-tcp-transport"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	multiaddr "github.com/multiformats/go-multiaddr"
 	"github.com/xlzd/gotp"
 )
+
+var defaultLibp2pOptions = []libp2p.Option{
+	libp2p.EnableAutoRelay(),
+	libp2p.EnableNATService(),
+	libp2p.NATPortMap(),
+	libp2p.DefaultSecurity,
+	libp2p.Transport(quic.NewTransport),
+	libp2p.Transport(tcp.NewTCPTransport),
+	libp2p.FallbackDefaults,
+}
 
 func (e *EdgeVPN) Host() host.Host {
 	return e.host
@@ -49,18 +60,20 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 		return nil, err
 	}
 
-	opts := []libp2p.Option{
-		libp2p.ListenAddrs([]multiaddr.Multiaddr(e.config.ListenAddresses)...),
-		libp2p.Identity(prvKey),
-		libp2p.EnableAutoRelay(),
-		libp2p.EnableNATService(),
-		libp2p.NATPortMap(),
-		libp2p.ConnectionGater(cg),
-	}
+	opts := defaultLibp2pOptions
 
 	if len(e.config.Options) != 0 {
 		opts = e.config.Options
 	}
+
+	opts = append(opts, libp2p.ConnectionGater(cg))
+	opts = append(opts, libp2p.Identity(prvKey))
+
+	addrs := []multiaddr.Multiaddr{}
+	for _, l := range e.config.ListenAddresses {
+		addrs = append(addrs, []multiaddr.Multiaddr(l)...)
+	}
+	opts = append(opts, libp2p.ListenAddrs(addrs...))
 
 	for _, d := range e.config.ServiceDiscovery {
 		opts = append(opts, d.Option(ctx))

@@ -100,9 +100,16 @@ func DiscoveryService(s ...ServiceDiscovery) func(cfg *Config) error {
 	}
 }
 
-func ListenAddresses(s string) func(cfg *Config) error {
+func ListenAddresses(ss ...string) func(cfg *Config) error {
 	return func(cfg *Config) error {
-		cfg.ListenAddresses.Set(s)
+		for _, s := range ss {
+			a := &discovery.AddrList{}
+			err := a.Set(s)
+			if err != nil {
+				return err
+			}
+			cfg.ListenAddresses = append(cfg.ListenAddresses, *a)
+		}
 		return nil
 	}
 }

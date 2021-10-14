@@ -19,7 +19,7 @@ type Config struct {
 	RoomName string
 
 	// ListenAddresses is the discovery peer initial bootstrap addresses
-	ListenAddresses discovery.AddrList
+	ListenAddresses []discovery.AddrList
 
 	// Insecure disables secure p2p e2e encrypted communication
 	Insecure bool
