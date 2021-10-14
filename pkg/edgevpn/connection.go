@@ -20,7 +20,6 @@ var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableAutoRelay(),
 	libp2p.EnableNATService(),
 	libp2p.NATPortMap(),
-	libp2p.FallbackDefaults,
 }
 
 func (e *EdgeVPN) Host() host.Host {
@@ -79,6 +78,8 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 	if e.config.Insecure {
 		opts = append(opts, libp2p.NoSecurity)
 	}
+
+	opts = append(opts, libp2p.FallbackDefaults)
 
 	return libp2p.New(ctx, opts...)
 }
