@@ -58,11 +58,15 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 		libp2p.ConnectionGater(cg),
 	}
 
+	if len(e.config.Options) != 0 {
+		opts = e.config.Options
+	}
+
 	for _, d := range e.config.ServiceDiscovery {
 		opts = append(opts, d.Option(ctx))
 	}
 
-	opts = append(opts, e.config.Options...)
+	opts = append(opts, e.config.AdditionalOptions...)
 
 	if e.config.Insecure {
 		opts = append(opts, libp2p.NoSecurity)

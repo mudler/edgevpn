@@ -23,9 +23,17 @@ func IfaceWriter(i *water.Interface) Handler {
 	})
 }
 
+// WithLibp2pOptions Overrides defaults options
 func WithLibp2pOptions(i ...libp2p.Option) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.Options = append(cfg.Options, i...)
+		return nil
+	}
+}
+
+func WithLibp2pAdditionalOptions(i ...libp2p.Option) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.AdditionalOptions = append(cfg.Options, i...)
 		return nil
 	}
 }
