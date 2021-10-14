@@ -54,6 +54,7 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 		libp2p.Identity(prvKey),
 		libp2p.EnableAutoRelay(),
 		libp2p.EnableNATService(),
+		libp2p.NATPortMap(),
 		libp2p.ConnectionGater(cg),
 	}
 

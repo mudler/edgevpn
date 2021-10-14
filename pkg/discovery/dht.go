@@ -9,6 +9,7 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
 	discovery "github.com/libp2p/go-libp2p-discovery"
@@ -158,11 +159,14 @@ func (d *DHT) announceAndConnect(ctx context.Context, kademliaDHT *dht.IpfsDHT, 
 		wg.Add(1)
 		go func(a peer.AddrInfo) {
 			defer wg.Done()
-			d.console.Sugar().Info("Found peer:", a)
-			if err := host.Connect(ctx, a); err != nil {
-				d.console.Sugar().Info("Failed connecting to", a)
-			} else {
-				d.console.Sugar().Info("Connected to:", a)
+
+			if host.Network().Connectedness(p.ID) != network.Connected {
+				d.console.Sugar().Info("Found peer:", a)
+				if err := host.Connect(ctx, a); err != nil {
+					d.console.Sugar().Info("Failed connecting to", a)
+				} else {
+					d.console.Sugar().Info("Connected to:", a)
+				}
 			}
 		}(p)
 
