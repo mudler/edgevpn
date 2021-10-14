@@ -15,6 +15,8 @@ require (
 	github.com/libp2p/go-libp2p-discovery v0.5.1
 	github.com/libp2p/go-libp2p-kad-dht v0.11.1
 	github.com/libp2p/go-libp2p-pubsub v0.5.4
+	github.com/libp2p/go-libp2p-quic-transport v0.11.2
+	github.com/libp2p/go-tcp-transport v0.2.8
 	github.com/lthibault/jitterbug v2.0.0+incompatible
 	github.com/multiformats/go-multiaddr v0.4.0
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
