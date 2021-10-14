@@ -10,9 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
-	quic "github.com/libp2p/go-libp2p-quic-transport"
 	conngater "github.com/libp2p/go-libp2p/p2p/net/conngater"
-	"github.com/libp2p/go-tcp-transport"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	multiaddr "github.com/multiformats/go-multiaddr"
 	"github.com/xlzd/gotp"
@@ -22,9 +20,6 @@ var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableAutoRelay(),
 	libp2p.EnableNATService(),
 	libp2p.NATPortMap(),
-	libp2p.DefaultSecurity,
-	libp2p.Transport(quic.NewTransport),
-	libp2p.Transport(tcp.NewTCPTransport),
 	libp2p.FallbackDefaults,
 }
 
