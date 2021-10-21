@@ -2,26 +2,39 @@
 
 Fully Decentralized. Immutable. Portable. Easy to use Statically compiled VPN
 
+EdgeVPN uses libp2p to connect and create a blockchain between nodes. It keeps the routing table stored in the ledger, while connections are dynamically established via p2p.
+
 ## Usage
 
-Generate a config:
+Generate a config, and send it over all the nodes you wish to connect:
 
 ```bash
 ./edgevpn -g > config.yaml
 ```
 
-Run it on multiple hosts:
+Run edgevpn on multiple hosts:
 
 ```bash
+# on Node A
 EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=10.1.0.11/24 ./edgevpn
+# on Node B
 EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=10.1.0.12/24 ./edgevpn
+# on Node C ...
 EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=10.1.0.13/24 ./edgevpn
 ...
 ```
 
-... and that's it!
+... and that's it! the `ADDRESS` is a _virtual_ unique IP for each node, and it is actually the ip where the node will be reachable to from the vpn, while `IFACE` is the interface name.
 
 *Note*: It might take up time to build the connection between nodes. Wait at least 5 mins, it depends on the network behind the hosts.
+
+## Architecture
+
+- p2p encryption between peers with libp2p
+- randezvous points dynamically generated from OTP keys
+- extra AES symmetric encryption on top. In case randezvous point is compromised
+- blockchain is used as a sealed encrypted store for the routing table
+- connections are created host to host
 
 ## Is it for me?
 
@@ -31,8 +44,8 @@ Its mainly use is for edge and low-end devices and especially for development.
 
 The decentralized approach has few cons:
 
-- The underlaying network is chatty. It uses a Gossip protocol and p2p. Every message is broadcasted to all peers.
-- Not suited for low latency. On my local tests on very slow connections, ping took ~200ms.
+- The underlaying network is chatty. It uses a Gossip protocol for syncronizing the routing table and p2p. Every blockchain message is broadcasted to all peers, while the traffic is to the host only.
+- Might be not suited for low latency workload.
 
 Keep that in mind before using it for your prod networks!
 
@@ -81,12 +94,6 @@ e := edgevpn.New(edgevpn.Logger(l),
 e.Start()
 
 ```
-
-## Architecture
-
-- p2p encryption between peers with libp2p
-- randezvous points dynamically generated from OTP keys
-- extra AES symmetric encryption on top. In case randezvous point is compromised
 
 ## Credits
 

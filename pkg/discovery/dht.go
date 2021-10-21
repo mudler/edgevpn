@@ -96,7 +96,6 @@ func (d *DHT) Run(c *zap.Logger, ctx context.Context, host host.Host) error {
 	}
 
 	go func() {
-
 		connect()
 
 		t := jitterbug.New(
@@ -149,29 +148,31 @@ func (d *DHT) announceAndConnect(ctx context.Context, kademliaDHT *dht.IpfsDHT, 
 	if err != nil {
 		return err
 	}
-	var wg sync.WaitGroup
+	//	var wg sync.WaitGroup
 
 	for p := range peerChan {
 		// Don't dial ourselves or peers without address
 		if p.ID == host.ID() || len(p.Addrs) == 0 {
 			continue
 		}
-		wg.Add(1)
-		go func(a peer.AddrInfo) {
-			defer wg.Done()
+		//	wg.Add(1)
+		//	go func(a peer.AddrInfo) {
+		//	defer wg.Done()
 
-			if host.Network().Connectedness(p.ID) != network.Connected {
-				d.console.Sugar().Info("Found peer:", a)
-				if err := host.Connect(ctx, a); err != nil {
-					d.console.Sugar().Info("Failed connecting to", a)
-				} else {
-					d.console.Sugar().Info("Connected to:", a)
-				}
+		if host.Network().Connectedness(p.ID) != network.Connected {
+			d.console.Sugar().Info("Found peer:", p)
+			if err := host.Connect(ctx, p); err != nil {
+				d.console.Sugar().Info("Failed connecting to", p)
+			} else {
+				d.console.Sugar().Info("Connected to:", p)
 			}
-		}(p)
+		} else {
+			d.console.Sugar().Info("Known peer (already connected):", p)
+		}
+		//}(p)
 
 	}
-	wg.Wait()
+	//	wg.Wait()
 
 	return nil
 }

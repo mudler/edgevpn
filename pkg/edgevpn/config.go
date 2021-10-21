@@ -28,17 +28,19 @@ type Config struct {
 	Handlers []Handler
 
 	MaxMessageSize   int
-	MTU              int
 	SealKeyInterval  int
 	Interface        *water.Interface
 	InterfaceName    string
 	InterfaceAddress string
 	InterfaceMTU     int
+	MTU              int
 	DeviceType       water.DeviceType
 	ServiceDiscovery []ServiceDiscovery
 	Logger           *zap.Logger
 
 	SealKeyLength int
+
+	MaxBlockChainLength int
 
 	NetLinkBootstrap bool
 

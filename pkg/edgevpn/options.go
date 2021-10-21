@@ -6,7 +6,6 @@ import (
 	"github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
-	"github.com/mudler/edgevpn/pkg/hub"
 	"github.com/mudler/edgevpn/pkg/utils"
 	"github.com/pkg/errors"
 	"github.com/songgao/water"
@@ -15,13 +14,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v2"
 )
-
-func IfaceWriter(i *water.Interface) Handler {
-	return Handler(func(m *hub.Message) error {
-		i.Write([]byte(m.Message))
-		return nil
-	})
-}
 
 // WithLibp2pOptions Overrides defaults options
 func WithLibp2pOptions(i ...libp2p.Option) func(cfg *Config) error {
@@ -59,6 +51,20 @@ func WithInterfaceMTU(i int) func(cfg *Config) error {
 	}
 }
 
+func WithMaxBlockChainSize(i int) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.MaxBlockChainLength = i
+		return nil
+	}
+}
+
+func WithPacketMTU(i int) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.MTU = i
+		return nil
+	}
+}
+
 func WithInterfaceType(d water.DeviceType) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.DeviceType = d
@@ -83,9 +89,7 @@ func Logger(l *zap.Logger) func(cfg *Config) error {
 // Handlers adds a handler to the list that is called on each received message
 func Handlers(h ...Handler) func(cfg *Config) error {
 	return func(cfg *Config) error {
-		for _, cc := range h {
-			cfg.Handlers = append(cfg.Handlers, cc)
-		}
+		cfg.Handlers = append(cfg.Handlers, h...)
 		return nil
 	}
 }
@@ -93,9 +97,7 @@ func Handlers(h ...Handler) func(cfg *Config) error {
 // DiscoveryService Adds the service given as argument to the discovery services
 func DiscoveryService(s ...ServiceDiscovery) func(cfg *Config) error {
 	return func(cfg *Config) error {
-		for _, cc := range s {
-			cfg.ServiceDiscovery = append(cfg.ServiceDiscovery, cc)
-		}
+		cfg.ServiceDiscovery = append(cfg.ServiceDiscovery, s...)
 		return nil
 	}
 }
@@ -149,13 +151,6 @@ func SealKeyInterval(i int) func(cfg *Config) error {
 	}
 }
 
-func WithMTU(i int) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.MTU = i
-		return nil
-	}
-}
-
 func SealKeyLength(i int) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.SealKeyLength = i
@@ -205,7 +200,7 @@ type YAMLConnectionConfig struct {
 	MDNS       string `yaml:"mdns"`
 }
 
-func (y YAMLConnectionConfig) Fill(cfg *Config) {
+func (y YAMLConnectionConfig) copy(cfg *Config) {
 	d := &discovery.DHT{
 		RefreshDiscoveryTime: 60,
 		OTPInterval:          y.OTP.DHT.Interval,
@@ -249,7 +244,7 @@ func FromYaml(path string) func(cfg *Config) error {
 		if err := yaml.Unmarshal(data, &t); err != nil {
 			return errors.Wrap(err, "parsing yaml")
 		}
-		t.Fill(cfg)
+		t.copy(cfg)
 		return nil
 	}
 }

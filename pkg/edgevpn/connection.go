@@ -16,6 +16,8 @@ import (
 	"github.com/xlzd/gotp"
 )
 
+const Protocol = "/edgevpn/0.1"
+
 var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableAutoRelay(),
 	libp2p.EnableNATService(),
@@ -27,7 +29,6 @@ func (e *EdgeVPN) Host() host.Host {
 }
 
 func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
-
 	var r io.Reader
 	if e.seed == 0 {
 		r = rand.Reader
@@ -85,8 +86,7 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 }
 
 func (e *EdgeVPN) sealkey() string {
-	totp := gotp.NewTOTP(e.config.ExchangeKey, 6, e.config.SealKeyInterval, nil)
-	return totp.Now()
+	return gotp.NewTOTP(e.config.ExchangeKey, 6, e.config.SealKeyInterval, nil).Now()
 }
 
 func (e *EdgeVPN) handleEvents(ctx context.Context) {
@@ -112,7 +112,9 @@ func (e *EdgeVPN) handleEvents(ctx context.Context) {
 
 func (e *EdgeVPN) handleReceivedMessage(m *hub.Message) {
 	for _, h := range e.config.Handlers {
-		h(m)
+		if err := h(m); err != nil {
+			e.config.Logger.Sugar().Warnf("handler error: %s", err)
+		}
 	}
 }
 

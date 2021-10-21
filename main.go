@@ -41,11 +41,12 @@ func main() {
 		edgevpn.Logger(l),
 		edgevpn.LogLevel(log.LevelInfo),
 		edgevpn.MaxMessageSize(2 << 20), // 2MB
-		edgevpn.WithMTU(1500),
-		edgevpn.WithInterfaceMTU(1300),
+		edgevpn.WithInterfaceMTU(1450),
+		edgevpn.WithPacketMTU(1420),
 		edgevpn.WithInterfaceAddress(os.Getenv("ADDRESS")),
 		edgevpn.WithInterfaceName(os.Getenv("IFACE")),
-		edgevpn.WithInterfaceType(water.TAP),
+		edgevpn.WithMaxBlockChainSize(1000),
+		edgevpn.WithInterfaceType(water.TUN),
 		edgevpn.NetLinkBootstrap(true),
 	}
 
@@ -95,5 +96,8 @@ func main() {
 
 	if err := e.Start(); err != nil {
 		l.Sugar().Fatal(err.Error())
+	}
+
+	for {
 	}
 }
