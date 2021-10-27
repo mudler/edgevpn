@@ -17,6 +17,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
+	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vishvananda/netlink v1.1.0
 	github.com/xlzd/gotp v0.0.0-20181030022105-c8557ba2c119
 	go.opencensus.io v0.23.0 // indirect

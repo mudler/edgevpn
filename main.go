@@ -22,6 +22,7 @@ import (
 
 	"github.com/ipfs/go-log/v2"
 	"github.com/songgao/water"
+	"github.com/urfave/cli"
 
 	internal "github.com/mudler/edgevpn/internal"
 	"go.uber.org/zap"
@@ -30,12 +31,85 @@ import (
 	edgevpn "github.com/mudler/edgevpn/pkg/edgevpn"
 )
 
-func main() {
-	help := flag.Bool("h", false, "Display Help")
-	genKeys := flag.Bool("g", false, "Generate pub/priv keys")
+const copyRight string = `	edgevpn  Copyright (C) 2021 Ettore Di Giacinto
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions.`
 
+func main() {
 	l, _ := zap.NewProduction()
 	defer l.Sync() // flushes buffer, if any
+
+	app := &cli.App{
+		Name:        "edgevpn",
+		Version:     internal.Version,
+		Author:      "Ettore Di Giacinto",
+		Usage:       "edgevpn --config /etc/edgevpn/config.yaml",
+		Description: "edgevpn uses libp2p to build an immutable trusted blockchain addressable p2p network",
+		Copyright:   copyRight,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "g",
+				Usage: "Generates a new configuration and prints it on screen",
+			},
+			&cli.StringFlag{
+				Name:   "config",
+				Usage:  "Specify a path to a edgevpn config file",
+				EnvVar: "EDGEVPNCONFIG",
+			},
+			&cli.StringFlag{
+				Name:   "token",
+				Usage:  "Specify an edgevpn token in place of a config file",
+				EnvVar: "EDGEVPNTOKEN",
+			},
+			&cli.StringFlag{
+				Name:   "address",
+				Usage:  "VPN virtual address",
+				EnvVar: "ADDRESS",
+				Value:  "10.1.0.1/24",
+			},
+			&cli.StringFlag{
+				Name:   "interface",
+				Usage:  "Interface name",
+				Value:  "edgevpn0",
+				EnvVar: "IFACE",
+			},
+		},
+
+		Action: func(c *cli.Context) error {
+			if c.Bool("g") {
+				// Generates a new config and exit
+				newData, err := edgevpn.GenerateNewConnectionData()
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+
+				bytesData, err := yaml.Marshal(newData)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+
+				fmt.Println(string(bytesData))
+				os.Exit(0)
+			}
+
+			start(l, c)
+			return nil
+		},
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		l.Sugar().Fatal(err)
+	}
+}
+func start(l *zap.Logger, c *cli.Context) {
+	config := c.String("config")
+	address := c.String("address")
+	iface := c.String("interface")
+	token := c.String("token")
 
 	opts := []edgevpn.Option{
 		edgevpn.Logger(l),
@@ -43,63 +117,28 @@ func main() {
 		edgevpn.MaxMessageSize(2 << 20), // 2MB
 		edgevpn.WithInterfaceMTU(1450),
 		edgevpn.WithPacketMTU(1420),
-		edgevpn.WithInterfaceAddress(os.Getenv("ADDRESS")),
-		edgevpn.WithInterfaceName(os.Getenv("IFACE")),
+		edgevpn.WithInterfaceAddress(address),
+		edgevpn.WithInterfaceName(iface),
 		edgevpn.WithMaxBlockChainSize(1000),
 		edgevpn.WithInterfaceType(water.TUN),
 		edgevpn.NetLinkBootstrap(true),
-		edgevpn.FromBase64(os.Getenv("EDGEVPNTOKEN")),
+		edgevpn.FromBase64(token),
+		edgevpn.FromYaml(config),
 	}
-
-	opts = append(opts, edgevpn.FromYaml(os.Getenv("EDGEVPNCONFIG")))
 
 	flag.Parse()
 
 	e := edgevpn.New(opts...)
 
-	if *help {
-		fmt.Println("edgevpn uses libp2p to build an immutable trusted p2p network")
-		fmt.Println("")
-		fmt.Println()
-		fmt.Println("Usage: Run './edgevpn in two different terminals. Let them connect to the bootstrap nodes, announce themselves and connect to the peers")
-		flag.PrintDefaults()
-		return
-	}
-
-	if *genKeys {
-		newData, err := edgevpn.GenerateNewConnectionData()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		bytesData, err := yaml.Marshal(newData)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		fmt.Println(string(bytesData))
-		os.Exit(0)
-	}
-
-	l.Sugar().Info(`
-	edgevpn  Copyright (C) 2021 Ettore Di Giacinto
-	This program comes with ABSOLUTELY NO WARRANTY.
-	This is free software, and you are welcome to redistribute it
-	under certain conditions.
-	`)
+	l.Sugar().Info(copyRight)
 
 	l.Sugar().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
-	if os.Getenv("EDGEVPNCONFIG") == "" && os.Getenv("EDGEVPNTOKEN") == "" {
+	if config == "" && token == "" {
 		l.Sugar().Fatal("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. config file is required")
 	}
 	l.Sugar().Info("Start")
 
 	if err := e.Start(); err != nil {
 		l.Sugar().Fatal(err.Error())
-	}
-
-	for {
 	}
 }

@@ -2,7 +2,9 @@
 
 Fully Decentralized. Immutable. Portable. Easy to use Statically compiled VPN
 
-EdgeVPN uses libp2p to connect and create a blockchain between nodes. It keeps the routing table stored in the ledger, while connections are dynamically established via p2p.
+EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p network.
+
+It connect and creates a small blockchain between nodes. It keeps the routing table stored in the ledger, while connections are dynamically established via p2p.
 
 ## Usage
 
