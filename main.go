@@ -16,7 +16,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -125,8 +124,6 @@ func start(l *zap.Logger, c *cli.Context) {
 		edgevpn.FromBase64(token),
 		edgevpn.FromYaml(config),
 	}
-
-	flag.Parse()
 
 	e := edgevpn.New(opts...)
 
