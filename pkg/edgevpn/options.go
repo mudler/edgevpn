@@ -236,7 +236,11 @@ func GenerateNewConnectionData() (*YAMLConnectionConfig, error) {
 
 func FromYaml(path string) func(cfg *Config) error {
 	return func(cfg *Config) error {
+		if len(path) == 0 {
+			return nil
+		}
 		t := YAMLConnectionConfig{}
+
 		data, err := ioutil.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading yaml file")
