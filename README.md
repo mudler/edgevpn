@@ -9,7 +9,7 @@ EdgeVPN uses libp2p to connect and create a blockchain between nodes. It keeps t
 Generate a config, and send it over all the nodes you wish to connect:
 
 ```bash
-./edgevpn -g > config.yaml
+edgevpn -g > config.yaml
 ```
 
 Run edgevpn on multiple hosts:
@@ -25,6 +25,13 @@ EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=10.1.0.13/24 ./edgevpn
 ```
 
 ... and that's it! the `ADDRESS` is a _virtual_ unique IP for each node, and it is actually the ip where the node will be reachable to from the vpn, while `IFACE` is the interface name.
+
+You can also encode the config in base64, and pass it to edgevpn with `EDGEVPNTOKEN` instead:
+
+```bash
+EDGEVPNTOKEN=$(edgevpn -g | base64 -w0)
+IFACE=edgevpn0 ADDRESS=10.1.0.13/24 ./edgevpn
+```
 
 *Note*: It might take up time to build the connection between nodes. Wait at least 5 mins, it depends on the network behind the hosts.
 

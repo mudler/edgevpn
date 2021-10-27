@@ -48,9 +48,11 @@ func main() {
 		edgevpn.WithMaxBlockChainSize(1000),
 		edgevpn.WithInterfaceType(water.TUN),
 		edgevpn.NetLinkBootstrap(true),
+		edgevpn.FromBase64(os.Getenv("EDGEVPNTOKEN")),
 	}
 
 	opts = append(opts, edgevpn.FromYaml(os.Getenv("EDGEVPNCONFIG")))
+
 	flag.Parse()
 
 	e := edgevpn.New(opts...)
@@ -89,8 +91,8 @@ func main() {
 	`)
 
 	l.Sugar().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
-	if os.Getenv("EDGEVPNCONFIG") == "" {
-		l.Sugar().Fatal("EDGEVPNCONFIG not supplied. config file is required")
+	if os.Getenv("EDGEVPNCONFIG") == "" && os.Getenv("EDGEVPNTOKEN") == "" {
+		l.Sugar().Fatal("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. config file is required")
 	}
 	l.Sugar().Info("Start")
 

@@ -1,6 +1,7 @@
 package edgevpn
 
 import (
+	"encoding/base64"
 	"io/ioutil"
 
 	"github.com/ipfs/go-log/v2"
@@ -242,6 +243,26 @@ func FromYaml(path string) func(cfg *Config) error {
 		}
 
 		if err := yaml.Unmarshal(data, &t); err != nil {
+			return errors.Wrap(err, "parsing yaml")
+		}
+
+		t.copy(cfg)
+		return nil
+	}
+}
+
+func FromBase64(bb string) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		if len(bb) == 0 {
+			return nil
+		}
+		configDec, err := base64.StdEncoding.DecodeString(bb)
+		if err != nil {
+			return err
+		}
+		t := YAMLConnectionConfig{}
+
+		if err := yaml.Unmarshal(configDec, &t); err != nil {
 			return errors.Wrap(err, "parsing yaml")
 		}
 		t.copy(cfg)
