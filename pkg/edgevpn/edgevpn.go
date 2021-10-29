@@ -81,6 +81,8 @@ func (e *EdgeVPN) Start() error {
 	e.config.StreamHandlers[protocol.ID(Protocol)] = streamHandler(ledger, ifce)
 
 	// Join the node to the network, using our ledger
+	// it also starts up a goroutine that periodically sends
+	// messages to the network with our blockchain content
 	if err := e.Join(ledger); err != nil {
 		return err
 	}
@@ -217,7 +219,7 @@ func (e *EdgeVPN) startNetwork() error {
 		return err
 	}
 
-	// join the chat room
+	// join the "chat" room
 	cr, err := hub.JoinRoom(ctx, ps, host.ID(), e.config.RoomName)
 	if err != nil {
 		return err
