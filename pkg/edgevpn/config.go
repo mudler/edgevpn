@@ -2,9 +2,12 @@ package edgevpn
 
 import (
 	"context"
+	"time"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/protocol"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	"github.com/songgao/water"
@@ -46,7 +49,10 @@ type Config struct {
 
 	// Handle is a handle consumed by HumanInterfaces to handle received messages
 	Handle                     func(bool, *hub.Message)
+	StreamHandlers             map[protocol.ID]func(stream network.Stream)
 	AdditionalOptions, Options []libp2p.Option
+
+	LedgerSyncronizationTime, LedgerAnnounceTime time.Duration
 }
 
 type Handler func(*hub.Message) error

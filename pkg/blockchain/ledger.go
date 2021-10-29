@@ -85,11 +85,11 @@ func (l *Ledger) Update(h *hub.Message) (err error) {
 	return
 }
 
-// Persist an async data to the blockchain.
+// Announce keeps updating async data to the blockchain.
 // Sends a broadcast at the specified interval
 // by making sure the async retrieved value is written to the
 // blockchain
-func (l *Ledger) Persist(ctx context.Context, t time.Duration, key string, async func() string) {
+func (l *Ledger) Announce(ctx context.Context, t time.Duration, key string, async func() string) {
 	go func() {
 		t := time.NewTicker(t)
 		defer t.Stop()
