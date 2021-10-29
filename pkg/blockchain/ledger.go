@@ -29,7 +29,7 @@ func New(w io.Writer, maxChainSize int) *Ledger {
 func (l *Ledger) newGenesis() {
 	t := time.Now()
 	genesisBlock := Block{}
-	genesisBlock = Block{0, t.String(), map[string]string{}, genesisBlock.Checksum(), ""}
+	genesisBlock = Block{0, t.String(), map[string]Data{}, genesisBlock.Checksum(), ""}
 	l.Blockchain = append(l.Blockchain, genesisBlock)
 }
 
@@ -89,22 +89,15 @@ func (l *Ledger) Update(h *hub.Message) (err error) {
 // Sends a broadcast at the specified interval
 // by making sure the async retrieved value is written to the
 // blockchain
-func (l *Ledger) Announce(ctx context.Context, t time.Duration, key string, async func() string) {
+func (l *Ledger) Announce(ctx context.Context, t time.Duration, async func()) {
 	go func() {
 		t := time.NewTicker(t)
 		defer t.Stop()
 		for {
 			select {
 			case <-t.C:
-				value := async()
-				// Retrieve current ID for ip in the blockchain
-				existingValue, found := l.GetKey(key)
-				// If mismatch, update the blockchain
-				if !found || existingValue != value {
-					updatedMap := map[string]string{}
-					updatedMap[key] = value
-					l.Add(updatedMap)
-				}
+				async()
+
 			case <-ctx.Done():
 				return
 			}
@@ -117,12 +110,13 @@ func (l *Ledger) lastBlock() Block {
 }
 
 // GetKey retrieve the current key from the blockchain
-func (l *Ledger) GetKey(s string) (value string, exists bool) {
+func (l *Ledger) GetKey(s string) (value Data, exists bool) {
 	l.Lock()
 	defer l.Unlock()
+
 	if len(l.Blockchain) > 0 {
 		last := l.lastBlock()
-		value, exists = last.AddressMap[s]
+		value, exists = last.Storage[s]
 		if exists {
 			return
 		}
@@ -132,12 +126,12 @@ func (l *Ledger) GetKey(s string) (value string, exists bool) {
 }
 
 // ExistsValue returns true if there is one element with a matching value
-func (l *Ledger) ExistsValue(v string) (exists bool) {
+func (l *Ledger) Exists(f func(Data) bool) (exists bool) {
 	l.Lock()
 	defer l.Unlock()
 	if len(l.Blockchain) > 0 {
-		for _, bv := range l.lastBlock().AddressMap {
-			if bv == v {
+		for _, bv := range l.lastBlock().Storage {
+			if f(bv) {
 				exists = true
 				return
 			}
@@ -148,9 +142,9 @@ func (l *Ledger) ExistsValue(v string) (exists bool) {
 }
 
 // Add data to the blockchain
-func (l *Ledger) Add(s map[string]string) {
+func (l *Ledger) Add(s map[string]Data) {
 	l.Lock()
-	current := l.lastBlock().AddressMap
+	current := l.lastBlock().Storage
 	for s, k := range s {
 		current[s] = k
 	}
@@ -158,7 +152,7 @@ func (l *Ledger) Add(s map[string]string) {
 	l.writeData(current)
 }
 
-func (l *Ledger) writeData(s map[string]string) {
+func (l *Ledger) writeData(s map[string]Data) {
 	newBlock := l.lastBlock().NewBlock(s)
 
 	if newBlock.IsValid(l.lastBlock()) {

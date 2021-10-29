@@ -43,23 +43,6 @@ func New(p ...Option) *EdgeVPN {
 	}
 }
 
-// keeps syncronized the blockchain with the node IP
-func (e *EdgeVPN) adverizer(ip net.IP, ledger *blockchain.Ledger) {
-	for {
-		time.Sleep(5 * time.Second)
-
-		nodeID := e.host.ID().String()
-		// Retrieve current ID for ip in the blockchain
-		existingPeerID, found := ledger.GetKey(ip.String())
-		// If mismatch, update the blockchain
-		if !found || existingPeerID != nodeID {
-			updatedMap := map[string]string{}
-			updatedMap[ip.String()] = nodeID
-			ledger.Add(updatedMap)
-		}
-	}
-}
-
 func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
 	// Set the handler when we receive messages
 	// The ledger needs to read them and update the internal blockchain
@@ -83,8 +66,16 @@ func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
 	ledger.Announce(
 		context.Background(),
 		e.config.LedgerAnnounceTime,
-		ip.String(),
-		func() string { return e.host.ID().String() },
+		func() {
+			// Retrieve current ID for ip in the blockchain
+			existingValue, found := ledger.GetKey(ip.String())
+			// If mismatch, update the blockchain
+			if !found || existingValue.PeerID != e.host.ID().String() {
+				updatedMap := map[string]blockchain.Data{}
+				updatedMap[ip.String()] = blockchain.Data{PeerID: e.host.ID().String()}
+				ledger.Add(updatedMap)
+			}
+		},
 	)
 
 	return nil
@@ -143,7 +134,10 @@ func (e *EdgeVPN) MessageWriter(opts ...hub.MessageOption) (*MessageWriter, erro
 
 func streamHandler(ledger *blockchain.Ledger, ifce *water.Interface) func(stream network.Stream) {
 	return func(stream network.Stream) {
-		if !ledger.ExistsValue(stream.Conn().RemotePeer().String()) {
+		if !ledger.Exists(
+			func(d blockchain.Data) bool {
+				return d.PeerID == stream.Conn().RemotePeer().String()
+			}) {
 			stream.Reset()
 			return
 		}
@@ -181,7 +175,7 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 		}
 
 		// Decode the Peer
-		d, err := peer.Decode(value)
+		d, err := peer.Decode(value.PeerID)
 		if err != nil {
 			e.config.Logger.Sugar().Infof("could not decode peer '%s'", value)
 			continue

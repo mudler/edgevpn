@@ -9,11 +9,11 @@ import (
 
 // Block represents each 'item' in the blockchain
 type Block struct {
-	Index      int
-	Timestamp  string
-	AddressMap map[string]string
-	Hash       string
-	PrevHash   string
+	Index     int
+	Timestamp string
+	Storage   map[string]Data
+	Hash      string
+	PrevHash  string
 }
 
 // Blockchain is a series of validated Blocks
@@ -42,7 +42,7 @@ func (newBlock Block) IsValid(oldBlock Block) bool {
 
 // Checksum does SHA256 hashing of the block
 func (b Block) Checksum() string {
-	record := fmt.Sprint(b.Index, b.Timestamp, b.AddressMap, b.PrevHash)
+	record := fmt.Sprint(b.Index, b.Timestamp, b.Storage, b.PrevHash)
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
@@ -50,15 +50,14 @@ func (b Block) Checksum() string {
 }
 
 // create a new block using previous block's hash
-func (oldBlock Block) NewBlock(s map[string]string) Block {
-
+func (oldBlock Block) NewBlock(s map[string]Data) Block {
 	var newBlock Block
 
 	t := time.Now()
 
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Timestamp = t.String()
-	newBlock.AddressMap = s
+	newBlock.Storage = s
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Hash = newBlock.Checksum()
 
