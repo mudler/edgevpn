@@ -29,7 +29,7 @@ type EdgeVPN struct {
 
 func New(p ...Option) *EdgeVPN {
 	c := Config{
-		StreamHandlers:           make(map[protocol.ID]func(stream network.Stream)),
+		StreamHandlers:           make(map[protocol.ID]StreamHandler),
 		LedgerAnnounceTime:       5 * time.Second,
 		LedgerSyncronizationTime: 5 * time.Second,
 	}
@@ -60,31 +60,14 @@ func (e *EdgeVPN) adverizer(ip net.IP, ledger *blockchain.Ledger) {
 	}
 }
 
-// Start the vpn. Returns an error in case of failure
-func (e *EdgeVPN) Start() error {
-	ifce, err := e.createInterface()
-	if err != nil {
-		return err
-	}
-	defer ifce.Close()
-
-	mw, err := e.MessageWriter()
-	if err != nil {
-		return err
-	}
-
-	ledger := blockchain.New(mw, e.config.MaxBlockChainLength)
-
+func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
 	// Set the handler when we receive messages
 	// The ledger needs to read them and update the internal blockchain
 	e.config.Handlers = append(e.config.Handlers, ledger.Update)
-	// Set the stream handler to get back the packets from the stream to the interface
-	e.config.StreamHandlers[protocol.ID(Protocol)] = streamHandler(ledger, ifce)
 
 	e.config.Logger.Sugar().Info("starting edgevpn background daemon")
-
 	// Startup libp2p network
-	err = e.network()
+	err := e.network()
 	if err != nil {
 		return err
 	}
@@ -103,6 +86,32 @@ func (e *EdgeVPN) Start() error {
 		ip.String(),
 		func() string { return e.host.ID().String() },
 	)
+
+	return nil
+}
+
+// Start the vpn. Returns an error in case of failure
+func (e *EdgeVPN) Start() error {
+	ifce, err := e.createInterface()
+	if err != nil {
+		return err
+	}
+	defer ifce.Close()
+
+	mw, err := e.MessageWriter()
+	if err != nil {
+		return err
+	}
+
+	ledger := blockchain.New(mw, e.config.MaxBlockChainLength)
+
+	// Set the stream handler to get back the packets from the stream to the interface
+	e.config.StreamHandlers[protocol.ID(Protocol)] = streamHandler(ledger, ifce)
+
+	// Join the node to the network, using our ledger
+	if err := e.Join(ledger); err != nil {
+		return err
+	}
 
 	if e.config.NetLinkBootstrap {
 		if err := e.prepareInterface(); err != nil {
@@ -201,7 +210,7 @@ func (e *EdgeVPN) network() error {
 	e.host = host
 
 	for pid, strh := range e.config.StreamHandlers {
-		host.SetStreamHandler(pid, strh)
+		host.SetStreamHandler(pid, network.StreamHandler(strh))
 	}
 
 	e.config.Logger.Sugar().Info("Host created. We are:", host.ID())

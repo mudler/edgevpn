@@ -6,6 +6,7 @@ import (
 
 	"github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/protocol"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/utils"
 	"github.com/pkg/errors"
@@ -91,6 +92,14 @@ func Logger(l *zap.Logger) func(cfg *Config) error {
 func Handlers(h ...Handler) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.Handlers = append(cfg.Handlers, h...)
+		return nil
+	}
+}
+
+// StreamHandlers adds a handler to the list that is called on each received message
+func WithStreamHandler(id protocol.ID, h StreamHandler) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.StreamHandlers[id] = h
 		return nil
 	}
 }

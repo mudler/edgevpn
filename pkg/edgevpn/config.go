@@ -49,11 +49,13 @@ type Config struct {
 
 	// Handle is a handle consumed by HumanInterfaces to handle received messages
 	Handle                     func(bool, *hub.Message)
-	StreamHandlers             map[protocol.ID]func(stream network.Stream)
+	StreamHandlers             map[protocol.ID]StreamHandler
 	AdditionalOptions, Options []libp2p.Option
 
 	LedgerSyncronizationTime, LedgerAnnounceTime time.Duration
 }
+
+type StreamHandler func(stream network.Stream)
 
 type Handler func(*hub.Message) error
 
