@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"net"
+	"os"
+	"runtime"
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/host"
@@ -11,6 +13,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	"github.com/songgao/packets/ethernet"
@@ -62,6 +65,18 @@ func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
 	return nil
 }
 
+func newBlockChainData(e *EdgeVPN) blockchain.Data {
+	hostname, _ := os.Hostname()
+
+	return blockchain.Data{
+		PeerID:   e.host.ID().String(),
+		Hostname: hostname,
+		OS:       runtime.GOOS,
+		Arch:     runtime.GOARCH,
+		Version:  internal.Version,
+	}
+}
+
 // Start the vpn. Returns an error in case of failure
 func (e *EdgeVPN) Start() error {
 	ifce, err := e.createInterface()
@@ -101,7 +116,7 @@ func (e *EdgeVPN) Start() error {
 			// If mismatch, update the blockchain
 			if !found || existingValue.PeerID != e.host.ID().String() {
 				updatedMap := map[string]blockchain.Data{}
-				updatedMap[ip.String()] = blockchain.Data{PeerID: e.host.ID().String()}
+				updatedMap[ip.String()] = newBlockChainData(e)
 				ledger.Add(updatedMap)
 			}
 		},
