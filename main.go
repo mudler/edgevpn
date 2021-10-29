@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
+	"github.com/mudler/edgevpn/pkg/blockchain"
 	edgevpn "github.com/mudler/edgevpn/pkg/edgevpn"
 )
 
@@ -35,9 +36,45 @@ This program comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
 under certain conditions.`
 
+func cliToOpts(l *zap.Logger, c *cli.Context) []edgevpn.Option {
+	config := c.String("config")
+	address := c.String("address")
+	iface := c.String("interface")
+	token := c.String("token")
+	if config == "" &&
+		token == "" {
+		l.Sugar().Fatal("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. At least a config file is required")
+	}
+	return []edgevpn.Option{
+		edgevpn.Logger(l),
+		edgevpn.LogLevel(log.LevelInfo),
+		edgevpn.MaxMessageSize(2 << 20), // 2MB
+		edgevpn.WithInterfaceMTU(1450),
+		edgevpn.WithPacketMTU(1420),
+		edgevpn.WithInterfaceAddress(address),
+		edgevpn.WithInterfaceName(iface),
+		edgevpn.WithMaxBlockChainSize(1000),
+		edgevpn.WithInterfaceType(water.TUN),
+		edgevpn.NetLinkBootstrap(true),
+		edgevpn.FromBase64(token),
+		edgevpn.FromYaml(config),
+	}
+}
+
 func main() {
 	l, _ := zap.NewProduction()
 	defer l.Sync() // flushes buffer, if any
+
+	common := []cli.Flag{&cli.StringFlag{
+		Name:   "config",
+		Usage:  "Specify a path to a edgevpn config file",
+		EnvVar: "EDGEVPNCONFIG",
+	},
+		&cli.StringFlag{
+			Name:   "token",
+			Usage:  "Specify an edgevpn token in place of a config file",
+			EnvVar: "EDGEVPNTOKEN",
+		}}
 
 	app := &cli.App{
 		Name:        "edgevpn",
@@ -46,20 +83,10 @@ func main() {
 		Usage:       "edgevpn --config /etc/edgevpn/config.yaml",
 		Description: "edgevpn uses libp2p to build an immutable trusted blockchain addressable p2p network",
 		Copyright:   copyRight,
-		Flags: []cli.Flag{
+		Flags: append([]cli.Flag{
 			&cli.BoolFlag{
 				Name:  "g",
 				Usage: "Generates a new configuration and prints it on screen",
-			},
-			&cli.StringFlag{
-				Name:   "config",
-				Usage:  "Specify a path to a edgevpn config file",
-				EnvVar: "EDGEVPNCONFIG",
-			},
-			&cli.StringFlag{
-				Name:   "token",
-				Usage:  "Specify an edgevpn token in place of a config file",
-				EnvVar: "EDGEVPNTOKEN",
 			},
 			&cli.StringFlag{
 				Name:   "address",
@@ -72,8 +99,31 @@ func main() {
 				Usage:  "Interface name",
 				Value:  "edgevpn0",
 				EnvVar: "IFACE",
+			}}, common...),
+
+		Commands: []cli.Command{{
+			Name:        "join",
+			Description: "join the network without activating any interface",
+			Flags:       common,
+			Action: func(c *cli.Context) error {
+				e := edgevpn.New(cliToOpts(l, c)...)
+
+				mw, err := e.MessageWriter()
+				if err != nil {
+					return err
+				}
+
+				ledger := blockchain.New(mw, 1000)
+
+				// Join the node to the network, using our ledger
+				if err := e.Join(ledger); err != nil {
+					return err
+				}
+
+				for {
+				}
 			},
-		},
+		}},
 
 		Action: func(c *cli.Context) error {
 			if c.Bool("g") {
@@ -94,7 +144,18 @@ func main() {
 				os.Exit(0)
 			}
 
-			start(l, c)
+			e := edgevpn.New(cliToOpts(l, c)...)
+
+			l.Sugar().Info(copyRight)
+
+			l.Sugar().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
+
+			l.Sugar().Info("Start")
+
+			if err := e.Start(); err != nil {
+				l.Sugar().Fatal(err.Error())
+			}
+
 			return nil
 		},
 	}
@@ -102,40 +163,5 @@ func main() {
 	err := app.Run(os.Args)
 	if err != nil {
 		l.Sugar().Fatal(err)
-	}
-}
-func start(l *zap.Logger, c *cli.Context) {
-	config := c.String("config")
-	address := c.String("address")
-	iface := c.String("interface")
-	token := c.String("token")
-
-	opts := []edgevpn.Option{
-		edgevpn.Logger(l),
-		edgevpn.LogLevel(log.LevelInfo),
-		edgevpn.MaxMessageSize(2 << 20), // 2MB
-		edgevpn.WithInterfaceMTU(1450),
-		edgevpn.WithPacketMTU(1420),
-		edgevpn.WithInterfaceAddress(address),
-		edgevpn.WithInterfaceName(iface),
-		edgevpn.WithMaxBlockChainSize(1000),
-		edgevpn.WithInterfaceType(water.TUN),
-		edgevpn.NetLinkBootstrap(true),
-		edgevpn.FromBase64(token),
-		edgevpn.FromYaml(config),
-	}
-
-	e := edgevpn.New(opts...)
-
-	l.Sugar().Info(copyRight)
-
-	l.Sugar().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
-	if config == "" && token == "" {
-		l.Sugar().Fatal("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. config file is required")
-	}
-	l.Sugar().Info("Start")
-
-	if err := e.Start(); err != nil {
-		l.Sugar().Fatal(err.Error())
 	}
 }

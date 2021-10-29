@@ -41,27 +41,28 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 		return nil, err
 	}
 
-	// Avoid to loopback traffic by trying to connect to nodes in via VPN
-	_, vpnNetwork, err := net.ParseCIDR(e.config.InterfaceAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	cg, err := conngater.NewBasicConnectionGater(nil)
-	if err != nil {
-		return nil, err
-	}
-	if err := cg.BlockSubnet(vpnNetwork); err != nil {
-		return nil, err
-	}
-
 	opts := defaultLibp2pOptions
 
 	if len(e.config.Options) != 0 {
 		opts = e.config.Options
 	}
 
-	opts = append(opts, libp2p.ConnectionGater(cg))
+	if e.config.InterfaceAddress != "" {
+		// Avoid to loopback traffic by trying to connect to nodes in via VPN
+		_, vpnNetwork, err := net.ParseCIDR(e.config.InterfaceAddress)
+		if err != nil {
+			return nil, err
+		}
+		cg, err := conngater.NewBasicConnectionGater(nil)
+		if err != nil {
+			return nil, err
+		}
+		if err := cg.BlockSubnet(vpnNetwork); err != nil {
+			return nil, err
+		}
+		opts = append(opts, libp2p.ConnectionGater(cg))
+	}
+
 	opts = append(opts, libp2p.Identity(prvKey))
 
 	addrs := []multiaddr.Multiaddr{}

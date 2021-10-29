@@ -48,35 +48,16 @@ func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
 	// The ledger needs to read them and update the internal blockchain
 	e.config.Handlers = append(e.config.Handlers, ledger.Update)
 
-	e.config.Logger.Sugar().Info("starting edgevpn background daemon")
+	e.config.Logger.Sugar().Info("starting edgevpn")
+
 	// Startup libp2p network
-	err := e.network()
+	err := e.startNetwork()
 	if err != nil {
 		return err
 	}
 
-	// Avoid to loopback traffic by trying to connect to nodes in via VPN
-	ip, _, err := net.ParseCIDR(e.config.InterfaceAddress)
-	if err != nil {
-		return err
-	}
-
-	// Updates the blockchain
+	// Send periodically messages to the channel with our blockchain content
 	ledger.Syncronizer(context.Background(), e.config.LedgerSyncronizationTime)
-	ledger.Announce(
-		context.Background(),
-		e.config.LedgerAnnounceTime,
-		func() {
-			// Retrieve current ID for ip in the blockchain
-			existingValue, found := ledger.GetKey(ip.String())
-			// If mismatch, update the blockchain
-			if !found || existingValue.PeerID != e.host.ID().String() {
-				updatedMap := map[string]blockchain.Data{}
-				updatedMap[ip.String()] = blockchain.Data{PeerID: e.host.ID().String()}
-				ledger.Add(updatedMap)
-			}
-		},
-	)
 
 	return nil
 }
@@ -103,6 +84,26 @@ func (e *EdgeVPN) Start() error {
 	if err := e.Join(ledger); err != nil {
 		return err
 	}
+
+	// Announce our IP
+	ip, _, err := net.ParseCIDR(e.config.InterfaceAddress)
+	if err != nil {
+		return err
+	}
+	ledger.Announce(
+		context.Background(),
+		e.config.LedgerAnnounceTime,
+		func() {
+			// Retrieve current ID for ip in the blockchain
+			existingValue, found := ledger.GetKey(ip.String())
+			// If mismatch, update the blockchain
+			if !found || existingValue.PeerID != e.host.ID().String() {
+				updatedMap := map[string]blockchain.Data{}
+				updatedMap[ip.String()] = blockchain.Data{PeerID: e.host.ID().String()}
+				ledger.Add(updatedMap)
+			}
+		},
+	)
 
 	if e.config.NetLinkBootstrap {
 		if err := e.prepareInterface(); err != nil {
@@ -192,7 +193,7 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 	}
 }
 
-func (e *EdgeVPN) network() error {
+func (e *EdgeVPN) startNetwork() error {
 	ctx := context.Background()
 	e.config.Logger.Sugar().Info("generating host data")
 
