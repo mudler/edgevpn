@@ -6,6 +6,13 @@ EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p net
 
 It connect and creates a small blockchain between nodes. It keeps the routing table stored in the ledger, while connections are dynamically established via p2p.
 
+
+## Screenshots
+
+Connected machines             |  Blockchain index
+:-------------------------:|:-------------------------:
+![edgevpn1](https://user-images.githubusercontent.com/2420543/139510781-18bc083e-34db-4b9c-b9ea-6250979d61cc.png)|  ![edgevpn2](https://user-images.githubusercontent.com/2420543/139510466-b8518d78-57c9-4325-b365-6439a8d130c3.png)
+
 ## Usage
 
 Generate a config, and send it over all the nodes you wish to connect:
@@ -36,6 +43,28 @@ IFACE=edgevpn0 ADDRESS=10.1.0.13/24 ./edgevpn
 ```
 
 *Note*: It might take up time to build the connection between nodes. Wait at least 5 mins, it depends on the network behind the hosts.
+
+## Web interface
+
+To access the web interface, run 
+
+```bash
+edgevpn api
+```
+
+with the same `EDGEVPNCONFIG` or `EDGEVPNTOKEN`. It will connect to the network without routing any packet. 
+
+By default edgevpn will listen on the `8080` port. See `edgevpn api --help` for the available options
+
+### API endpoint
+
+#### `/api/data`
+
+Returns the latest available data stored in the blockchain
+
+#### `/api/blockchain`
+
+Returns the latest available blockchain
 
 ## Architecture
 
