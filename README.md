@@ -39,6 +39,7 @@ IFACE=edgevpn0 ADDRESS=10.1.0.13/24 ./edgevpn
 
 ## Architecture
 
+- Simple (KISS) interface to display network data from the blockchain
 - p2p encryption between peers with libp2p
 - randezvous points dynamically generated from OTP keys
 - extra AES symmetric encryption on top. In case randezvous point is compromised

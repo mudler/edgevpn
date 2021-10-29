@@ -65,7 +65,7 @@ func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
 	return nil
 }
 
-func newBlockChainData(e *EdgeVPN) blockchain.Data {
+func newBlockChainData(e *EdgeVPN, address string) blockchain.Data {
 	hostname, _ := os.Hostname()
 
 	return blockchain.Data{
@@ -74,6 +74,7 @@ func newBlockChainData(e *EdgeVPN) blockchain.Data {
 		OS:       runtime.GOOS,
 		Arch:     runtime.GOARCH,
 		Version:  internal.Version,
+		Address:  address,
 	}
 }
 
@@ -116,7 +117,7 @@ func (e *EdgeVPN) Start() error {
 			// If mismatch, update the blockchain
 			if !found || existingValue.PeerID != e.host.ID().String() {
 				updatedMap := map[string]blockchain.Data{}
-				updatedMap[ip.String()] = newBlockChainData(e)
+				updatedMap[ip.String()] = newBlockChainData(e, ip.String())
 				ledger.Add(updatedMap)
 			}
 		},

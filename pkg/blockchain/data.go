@@ -5,5 +5,6 @@ type Data struct {
 	Hostname string
 	OS       string
 	Arch     string
+	Address  string
 	Version  string
 }

@@ -1,0 +1,131 @@
+<html>
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Duru+Sans&family=Hammersmith+One&family=Lato&family=Nunito&family=Nunito+Sans:wght@400;600&family=Zen+Kurenaido&display=swap" rel="stylesheet"> 
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.1/css/bulma.css" />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
+
+<!-- datatables -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> 
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">
+
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js"></script>
+
+<script src="/js/dt.js"></script> 
+
+<link rel="stylesheet" type="text/css" href="/css/style.css">
+
+<title>EdgeVPN - Machines index</title>
+</head>
+
+<body>
+  <nav class="navbar is-dark is-spaced has-shadow" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="/">
+      <!--  <img src="/images/logo.png" width="112" height="28"> -->
+      <i class="fas fa-ship"></i>
+      </a>
+  
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" href="/index.html">
+          <i class="fas fa-desktop"></i>&nbsp;
+          Machines
+        </a>
+        <a class="navbar-item" href="/blockchain.html">
+          <i class="fas fa-dice-d20"></i>&nbsp;
+          Blockchain
+        </a>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="buttons">
+            <a class="button is-link" href="https://github.com/mudler/edgevpn" target=_blank>
+             <strong><i class="fab fa-github-alt"></i> GitHub</strong>
+            </a>
+            <a class="button is-light" href="https://github.com/mudler/edgevpn/issues/new" target=_blank>
+             <i class="fas fa-bug"></i> Report issue
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+    <section class="hero">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            <i class="fas fa-desktop"></i> Connected Machines
+          </h1>
+          <h2 class="subtitle">
+             
+          </h2>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+        <div class="container">
+
+        </div>
+    </section>
+
+
+    <div class="container">
+        <table  data-toggle="table"
+          data-search="true"
+          data-show-columns="true"
+          id="table"  >
+          <thead>
+        
+          <tr>
+              <th ><abbr title="ip">Address</abbr></th>
+              <th ><abbr title="peer">PeerID</abbr></th>
+              <th  >Hostname</th>
+              <th ><abbr title="OS">OS</abbr></th>
+              <th><abbr title="Arch">Architecture</abbr></th>
+              <th><abbr title="Version">Version</abbr></th>
+
+            </tr>
+          </thead>
+        </table> 
+      </div>
+      
+        <script type="text/javascript">
+            $(document).ready(function() {
+                var table = $('#table').DataTable( {
+                    "processing": true,
+                    "ajax": {
+                        "url": "/api/data",
+                        "type": "GET",
+                        "dataSrc": '',
+                    },
+                    'language':{ 
+                      "loadingRecords": "",
+                      "processing": ""
+                    },
+                    "columns": [
+                        { "data": "Address" },
+                        { "data": "PeerID" },
+                        { "data": "Hostname" },
+                        { "data": "OS" },
+                        { "data": "Arch" },
+                        { "data": "Version" },
+                    ],
+                } );
+
+                setInterval( function () {
+                    table.ajax.reload();
+                }, 5000 ); // 5 s
+            } );
+        </script>  
+    </body>
+</html>

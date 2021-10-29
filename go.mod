@@ -1,6 +1,6 @@
 module github.com/mudler/edgevpn
 
-go 1.14
+go 1.16
 
 require (
 	github.com/ipfs/go-ipns v0.1.2 // indirect

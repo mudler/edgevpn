@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"net/http"
-
-	"github.com/labstack/echo/v4"
+	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
@@ -35,17 +33,7 @@ func API(l *zap.Logger) cli.Command {
 				return err
 			}
 
-			ec := echo.New()
-
-			ec.GET("/api/data", func(c echo.Context) error {
-				return c.JSON(http.StatusOK, ledger.CurrentData())
-			})
-
-			ec.GET("/api/blockchain", func(c echo.Context) error {
-				return c.JSON(http.StatusOK, ledger.BlockChain())
-			})
-
-			return ec.Start(c.String("listen"))
+			return api.API(c.String("listen"), ledger)
 		},
 	}
 }
