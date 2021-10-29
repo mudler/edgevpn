@@ -39,6 +39,7 @@ func main() {
 		Flags:       cmd.MainFlags(),
 		Commands: []cli.Command{
 			cmd.Join(l),
+			cmd.API(l),
 		},
 
 		Action: cmd.Main(l),

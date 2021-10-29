@@ -7,6 +7,7 @@ require (
 	github.com/ipfs/go-log v1.0.5 // indirect
 	github.com/ipfs/go-log/v2 v2.3.0
 	github.com/kr/text v0.2.0 // indirect
+	github.com/labstack/echo/v4 v4.6.1 // indirect
 	github.com/libp2p/go-libp2p v0.15.1
 	github.com/libp2p/go-libp2p-core v0.9.0
 	github.com/libp2p/go-libp2p-discovery v0.5.1
@@ -23,7 +24,7 @@ require (
 	github.com/xlzd/gotp v0.0.0-20181030022105-c8557ba2c119
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/zap v1.19.0
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
+	golang.org/x/net v0.0.0-20210913180222-943fd674d43e
 	gopkg.in/yaml.v2 v2.4.0
 )
 
