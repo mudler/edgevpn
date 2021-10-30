@@ -37,6 +37,16 @@ func API(l string, ledger *blockchain.Ledger) error {
 		return c.JSON(http.StatusOK, list)
 	})
 
+	ec.GET("/api/users", func(c echo.Context) error {
+		user := []*types.User{}
+		for _, v := range ledger.CurrentData()[edgevpn.UsersLedgerKey] {
+			u := &types.User{}
+			v.Unmarshal(u)
+			user = append(user, u)
+		}
+		return c.JSON(http.StatusOK, user)
+	})
+
 	ec.GET("/api/services", func(c echo.Context) error {
 		list := []*types.Service{}
 		for _, v := range ledger.CurrentData()[edgevpn.ServicesLedgerKey] {

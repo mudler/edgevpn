@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net"
+	"time"
 
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -93,7 +94,10 @@ func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, 
 			// If mismatch, update the blockchain
 			if !found {
 				updatedMap := map[string]interface{}{}
-				updatedMap[e.host.ID().String()] = ""
+				updatedMap[e.host.ID().String()] = &types.User{
+					PeerID:    e.host.ID().String(),
+					Timestamp: time.Now().String(),
+				}
 				ledger.Add(UsersLedgerKey, updatedMap)
 			}
 		},
