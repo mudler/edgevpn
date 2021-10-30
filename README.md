@@ -8,12 +8,18 @@ It connect and creates a small blockchain between nodes. It keeps the routing ta
 
 **The blockchain is ephemeral and on-memory**. Each node keeps broadcasting it's state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.  
 
+**Not only a VPN** You can now share a tcp service like you would do with `ngrok`. See Usage below.
+
+
 ## Screenshots
 
 Connected machines             |  Blockchain index
 :-------------------------:|:-------------------------:
-![edgevpn1](https://user-images.githubusercontent.com/2420543/139510781-18bc083e-34db-4b9c-b9ea-6250979d61cc.png)|  ![edgevpn2](https://user-images.githubusercontent.com/2420543/139510466-b8518d78-57c9-4325-b365-6439a8d130c3.png)
+![Screenshot 2021-10-31 at 00-12-16 EdgeVPN - Machines index](https://user-images.githubusercontent.com/2420543/139559755-0ad24e07-77ef-4b80-9adf-db60bce7647c.png)| ![Screenshot 2021-10-31 at 00-11-21 EdgeVPN - Blockchain index](https://user-images.githubusercontent.com/2420543/139559754-a3222aad-c1d3-49a4-be19-a52eba308595.png)
 
+Services             |  Connected users
+:-------------------------:|:-------------------------:
+![Screenshot 2021-10-31 at 00-10-51 EdgeVPN - Services index](https://user-images.githubusercontent.com/2420543/139559750-d67aaf92-c0c5-4ce1-88df-a3240b501f45.png) | ![Screenshot 2021-10-31 at 00-11-08 EdgeVPN - Users connected](https://user-images.githubusercontent.com/2420543/139559751-a81a3e1d-71ac-4485-9fd0-3cd96f44c4b1.png)
 ## Usage
 
 Generate a config, and send it over all the nodes you wish to connect:
@@ -45,6 +51,30 @@ IFACE=edgevpn0 ADDRESS=10.1.0.13/24 ./edgevpn
 
 *Note*: It might take up time to build the connection between nodes. Wait at least 5 mins, it depends on the network behind the hosts.
 
+## Forwarding a local connection
+
+EdgeVPN can also be used to expose local(or remote) services without establishing a VPN and allocating a local tun/tap device, similarly to `ngrok`.
+
+### Exposing a service
+
+If you are used to how Local SSH forwarding works (e.g. `ssh -L 9090:something:remote <my_node>`), EdgeVPN takes a similar approach.
+
+A Service is a generalized TCP service running in a host (also outside the network). For example, let's say that we want to expose a SSH server inside a LAN.
+
+To expose a service to your EdgeVPN network then:
+
+```bash
+edgevpn service-add --name "MyCoolService" --remoteaddress "127.0.0.1:22"
+```
+
+To reach the service, EdgeVPN will setup a local port and bind to it, it will tunnel the traffic to the service over the VPN, for e.g. to bind locally to `9090`:
+
+```bash
+./edgevpn service-connect --name "MyCoolService" --srcaddress "127.0.0.1:9090"
+```
+
+with the example above, 'sshing into `9090` locally would forward to `22`.
+
 ## Web interface
 
 To access the web interface, run 
@@ -59,9 +89,17 @@ By default edgevpn will listen on the `8080` port. See `edgevpn api --help` for 
 
 ### API endpoint
 
-#### `/api/data`
+#### `/api/users`
 
-Returns the latest available data stored in the blockchain
+Returns the users connected to services in the blockchain
+
+#### `/api/services`
+
+Returns the services running in the blockchain
+
+#### `/api/machines`
+
+Returns the machines connected to the VPN
 
 #### `/api/blockchain`
 
