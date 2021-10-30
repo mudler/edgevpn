@@ -16,7 +16,10 @@ import (
 	"github.com/xlzd/gotp"
 )
 
-const Protocol = "/edgevpn/0.1"
+const (
+	Protocol        = "/edgevpn/0.1"
+	ServiceProtocol = "/edgevpn/service/0.1"
+)
 
 var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableAutoRelay(),

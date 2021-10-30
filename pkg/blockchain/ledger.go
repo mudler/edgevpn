@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mudler/edgevpn/pkg/hub"
+	"github.com/pkg/errors"
 )
 
 type Ledger struct {
@@ -73,6 +74,7 @@ func (l *Ledger) Update(h *hub.Message) (err error) {
 
 	err = json.Unmarshal([]byte(h.Message), &chain)
 	if err != nil {
+		err = errors.Wrap(err, "failed unmarshalling blockchain data")
 		return
 	}
 

@@ -40,6 +40,8 @@ func main() {
 		Commands: []cli.Command{
 			cmd.Join(l),
 			cmd.API(l),
+			cmd.ServiceAdd(l),
+			cmd.ServiceConnect(l),
 		},
 
 		Action: cmd.Main(l),
