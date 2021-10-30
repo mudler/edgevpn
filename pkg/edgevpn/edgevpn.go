@@ -35,6 +35,7 @@ func New(p ...Option) *EdgeVPN {
 		StreamHandlers:           make(map[protocol.ID]StreamHandler),
 		LedgerAnnounceTime:       5 * time.Second,
 		LedgerSyncronizationTime: 5 * time.Second,
+		SealKeyLength:            12,
 	}
 	c.Apply(p...)
 

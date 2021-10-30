@@ -38,7 +38,7 @@ func (d *DHT) Option(ctx context.Context) func(c *libp2p.Config) error {
 }
 func (d *DHT) Rendezvous() string {
 	if d.OTPKey != "" {
-		totp := gotp.NewTOTP(d.OTPKey, 6, d.OTPInterval, nil)
+		totp := gotp.NewTOTP(d.OTPKey, d.KeyLength, d.OTPInterval, nil)
 
 		//totp := gotp.NewDefaultTOTP(d.OTPKey)
 		rv := totp.Now()
@@ -65,6 +65,10 @@ func (d *DHT) startDHT(ctx context.Context, h host.Host) (*dht.IpfsDHT, error) {
 }
 
 func (d *DHT) Run(c *zap.Logger, ctx context.Context, host host.Host) error {
+	if d.KeyLength == 0 {
+		d.KeyLength = 12
+	}
+
 	d.console = c
 	if len(d.BootstrapPeers) == 0 {
 		d.BootstrapPeers = dht.DefaultBootstrapPeers

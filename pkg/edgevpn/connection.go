@@ -87,7 +87,7 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 }
 
 func (e *EdgeVPN) sealkey() string {
-	return gotp.NewTOTP(e.config.ExchangeKey, 6, e.config.SealKeyInterval, nil).Now()
+	return gotp.NewTOTP(e.config.ExchangeKey, e.config.SealKeyLength, e.config.SealKeyInterval, nil).Now()
 }
 
 func (e *EdgeVPN) handleEvents(ctx context.Context) {
