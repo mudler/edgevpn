@@ -7,11 +7,13 @@ import (
 	"time"
 )
 
+type DataString string
+
 // Block represents each 'item' in the blockchain
 type Block struct {
 	Index     int
 	Timestamp string
-	Storage   map[string]Data
+	Storage   map[string]map[string]Data
 	Hash      string
 	PrevHash  string
 }
@@ -50,7 +52,7 @@ func (b Block) Checksum() string {
 }
 
 // create a new block using previous block's hash
-func (oldBlock Block) NewBlock(s map[string]Data) Block {
+func (oldBlock Block) NewBlock(s map[string]map[string]Data) Block {
 	var newBlock Block
 
 	t := time.Now()

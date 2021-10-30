@@ -30,7 +30,7 @@ func New(w io.Writer, maxChainSize int) *Ledger {
 func (l *Ledger) newGenesis() {
 	t := time.Now()
 	genesisBlock := Block{}
-	genesisBlock = Block{0, t.String(), map[string]Data{}, genesisBlock.Checksum(), ""}
+	genesisBlock = Block{0, t.String(), map[string]map[string]Data{}, genesisBlock.Checksum(), ""}
 	l.blockchain = append(l.blockchain, genesisBlock)
 }
 
@@ -112,27 +112,29 @@ func (l *Ledger) lastBlock() Block {
 }
 
 // GetKey retrieve the current key from the blockchain
-func (l *Ledger) GetKey(s string) (value Data, exists bool) {
+func (l *Ledger) GetKey(b, s string) (value Data, exists bool) {
 	l.Lock()
 	defer l.Unlock()
 
 	if len(l.blockchain) > 0 {
 		last := l.lastBlock()
-		value, exists = last.Storage[s]
+		if _, exists = last.Storage[b]; !exists {
+			return
+		}
+		value, exists = last.Storage[b][s]
 		if exists {
 			return
 		}
 	}
-
 	return
 }
 
 // ExistsValue returns true if there is one element with a matching value
-func (l *Ledger) Exists(f func(Data) bool) (exists bool) {
+func (l *Ledger) Exists(b string, f func(Data) bool) (exists bool) {
 	l.Lock()
 	defer l.Unlock()
 	if len(l.blockchain) > 0 {
-		for _, bv := range l.lastBlock().Storage {
+		for _, bv := range l.lastBlock().Storage[b] {
 			if f(bv) {
 				exists = true
 				return
@@ -143,7 +145,7 @@ func (l *Ledger) Exists(f func(Data) bool) (exists bool) {
 	return
 }
 
-func (l *Ledger) CurrentData() map[string]Data {
+func (l *Ledger) CurrentData() map[string]map[string]Data {
 	l.Lock()
 	defer l.Unlock()
 	return l.lastBlock().Storage
@@ -156,17 +158,21 @@ func (l *Ledger) BlockChain() Blockchain {
 }
 
 // Add data to the blockchain
-func (l *Ledger) Add(s map[string]Data) {
+func (l *Ledger) Add(b string, s map[string]interface{}) {
 	l.Lock()
 	current := l.lastBlock().Storage
 	for s, k := range s {
-		current[s] = k
+		if _, exists := current[b]; !exists {
+			current[b] = make(map[string]Data)
+		}
+		dat, _ := json.Marshal(k)
+		current[b][s] = Data(string(dat))
 	}
 	l.Unlock()
 	l.writeData(current)
 }
 
-func (l *Ledger) writeData(s map[string]Data) {
+func (l *Ledger) writeData(s map[string]map[string]Data) {
 	newBlock := l.lastBlock().NewBlock(s)
 
 	if newBlock.IsValid(l.lastBlock()) {

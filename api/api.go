@@ -7,6 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/mudler/edgevpn/pkg/blockchain"
+	"github.com/mudler/edgevpn/pkg/edgevpn"
+	"github.com/mudler/edgevpn/pkg/edgevpn/types"
 )
 
 //go:embed public
@@ -25,10 +27,22 @@ func API(l string, ledger *blockchain.Ledger) error {
 	ec := echo.New()
 	assetHandler := http.FileServer(getFileSystem())
 
-	ec.GET("/api/data", func(c echo.Context) error {
-		list := []blockchain.Data{}
-		for _, v := range ledger.CurrentData() {
-			list = append(list, v)
+	ec.GET("/api/machines", func(c echo.Context) error {
+		list := []*types.Machine{}
+		for _, v := range ledger.CurrentData()[edgevpn.MachinesLedgerKey] {
+			machine := &types.Machine{}
+			v.Unmarshal(machine)
+			list = append(list, machine)
+		}
+		return c.JSON(http.StatusOK, list)
+	})
+
+	ec.GET("/api/services", func(c echo.Context) error {
+		list := []*types.Service{}
+		for _, v := range ledger.CurrentData()[edgevpn.ServicesLedgerKey] {
+			srvc := &types.Service{}
+			v.Unmarshal(srvc)
+			list = append(list, srvc)
 		}
 		return c.JSON(http.StatusOK, list)
 	})

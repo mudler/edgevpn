@@ -2,7 +2,6 @@ package edgevpn
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net"
 	"os"
@@ -16,11 +15,14 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
+	"github.com/mudler/edgevpn/pkg/edgevpn/types"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	"github.com/songgao/packets/ethernet"
 	"github.com/songgao/water"
 	"golang.org/x/net/ipv4"
 )
+
+const MachinesLedgerKey = "machines"
 
 type EdgeVPN struct {
 	config  Config
@@ -48,114 +50,6 @@ func New(p ...Option) *EdgeVPN {
 	}
 }
 
-func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress string) {
-	// 1) Register the ServiceID <-> PeerID Association
-	// By announcing periodically our service to the blockchain
-	ledger.Announce(
-		context.Background(),
-		e.config.LedgerAnnounceTime,
-		func() {
-			key := fmt.Sprintf("service-%s", serviceID)
-			// Retrieve current ID for ip in the blockchain
-			existingValue, found := ledger.GetKey(key)
-			// If mismatch, update the blockchain
-			if !found || existingValue.PeerID != e.host.ID().String() {
-				updatedMap := map[string]blockchain.Data{}
-				updatedMap[key] = blockchain.Data{PeerID: e.host.ID().String()}
-				ledger.Add(updatedMap)
-			}
-		},
-	)
-
-	// 2) Set a stream handler
-	//    which connect to the given address/Port and Send what we receive from the Stream.
-	e.config.StreamHandlers[protocol.ID(ServiceProtocol)] = func(stream network.Stream) {
-		go func() {
-			e.config.Logger.Sugar().Info("Received connection from", stream.Conn().RemotePeer().String())
-			// TODO: Gate connection by PeerID: stream.Conn().RemotePeer().String()
-			// we need a list of known peers
-			e.config.Logger.Sugar().Info("Dialing", dstaddress)
-
-			c, err := net.Dial("tcp", dstaddress)
-			if err != nil {
-				e.config.Logger.Sugar().Info("Reset", stream.Conn().RemotePeer().String(), err.Error())
-				stream.Reset()
-				return
-			}
-			closer := make(chan struct{}, 2)
-			go copyStream(closer, stream, c)
-			go copyStream(closer, c, stream)
-			<-closer
-
-			stream.Close()
-			c.Close()
-
-			e.config.Logger.Sugar().Info("Done", stream.Conn().RemotePeer().String())
-
-		}()
-	}
-
-}
-
-func copyStream(closer chan struct{}, dst io.Writer, src io.Reader) {
-	_, _ = io.Copy(dst, src)
-	closer <- struct{}{} // connection is closed, send signal to stop proxy
-}
-
-func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, srcaddr string) error {
-	// Open local port for listening
-	l, err := net.Listen("tcp", srcaddr)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Listening on ", srcaddr)
-
-	defer l.Close()
-	for {
-		// Listen for an incoming connection.
-		conn, err := l.Accept()
-		if err != nil {
-			fmt.Println("Error accepting: ", err.Error())
-			os.Exit(1)
-		}
-		e.config.Logger.Sugar().Info("New connection from", l.Addr().String())
-		// Handle connections in a new goroutine, forwarding to the p2p service
-		go func() {
-			key := fmt.Sprintf("service-%s", serviceID)
-			// Retrieve current ID for ip in the blockchain
-			existingValue, found := ledger.GetKey(key)
-			// If mismatch, update the blockchain
-			if !found {
-				e.config.Logger.Sugar().Info("service not found on blockchain")
-				return
-			}
-			// Decode the Peer
-			d, err := peer.Decode(existingValue.PeerID)
-			if err != nil {
-				e.config.Logger.Sugar().Infof("could not decode peer '%s'", existingValue.PeerID)
-				return
-			}
-
-			// Open a stream
-			stream, err := e.host.NewStream(context.Background(), d, ServiceProtocol)
-			if err != nil {
-				e.config.Logger.Sugar().Infof("could not open stream '%s'", err.Error())
-				return
-			}
-			e.config.Logger.Sugar().Info("Redirecting", l.Addr().String(), "to", serviceID)
-
-			closer := make(chan struct{}, 2)
-			go copyStream(closer, stream, conn)
-			go copyStream(closer, conn, stream)
-			<-closer
-
-			stream.Close()
-			conn.Close()
-			e.config.Logger.Sugar().Info("Done handling", l.Addr().String(), "to", serviceID)
-		}()
-	}
-}
-
 // Join the network with the ledger.
 // It does the minimal action required to be connected
 // without any active packet routing
@@ -178,10 +72,10 @@ func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
 	return nil
 }
 
-func newBlockChainData(e *EdgeVPN, address string) blockchain.Data {
+func newBlockChainData(e *EdgeVPN, address string) types.Machine {
 	hostname, _ := os.Hostname()
 
-	return blockchain.Data{
+	return types.Machine{
 		PeerID:   e.host.ID().String(),
 		Hostname: hostname,
 		OS:       runtime.GOOS,
@@ -225,13 +119,16 @@ func (e *EdgeVPN) Start() error {
 		context.Background(),
 		e.config.LedgerAnnounceTime,
 		func() {
+			machine := &types.Machine{}
 			// Retrieve current ID for ip in the blockchain
-			existingValue, found := ledger.GetKey(ip.String())
+			existingValue, found := ledger.GetKey(MachinesLedgerKey, ip.String())
+			existingValue.Unmarshal(machine)
+
 			// If mismatch, update the blockchain
-			if !found || existingValue.PeerID != e.host.ID().String() {
-				updatedMap := map[string]blockchain.Data{}
+			if !found || machine.PeerID != e.host.ID().String() {
+				updatedMap := map[string]interface{}{}
 				updatedMap[ip.String()] = newBlockChainData(e, ip.String())
-				ledger.Add(updatedMap)
+				ledger.Add(MachinesLedgerKey, updatedMap)
 			}
 		},
 	)
@@ -266,9 +163,11 @@ func (e *EdgeVPN) MessageWriter(opts ...hub.MessageOption) (*MessageWriter, erro
 
 func streamHandler(ledger *blockchain.Ledger, ifce *water.Interface) func(stream network.Stream) {
 	return func(stream network.Stream) {
-		if !ledger.Exists(
+		if !ledger.Exists(MachinesLedgerKey,
 			func(d blockchain.Data) bool {
-				return d.PeerID == stream.Conn().RemotePeer().String()
+				machine := &types.Machine{}
+				d.Unmarshal(machine)
+				return machine.PeerID == stream.Conn().RemotePeer().String()
 			}) {
 			stream.Reset()
 			return
@@ -300,14 +199,16 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 		dst := header.Dst.String()
 
 		// Query the routing table
-		value, found := ledger.GetKey(dst)
+		value, found := ledger.GetKey(MachinesLedgerKey, dst)
 		if !found {
 			e.config.Logger.Sugar().Infof("'%s' not found in the routing table", dst)
 			continue
 		}
+		machine := &types.Machine{}
+		value.Unmarshal(machine)
 
 		// Decode the Peer
-		d, err := peer.Decode(value.PeerID)
+		d, err := peer.Decode(machine.PeerID)
 		if err != nil {
 			e.config.Logger.Sugar().Infof("could not decode peer '%s'", value)
 			continue
