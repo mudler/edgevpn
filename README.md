@@ -6,6 +6,7 @@ EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p net
 
 It connect and creates a small blockchain between nodes. It keeps the routing table stored in the ledger, while connections are dynamically established via p2p.
 
+**The blockchain is ephemeral and on-memory**. Each node keeps broadcasting it's state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.  
 
 ## Screenshots
 
@@ -74,6 +75,10 @@ Returns the latest available blockchain
 - extra AES symmetric encryption on top. In case randezvous point is compromised
 - blockchain is used as a sealed encrypted store for the routing table
 - connections are created host to host
+
+### Caveats
+
+We might loose packets when the blockchain limit is reached. At that point EdgeVPN to avoid polluting memory will reset the blockchain, and the nodes will start to announce themselves again, there might be a small interval of time whereas node can't be reached. This _could_ happen if your network is having a lot of updates.
 
 ## Is it for me?
 
