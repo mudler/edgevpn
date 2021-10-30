@@ -2,10 +2,8 @@ package edgevpn
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net"
-	"os"
 
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -14,7 +12,10 @@ import (
 	"github.com/mudler/edgevpn/pkg/edgevpn/types"
 )
 
-const ServicesLedgerKey = "services"
+const (
+	ServicesLedgerKey = "services"
+	UsersLedgerKey    = "users"
+)
 
 func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress string) {
 	// 1) Register the ServiceID <-> PeerID Association
@@ -28,7 +29,6 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 			service := &types.Service{}
 			existingValue.Unmarshal(service)
 			// If mismatch, update the blockchain
-			fmt.Println(service)
 			if !found || service.PeerID != e.host.ID().String() {
 				updatedMap := map[string]interface{}{}
 				updatedMap[serviceID] = types.Service{PeerID: e.host.ID().String(), Name: serviceID}
@@ -42,7 +42,16 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 	e.config.StreamHandlers[protocol.ID(ServiceProtocol)] = func(stream network.Stream) {
 		go func() {
 			e.config.Logger.Sugar().Info("Received connection from", stream.Conn().RemotePeer().String())
-			// TODO: Gate connection by PeerID: stream.Conn().RemotePeer().String()
+
+			// Retrieve current ID for ip in the blockchain
+			_, found := ledger.GetKey(UsersLedgerKey, stream.Conn().RemotePeer().String())
+			// If mismatch, update the blockchain
+			if !found {
+				e.config.Logger.Sugar().Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
+				stream.Reset()
+				return
+			}
+
 			// we need a list of known peers
 			e.config.Logger.Sugar().Info("Dialing", dstaddress)
 
@@ -72,15 +81,30 @@ func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, 
 	if err != nil {
 		return err
 	}
-	fmt.Println("Listening on ", srcaddr)
+	e.config.Logger.Sugar().Info("Listening on ", srcaddr)
 
+	// Announce ourselves so nodes accepts our connection
+	ledger.Announce(
+		context.Background(),
+		e.config.LedgerAnnounceTime,
+		func() {
+			// Retrieve current ID for ip in the blockchain
+			_, found := ledger.GetKey(UsersLedgerKey, e.host.ID().String())
+			// If mismatch, update the blockchain
+			if !found {
+				updatedMap := map[string]interface{}{}
+				updatedMap[e.host.ID().String()] = ""
+				ledger.Add(UsersLedgerKey, updatedMap)
+			}
+		},
+	)
 	defer l.Close()
 	for {
 		// Listen for an incoming connection.
 		conn, err := l.Accept()
 		if err != nil {
-			fmt.Println("Error accepting: ", err.Error())
-			os.Exit(1)
+			e.config.Logger.Sugar().Error("Error accepting: ", err.Error())
+			continue
 		}
 		e.config.Logger.Sugar().Info("New connection from", l.Addr().String())
 		// Handle connections in a new goroutine, forwarding to the p2p service
