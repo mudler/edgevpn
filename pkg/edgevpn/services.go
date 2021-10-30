@@ -64,7 +64,6 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 
 		}()
 	}
-
 }
 
 func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, srcaddr string) error {

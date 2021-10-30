@@ -17,7 +17,7 @@
 
 <link rel="stylesheet" type="text/css" href="/css/style.css">
 
-<title>EdgeVPN - Machines index</title>
+<title>EdgeVPN - Services index</title>
 </head>
 
 <body>
@@ -68,17 +68,17 @@
       <div class="hero-body">
         <div class="container">
           <h1 class="title">
-            <i class="fas fa-server"></i> Connected Machines
+            <i class="fas fa-project-diagram"></i> Exposed services
           </h1>
           <h2 class="subtitle">
-            Accessible via api at <a href="/api/machines" target=_blank><code> /api/machines </code></a>
+            Accessible via api at <a href="/api/services" target=_blank><code> /api/services </code></a>
+            Connect to any service by running <code>edgevpn service-connect --name "service_name" --srcaddress ":9090"</code>
           </h2>
         </div>
       </div>
     </section>
     <section class="section">
         <div class="container">
-
         </div>
     </section>
 
@@ -91,12 +91,8 @@
           <thead>
         
           <tr>
-              <th ><abbr title="ip">Address</abbr></th>
+              <th ><abbr title="ip">Name</abbr></th>
               <th ><abbr title="peer">PeerID</abbr></th>
-              <th  >Hostname</th>
-              <th ><abbr title="OS">OS</abbr></th>
-              <th><abbr title="Arch">Architecture</abbr></th>
-              <th><abbr title="Version">Version</abbr></th>
 
             </tr>
           </thead>
@@ -108,7 +104,7 @@
                 var table = $('#table').DataTable( {
                     "processing": true,
                     "ajax": {
-                        "url": "/api/machines",
+                        "url": "/api/services",
                         "type": "GET",
                         "dataSrc": '',
                     },
@@ -117,12 +113,8 @@
                       "processing": ""
                     },
                     "columns": [
-                        { "data": "Address" },
+                        { "data": "Name" },
                         { "data": "PeerID" },
-                        { "data": "Hostname" },
-                        { "data": "OS" },
-                        { "data": "Arch" },
-                        { "data": "Version" },
                     ],
                 } );
 
