@@ -17,7 +17,7 @@
 
 <link rel="stylesheet" type="text/css" href="/css/style.css">
 
-<title>EdgeVPN - Machines index</title>
+<title>EdgeVPN - Dashboard</title>
 </head>
 
 <body>
@@ -25,7 +25,8 @@
     <div class="navbar-brand">
       <a class="navbar-item" href="/">
       <!--  <img src="/images/logo.png" width="112" height="28"> 
-      <i class="fas fa-ship"></i>&nbsp;--> EdgeVPN
+      <i class="fas fa-ship"></i>&nbsp;-->
+      <i class="fas fa-tachometer-alt"></i>&nbsp; EdgeVPN
       </a>
   
       <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
@@ -36,7 +37,7 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start">
-        <a class="navbar-item" href="/index.html">
+        <a class="navbar-item" href="/machines.html">
           <i class="fas fa-server"></i>&nbsp;
           Machines
         </a>
@@ -76,10 +77,10 @@
       <div class="hero-body">
         <div class="container">
           <h1 class="title">
-            <i class="fas fa-server"></i> Connected Machines
+            <i class="fas fa-tachometer-alt"></i> Dashboard
           </h1>
           <h2 class="subtitle">
-            Accessible via api at <a href="/api/machines" target=_blank><code> /api/machines </code></a>
+            Accessible via api at <a href="/api/summary" target=_blank><code> /api/summary </code></a>
           </h2>
         </div>
       </div>
@@ -87,56 +88,74 @@
     <section class="section">
         <div class="container">
 
+          <div class="tile is-ancestor has-text-centered">
+            <div class="tile is-parent">
+                <article class="tile is-child box">
+                    <p class="title" id="machines"></p>
+                    <p class="subtitle"><i class="fas fa-server"></i> Machines</p>
+                </article>
+            </div>
+            <div class="tile is-parent">
+                <article class="tile is-child box">
+                    <p class="title" id="services"></p>
+                    <p class="subtitle"><i class="fas fa-project-diagram"></i> Services</p>
+                </article>
+            </div>
+            <div class="tile is-parent">
+                <article class="tile is-child box">
+                    <p class="title" id="files"></p>
+                    <p class="subtitle"><i class="fas fa-file-upload"></i> Files</p>
+                </article>
+            </div>
+            <div class="tile is-parent">
+                <article class="tile is-child box">
+                    <p class="title" id="users"></p>
+                    <p class="subtitle"><i class="fas fa-user-clock"></i> Users</p>
+                </article>
+            </div>
+            <div class="tile is-parent">
+              <article class="tile is-child box">
+                  <p class="title" id="blockchain"></p>
+                  <p class="subtitle"><i class="fas fa-dice-d20"></i> Blockchain index</p>
+              </article>
+          </div>
+        </div>
+  
         </div>
     </section>
 
 
-    <div class="container">
-        <table  data-toggle="table"
-          data-search="true"
-          data-show-columns="true"
-          id="table"  >
-          <thead>
-        
-          <tr>
-              <th ><abbr title="ip">Address</abbr></th>
-              <th ><abbr title="peer">PeerID</abbr></th>
-              <th  >Hostname</th>
-              <th ><abbr title="OS">OS</abbr></th>
-              <th><abbr title="Arch">Architecture</abbr></th>
-              <th><abbr title="Version">Version</abbr></th>
-
-            </tr>
-          </thead>
-        </table> 
-      </div>
+ 
       
         <script type="text/javascript">
             $(document).ready(function() {
-                var table = $('#table').DataTable( {
-                    "processing": true,
-                    "ajax": {
-                        "url": "/api/machines",
-                        "type": "GET",
-                        "dataSrc": '',
-                    },
-                    'language':{ 
-                      "loadingRecords": "",
-                      "processing": ""
-                    },
-                    "columns": [
-                        { "data": "Address" },
-                        { "data": "PeerID" },
-                        { "data": "Hostname" },
-                        { "data": "OS" },
-                        { "data": "Arch" },
-                        { "data": "Version" },
-                    ],
-                } );
 
-                setInterval( function () {
-                    table.ajax.reload();
-                }, 5000 ); // 5 s
+              sync = function() {
+                $.ajax({
+                    url: "/api/summary",
+                    type: "GET",
+                    cache: false,
+                    async: true,
+
+                    dataType: "json",
+                    success: function (response) {
+                        // response is JSON
+                        $('#services').html(response.Services);
+                        $('#users').html(response.Users);
+                        $('#files').html(response.Files);
+                        $('#machines').html(response.Machines);
+                        $('#blockchain').html(response.BlockChain);
+
+                    }
+                });
+              }
+
+              sync()
+
+              setInterval( function () {
+               sync()
+              }, 5000 ); // 5 s
+
             } );
         </script>
         <footer class="footer">

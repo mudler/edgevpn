@@ -37,6 +37,18 @@ func API(l string, ledger *blockchain.Ledger) error {
 		return c.JSON(http.StatusOK, list)
 	})
 
+	ec.GET("/api/summary", func(c echo.Context) error {
+		files := len(ledger.CurrentData()[edgevpn.FilesLedgerKey])
+		machines := len(ledger.CurrentData()[edgevpn.MachinesLedgerKey])
+		users := len(ledger.CurrentData()[edgevpn.UsersLedgerKey])
+		services := len(ledger.CurrentData()[edgevpn.ServicesLedgerKey])
+		blockchain := len(ledger.BlockChain())
+
+		return c.JSON(http.StatusOK, struct {
+			Files, Machines, Users, Services, BlockChain int
+		}{files, machines, users, services, blockchain})
+	})
+
 	ec.GET("/api/machines", func(c echo.Context) error {
 		list := []*types.Machine{}
 		for _, v := range ledger.CurrentData()[edgevpn.MachinesLedgerKey] {
