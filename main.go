@@ -42,6 +42,8 @@ func main() {
 			cmd.API(l),
 			cmd.ServiceAdd(l),
 			cmd.ServiceConnect(l),
+			cmd.FileReceive(l),
+			cmd.FileSend(l),
 		},
 
 		Action: cmd.Main(l),

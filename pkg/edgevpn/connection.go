@@ -19,6 +19,7 @@ import (
 const (
 	Protocol        = "/edgevpn/0.1"
 	ServiceProtocol = "/edgevpn/service/0.1"
+	FileProtocol    = "/edgevpn/file/0.1"
 )
 
 var defaultLibp2pOptions = []libp2p.Option{
