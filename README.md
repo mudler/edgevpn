@@ -4,14 +4,17 @@ Fully Decentralized. Immutable. Portable. Easy to use Statically compiled VPN an
 
 ## Screenshots
 
-Connected machines             |  Blockchain index
+Dashboard            |  Machine index
 :-------------------------:|:-------------------------:
-![Screenshot 2021-10-31 at 00-12-16 EdgeVPN - Machines index](https://user-images.githubusercontent.com/2420543/139559755-0ad24e07-77ef-4b80-9adf-db60bce7647c.png)| ![Screenshot 2021-10-31 at 00-11-21 EdgeVPN - Blockchain index](https://user-images.githubusercontent.com/2420543/139559754-a3222aad-c1d3-49a4-be19-a52eba308595.png)
+![Screenshot 2021-10-31 at 00-12-16 EdgeVPN - Machines index](https://user-images.githubusercontent.com/2420543/139602703-f04ac4cb-b949-498c-a23a-0ce8deb036f9.png) | ![Screenshot 2021-10-31 at 23-03-26 EdgeVPN - Machines index](https://user-images.githubusercontent.com/2420543/139602704-15bd342f-2db2-4a3b-b1c7-4dc7be27c0f4.png)
 
-Services             |  Connected users
+Services            |  File index
 :-------------------------:|:-------------------------:
-![Screenshot 2021-10-31 at 00-10-51 EdgeVPN - Services index](https://user-images.githubusercontent.com/2420543/139559750-d67aaf92-c0c5-4ce1-88df-a3240b501f45.png) | ![Screenshot 2021-10-31 at 00-11-08 EdgeVPN - Users connected](https://user-images.githubusercontent.com/2420543/139559751-a81a3e1d-71ac-4485-9fd0-3cd96f44c4b1.png)
+![Screenshot 2021-10-31 at 23-03-44 EdgeVPN - Services index](https://user-images.githubusercontent.com/2420543/139602706-6050dfb7-2ef1-45b2-a768-a00b9de60ba1.png) | ![Screenshot 2021-10-31 at 23-03-59 EdgeVPN - Files index](https://user-images.githubusercontent.com/2420543/139602707-1d29f9b4-972c-490f-8015-067fbf5580f2.png)
 
+Users            |  Blockchain index
+:-------------------------:|:-------------------------:
+![Screenshot 2021-10-31 at 23-04-12 EdgeVPN - Users connected](https://user-images.githubusercontent.com/2420543/139602708-d102ae09-12f2-4c4c-bcc2-d8f4366355e0.png) | ![Screenshot 2021-10-31 at 23-04-20 EdgeVPN - Blockchain index](https://user-images.githubusercontent.com/2420543/139602709-244960bb-ea1d-413b-8c3e-8959133427ae.png)
 
 EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p network.
 
