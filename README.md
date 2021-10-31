@@ -1,15 +1,6 @@
 # :sailboat: EdgeVPN
 
-Fully Decentralized. Immutable. Portable. Easy to use Statically compiled VPN
-
-EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p network.
-
-It connect and creates a small blockchain between nodes. It keeps the routing table stored in the ledger, while connections are dynamically established via p2p.
-
-**The blockchain is ephemeral and on-memory**. Each node keeps broadcasting it's state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.  
-
-**Not only a VPN** You can now share a tcp service like you would do with `ngrok`. See Usage below.
-
+Fully Decentralized. Immutable. Portable. Easy to use Statically compiled VPN and a reverse proxy over p2p.
 
 ## Screenshots
 
@@ -20,34 +11,62 @@ Connected machines             |  Blockchain index
 Services             |  Connected users
 :-------------------------:|:-------------------------:
 ![Screenshot 2021-10-31 at 00-10-51 EdgeVPN - Services index](https://user-images.githubusercontent.com/2420543/139559750-d67aaf92-c0c5-4ce1-88df-a3240b501f45.png) | ![Screenshot 2021-10-31 at 00-11-08 EdgeVPN - Users connected](https://user-images.githubusercontent.com/2420543/139559751-a81a3e1d-71ac-4485-9fd0-3cd96f44c4b1.png)
+
+
+EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p network.
+
+**VPN** Creates a vpn between p2p peers
+
+**Reverse Proxy** You can now share a tcp service like you would do with `ngrok`. Expose services to the p2p network. Creates reverse proxy and tunnels traffic into the p2p network.
+
+**Send files via p2p** Send files over p2p between nodes.
+
+At implementation detail, EdgeVPN uses a blockchain to store *Services UUID*, *Files UUID*, *VPN Data* into the shared ledger.
+
+It connect and creates a small blockchain between nodes. 
+
+**The blockchain is ephemeral and on-memory**. Each node keeps broadcasting it's state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.  
+
+## Warning!
+
+I'm not a security expert, and this software didn't went through a full security audit, so don't use and rely it for sensible traffic and not even for production environment! I did this mostly for fun while I was experimenting with libp2p. 
+
 ## Usage
 
-Generate a config, and send it over all the nodes you wish to connect:
+EdgeVPN needs only a config, or a token to connect machines to a network.
+
+To generate a config, do:
 
 ```bash
-edgevpn -g > config.yaml
+# Generate a new config file and use it later as EDGEVPNCONFIG
+$ edgevpn -g > config.yaml
 ```
+
+OR for a token:
+
+```bash
+$ EDGEVPNTOKEN=$(edgevpn -g -b)
+```
+
+The commands below emplies that you either specify a `EDGEVPNTOKEN` (or `--token` as parameter) or a `EDGEVPNCONFIG`. The configuration file is the network definition and allows you to connect over to your peers securely.
+
+**Warning** Exposing this file or passing-it by is equivalent to give full control to the network.
+
+## As a VPN
 
 Run edgevpn on multiple hosts:
 
 ```bash
 # on Node A
-EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=10.1.0.11/24 ./edgevpn
+$ EDGEVPNTOKEN=.. IFACE=edgevpn0 ADDRESS=10.1.0.11/24 edgevpn
 # on Node B
-EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=10.1.0.12/24 ./edgevpn
+$ EDGEVPNTOKEN=.. IFACE=edgevpn0 ADDRESS=10.1.0.12/24 edgevpn
 # on Node C ...
-EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=10.1.0.13/24 ./edgevpn
+$ EDGEVPNTOKEN=.. IFACE=edgevpn0 ADDRESS=10.1.0.13/24 edgevpn
 ...
 ```
 
 ... and that's it! the `ADDRESS` is a _virtual_ unique IP for each node, and it is actually the ip where the node will be reachable to from the vpn, while `IFACE` is the interface name.
-
-You can also encode the config in base64, and pass it to edgevpn with `EDGEVPNTOKEN` instead:
-
-```bash
-EDGEVPNTOKEN=$(edgevpn -g | base64 -w0)
-IFACE=edgevpn0 ADDRESS=10.1.0.13/24 ./edgevpn
-```
 
 *Note*: It might take up time to build the connection between nodes. Wait at least 5 mins, it depends on the network behind the hosts.
 
@@ -64,13 +83,13 @@ A Service is a generalized TCP service running in a host (also outside the netwo
 To expose a service to your EdgeVPN network then:
 
 ```bash
-edgevpn service-add --name "MyCoolService" --remoteaddress "127.0.0.1:22"
+$ edgevpn service-add --name "MyCoolService" --remoteaddress "127.0.0.1:22"
 ```
 
 To reach the service, EdgeVPN will setup a local port and bind to it, it will tunnel the traffic to the service over the VPN, for e.g. to bind locally to `9090`:
 
 ```bash
-./edgevpn service-connect --name "MyCoolService" --srcaddress "127.0.0.1:9090"
+$ edgevpn service-connect --name "MyCoolService" --srcaddress "127.0.0.1:9090"
 ```
 
 with the example above, 'sshing into `9090` locally would forward to `22`.
@@ -80,7 +99,7 @@ with the example above, 'sshing into `9090` locally would forward to `22`.
 To access the web interface, run 
 
 ```bash
-edgevpn api
+$ edgevpn api
 ```
 
 with the same `EDGEVPNCONFIG` or `EDGEVPNTOKEN`. It will connect to the network without routing any packet. 
@@ -104,6 +123,19 @@ Returns the machines connected to the VPN
 #### `/api/blockchain`
 
 Returns the latest available blockchain
+
+## Sending and receiving files
+
+### Sending
+
+```bash
+$ edgevpn file-send --name 'unique-id' --path '/src/path'
+```
+
+### Receiving
+```bash
+$ edgevpn file-receive --name 'unique-id' --path '/dst/path'
+```
 
 ## Architecture
 
@@ -183,9 +215,7 @@ e.Start()
 - [https://github.com/songgao/water](https://github.com/songgao/water) for tun/tap devices in golang
 - [Room example](https://github.com/libp2p/go-libp2p/tree/master/examples/chat-with-rendezvous) (shamelessly parts are copied by)
 
-## Disclaimers
 
-I'm not a security expert, and this software didn't went through a full security audit, so don't use and rely it for sensible traffic! I did this mostly for fun while I was experimenting with libp2p. 
 
 ## LICENSE
 
