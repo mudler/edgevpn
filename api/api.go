@@ -27,6 +27,16 @@ func API(l string, ledger *blockchain.Ledger) error {
 	ec := echo.New()
 	assetHandler := http.FileServer(getFileSystem())
 
+	ec.GET("/api/files", func(c echo.Context) error {
+		list := []*types.File{}
+		for _, v := range ledger.CurrentData()[edgevpn.FilesLedgerKey] {
+			machine := &types.File{}
+			v.Unmarshal(machine)
+			list = append(list, machine)
+		}
+		return c.JSON(http.StatusOK, list)
+	})
+
 	ec.GET("/api/machines", func(c echo.Context) error {
 		list := []*types.Machine{}
 		for _, v := range ledger.CurrentData()[edgevpn.MachinesLedgerKey] {
