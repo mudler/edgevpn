@@ -12,6 +12,7 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">
 
 <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
 
 <script src="/js/dt.js"></script> 
 
@@ -81,17 +82,38 @@
           </h1>
           <h2 class="subtitle">
             Accessible via api at <a href="/api/services" target=_blank><code> /api/services </code></a><br>
-            Connect to any service by running <code>edgevpn service-connect --name "service_name" --srcaddress ":9090"</code>
           </h2>
+            <div class="notification is-info is-light">
+              <h1>Expose a service</h1>
+              <div class="field has-addons">
+                <div class="control has-icons-left">
+                  <input id="expose" type="text" class="input is-info is-small" size=40 value='edgevpn service-add --name "service_name" --remoteaddress "192.168.1.1:80"'>
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-terminal"></i>
+                  </span>
+                </div>
+                <div class="control">
+                  <button class="btn button is-dark is-small" data-clipboard-target="#expose"> Copy to clipboard</button>
+                </div>
+              </div>
+              <hr>
+              <h1>Connect to a service</h1>
+              <div class="field has-addons">
+                <div class="control has-icons-left">
+                  <input id="connect" type="text" class="input is-info is-small" size=40 value='edgevpn service-connect --name "service_name" --srcaddress ":9090"'>
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-terminal"></i>
+                  </span>
+                </div>
+                <div class="control">
+                  <button class="btn button is-dark is-small" data-clipboard-target="#connect"> Copy to clipboard</button>
+                </div>
+              </div>
+          </div>
         </div>
       </div>
     </section>
     <section class="section">
-        <div class="container">
-        </div>
-    </section>
-
-
     <div class="container">
         <table  data-toggle="table"
           data-search="true"
@@ -107,9 +129,11 @@
           </thead>
         </table> 
       </div>
+    </section>
       
         <script type="text/javascript">
             $(document).ready(function() {
+              var btn = new ClipboardJS('.btn');
                 var table = $('#table').DataTable( {
                     "processing": true,
                     "ajax": {

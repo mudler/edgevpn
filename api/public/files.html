@@ -14,6 +14,7 @@
 <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js"></script>
 
 <script src="/js/dt.js"></script> 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
 
 <link rel="stylesheet" type="text/css" href="/css/style.css">
 
@@ -81,19 +82,42 @@
           </h1>
           <h2 class="subtitle">
             Accessible via api at <a href="/api/files" target=_blank><code> /api/files </code></a><br>
-            Receive files by running <code>edgevpn file-receive --name "file_name" --path /dst/file </code>
           </h2>
+
+          <div class="notification is-info is-light">
+            <h1>Send files</h1>
+            <div class="field has-addons">
+              <div class="control has-icons-left">
+                <input id="sendfile" type="text" class="input is-info is-small" size=40 value='edgevpn file-send --name "file_name" --path /src/file'>
+                <span class="icon is-small is-left">
+                  <i class="fas fa-terminal"></i>
+                </span>
+              </div>
+              <div class="control">
+                <button class="btn button is-dark is-small" data-clipboard-target="#sendfile"> Copy to clipboard</button>
+              </div>
+            </div>
+            <hr>
+            <h1>Receive files</h1>
+            <div class="field has-addons">
+              <div class="control has-icons-left">
+                <input id="receivefile" type="text" class="input is-info is-small" size=40 value='edgevpn file-receive --name "file_name" --path /dst/file'>
+                <span class="icon is-small is-left">
+                  <i class="fas fa-terminal"></i>
+                </span>
+              </div>
+              <div class="control">
+                <button class="btn button is-dark is-small" data-clipboard-target="#receivefile"> Copy to clipboard</button>
+              </div>
+            </div>
         </div>
       </div>
     </section>
     <section class="section">
+      
         <div class="container">
-        </div>
-    </section>
-
-
-    <div class="container">
-        <table  data-toggle="table"
+      
+          <table  data-toggle="table"
           data-search="true"
           data-show-columns="true"
           id="table"  >
@@ -106,10 +130,13 @@
             </tr>
           </thead>
         </table> 
-      </div>
+
+        </div>
+    </section>
       
         <script type="text/javascript">
             $(document).ready(function() {
+                var btn = new ClipboardJS('.btn');
                 var table = $('#table').DataTable( {
                     "processing": true,
                     "ajax": {
