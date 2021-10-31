@@ -1,8 +1,30 @@
-# :sailboat: EdgeVPN
+<h1 align="center">
+  <br>
+ :sailboat: EdgeVPN
+<br>
 
-Fully Decentralized. Immutable. Portable. Easy to use Statically compiled VPN and a reverse proxy over p2p.
+</h1>
 
-## Screenshots
+<h3 align="center">Create Decentralized private networks </h3>
+<p align="center">
+  <a href="https://opensource.org/licenses/">
+    <img src="https://img.shields.io/badge/licence-GPL3-brightgreen"
+         alt="license">
+  </a>
+  <a href="https://github.com/mudler/edgevpn/issues"><img src="https://img.shields.io/github/issues/mudler/edgevpn"></a>
+  <img src="https://img.shields.io/badge/made%20with-Go-blue">
+  <img src="https://goreportcard.com/badge/github.com/mudler/edgevpn" alt="go report card" />
+</p>
+
+<p align="center">
+	 <br>
+    Fully Decentralized. Immutable. Portable. Easy to use Statically compiled VPN and a reverse proxy over p2p.
+</p>
+
+
+
+
+# :camera: Screenshots
 
 Dashboard            |  Machine index
 :-------------------------:|:-------------------------:
@@ -30,11 +52,19 @@ It connect and creates a small blockchain between nodes.
 
 **The blockchain is ephemeral and on-memory**. Each node keeps broadcasting it's state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.  
 
-## Warning!
+# :question: Why? 
+
+First of all it's my first experiment with libp2p. Second, I always wanted a more "open" `ngrok` alternative, but I always prefer to have "less infra" as possible to maintain. That's why building something like this on top of `libp2p` makes sense.
+
+# :warning: Warning!
 
 I'm not a security expert, and this software didn't went through a full security audit, so don't use and rely it for sensible traffic and not even for production environment! I did this mostly for fun while I was experimenting with libp2p. 
 
-## Usage
+# :running: Installation
+
+Download the precompiled static release in the [releases page](https://github.com/mudler/edgevpn/releases). You can either install it in your system or just run it.
+
+# :computer: Usage
 
 EdgeVPN needs only a config, or a token to connect machines to a network.
 
@@ -55,7 +85,7 @@ The commands below emplies that you either specify a `EDGEVPNTOKEN` (or `--token
 
 **Warning** Exposing this file or passing-it by is equivalent to give full control to the network.
 
-## As a VPN
+## :satellite: As a VPN
 
 Run edgevpn on multiple hosts:
 
@@ -73,7 +103,7 @@ $ EDGEVPNTOKEN=.. IFACE=edgevpn0 ADDRESS=10.1.0.13/24 edgevpn
 
 *Note*: It might take up time to build the connection between nodes. Wait at least 5 mins, it depends on the network behind the hosts.
 
-## Forwarding a local connection
+## :loop: Forwarding a local connection
 
 EdgeVPN can also be used to expose local(or remote) services without establishing a VPN and allocating a local tun/tap device, similarly to `ngrok`.
 
@@ -97,7 +127,7 @@ $ edgevpn service-connect --name "MyCoolService" --srcaddress "127.0.0.1:9090"
 
 with the example above, 'sshing into `9090` locally would forward to `22`.
 
-## Web interface
+## :globe_with_meridians: Web interface
 
 To access the web interface, run 
 
@@ -109,7 +139,7 @@ with the same `EDGEVPNCONFIG` or `EDGEVPNTOKEN`. It will connect to the network 
 
 By default edgevpn will listen on the `8080` port. See `edgevpn api --help` for the available options
 
-### API endpoint
+## :mag: API endpoint
 
 #### `/api/users`
 
@@ -127,20 +157,21 @@ Returns the machines connected to the VPN
 
 Returns the latest available blockchain
 
-## Sending and receiving files
+## :mailbox: Sending and receiving files
 
-### Sending
+### :outbox_tray: Sending
 
 ```bash
 $ edgevpn file-send --name 'unique-id' --path '/src/path'
 ```
 
-### Receiving
+### :inbox_tray: Receiving
+
 ```bash
 $ edgevpn file-receive --name 'unique-id' --path '/dst/path'
 ```
 
-## Architecture
+# Architecture
 
 - Simple (KISS) interface to display network data from the blockchain
 - p2p encryption between peers with libp2p
@@ -149,11 +180,11 @@ $ edgevpn file-receive --name 'unique-id' --path '/dst/path'
 - blockchain is used as a sealed encrypted store for the routing table
 - connections are created host to host
 
-### Caveats
+# :warning: Caveats
 
 We might loose packets when the blockchain limit is reached. At that point EdgeVPN to avoid polluting memory will reset the blockchain, and the nodes will start to announce themselves again, there might be a small interval of time whereas node can't be reached. This _could_ happen if your network is having a lot of updates.
 
-## Is it for me?
+# :question: Is it for me?
 
 EdgeVPN makes VPN decentralization a first strong requirement. 
 
@@ -168,7 +199,7 @@ Keep that in mind before using it for your prod networks!
 
 But it has a strong pro: it just works everywhere libp2p works!
 
-### Example use case: network-decentralized [k3s](https://github.com/k3s-io/k3s) test cluster
+## Example use case: network-decentralized [k3s](https://github.com/k3s-io/k3s) test cluster
 
 Let's see a practical example, you are developing something for kubernetes and you want to try a multi-node setup, but you have machines available that are only behind NAT (pity!) and you would really like to leverage HW.
 
@@ -188,7 +219,7 @@ If you are not really interested in network performance (again, that's for devel
 
 We have used flannel here, but other CNI should work as well.
 
-## As a library
+# :notebook: As a library
 
 EdgeVPN can be used as a library. It is very portable and offers a functional interface:
 
@@ -212,15 +243,24 @@ e.Start()
 
 ```
 
-## Credits
+# 🐜 Contribution
+
+You can improve this project by contributing in following ways:
+
+- report bugs
+- fix issues
+- request features
+- asking questions (just open an issue)
+
+and any other way if not mentioned here.
+
+# :notebook: Credits
 
 - The awesome [libp2p](https://github.com/libp2p) library
 - [https://github.com/songgao/water](https://github.com/songgao/water) for tun/tap devices in golang
 - [Room example](https://github.com/libp2p/go-libp2p/tree/master/examples/chat-with-rendezvous) (shamelessly parts are copied by)
 
-
-
-## LICENSE
+# :notebook: LICENSE
 
 GNU GPLv3.
 
