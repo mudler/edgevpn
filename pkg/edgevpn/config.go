@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -11,7 +12,6 @@ import (
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	"github.com/songgao/water"
-	"go.uber.org/zap"
 )
 
 type Config struct {
@@ -39,7 +39,7 @@ type Config struct {
 	MTU              int
 	DeviceType       water.DeviceType
 	ServiceDiscovery []ServiceDiscovery
-	Logger           *zap.Logger
+	Logger           log.StandardLogger
 
 	SealKeyLength int
 
@@ -60,7 +60,7 @@ type StreamHandler func(stream network.Stream)
 type Handler func(*hub.Message) error
 
 type ServiceDiscovery interface {
-	Run(*zap.Logger, context.Context, host.Host) error
+	Run(log.StandardLogger, context.Context, host.Host) error
 	Option(context.Context) func(c *libp2p.Config) error
 }
 

@@ -16,18 +16,16 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/urfave/cli"
 
 	"github.com/mudler/edgevpn/cmd"
 	internal "github.com/mudler/edgevpn/internal"
-	"go.uber.org/zap"
 )
 
 func main() {
-	l, _ := zap.NewProduction()
-	defer l.Sync() // flushes buffer, if any
 
 	app := &cli.App{
 		Name:        "edgevpn",
@@ -38,19 +36,20 @@ func main() {
 		Copyright:   cmd.Copyright,
 		Flags:       cmd.MainFlags(),
 		Commands: []cli.Command{
-			cmd.Join(l),
-			cmd.API(l),
-			cmd.ServiceAdd(l),
-			cmd.ServiceConnect(l),
-			cmd.FileReceive(l),
-			cmd.FileSend(l),
+			cmd.Join(),
+			cmd.API(),
+			cmd.ServiceAdd(),
+			cmd.ServiceConnect(),
+			cmd.FileReceive(),
+			cmd.FileSend(),
 		},
 
-		Action: cmd.Main(l),
+		Action: cmd.Main(),
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
-		l.Sugar().Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }

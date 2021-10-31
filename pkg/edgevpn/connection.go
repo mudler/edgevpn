@@ -99,12 +99,12 @@ func (e *EdgeVPN) handleEvents(ctx context.Context) {
 		select {
 		case m := <-e.inputCh:
 			if err := m.Seal(e.sealkey()); err != nil {
-				e.config.Logger.Sugar().Warn(err.Error())
+				e.config.Logger.Warn(err.Error())
 			}
 			e.handleOutgoingMessage(m)
 		case m := <-e.HubRoom.Messages:
 			if err := m.Unseal(e.sealkey()); err != nil {
-				e.config.Logger.Sugar().Warn(err.Error())
+				e.config.Logger.Warn(err.Error())
 			}
 			e.handleReceivedMessage(m)
 		case <-ctx.Done():
@@ -118,7 +118,7 @@ func (e *EdgeVPN) handleEvents(ctx context.Context) {
 func (e *EdgeVPN) handleReceivedMessage(m *hub.Message) {
 	for _, h := range e.config.Handlers {
 		if err := h(m); err != nil {
-			e.config.Logger.Sugar().Warnf("handler error: %s", err)
+			e.config.Logger.Warnf("handler error: %s", err)
 		}
 	}
 }
@@ -126,6 +126,6 @@ func (e *EdgeVPN) handleReceivedMessage(m *hub.Message) {
 func (e *EdgeVPN) handleOutgoingMessage(m *hub.Message) {
 	err := e.HubRoom.PublishMessage(m)
 	if err != nil {
-		e.config.Logger.Sugar().Warnf("publish error: %s", err)
+		e.config.Logger.Warnf("publish error: %s", err)
 	}
 }

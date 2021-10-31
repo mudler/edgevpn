@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -58,7 +59,7 @@ func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
 	// The ledger needs to read them and update the internal blockchain
 	e.config.Handlers = append(e.config.Handlers, ledger.Update)
 
-	e.config.Logger.Sugar().Info("starting edgevpn")
+	e.config.Logger.Info("starting edgevpn")
 
 	// Startup libp2p network
 	err := e.startNetwork()
@@ -185,14 +186,14 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 		frame.Resize(e.config.MTU)
 		n, err := ifce.Read([]byte(frame))
 		if err != nil {
-			e.config.Logger.Sugar().Debug("could not read from interface")
+			e.config.Logger.Debug("could not read from interface")
 			return err
 		}
 		frame = frame[:n]
 
 		header, err := ipv4.ParseHeader(frame)
 		if err != nil {
-			e.config.Logger.Sugar().Infof("could not parase ipv4 header from frame")
+			e.config.Logger.Infof("could not parase ipv4 header from frame")
 			continue
 		}
 
@@ -201,7 +202,7 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 		// Query the routing table
 		value, found := ledger.GetKey(MachinesLedgerKey, dst)
 		if !found {
-			e.config.Logger.Sugar().Infof("'%s' not found in the routing table", dst)
+			e.config.Logger.Infof("'%s' not found in the routing table", dst)
 			continue
 		}
 		machine := &types.Machine{}
@@ -210,14 +211,14 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 		// Decode the Peer
 		d, err := peer.Decode(machine.PeerID)
 		if err != nil {
-			e.config.Logger.Sugar().Infof("could not decode peer '%s'", value)
+			e.config.Logger.Infof("could not decode peer '%s'", value)
 			continue
 		}
 
 		// Open a stream
 		stream, err := e.host.NewStream(ctx, d, Protocol)
 		if err != nil {
-			e.config.Logger.Sugar().Infof("could not open stream '%s'", err.Error())
+			e.config.Logger.Infof("could not open stream '%s'", err.Error())
 			continue
 		}
 		stream.Write(frame)
@@ -225,13 +226,17 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 	}
 }
 
+func (e *EdgeVPN) Logger() log.StandardLogger {
+	return e.config.Logger
+}
+
 func (e *EdgeVPN) startNetwork() error {
 	ctx := context.Background()
-	e.config.Logger.Sugar().Info("generating host data")
+	e.config.Logger.Info("generating host data")
 
 	host, err := e.genHost(ctx)
 	if err != nil {
-		e.config.Logger.Sugar().Error(err.Error())
+		e.config.Logger.Error(err.Error())
 		return err
 	}
 	e.host = host
@@ -240,8 +245,8 @@ func (e *EdgeVPN) startNetwork() error {
 		host.SetStreamHandler(pid, network.StreamHandler(strh))
 	}
 
-	e.config.Logger.Sugar().Info("Host created. We are:", host.ID())
-	e.config.Logger.Sugar().Info(host.Addrs())
+	e.config.Logger.Info("Host created. We are:", host.ID())
+	e.config.Logger.Info(host.Addrs())
 
 	// create a new PubSub service using the GossipSub router
 	ps, err := pubsub.NewGossipSub(ctx, host, pubsub.WithMaxMessageSize(e.config.MaxMessageSize))
@@ -259,13 +264,13 @@ func (e *EdgeVPN) startNetwork() error {
 
 	for _, sd := range e.config.ServiceDiscovery {
 		if err := sd.Run(e.config.Logger, ctx, host); err != nil {
-			e.config.Logger.Sugar().Fatal(err)
+			e.config.Logger.Fatal(err)
 		}
 	}
 
-	e.config.Logger.Sugar().Info("starting event handler")
+	e.config.Logger.Info("starting event handler")
 	go e.handleEvents(ctx)
-	e.config.Logger.Sugar().Info("started event handler successfully")
+	e.config.Logger.Info("started event handler successfully")
 
 	return nil
 }

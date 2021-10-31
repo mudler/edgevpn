@@ -4,10 +4,9 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
-func ServiceAdd(l *zap.Logger) cli.Command {
+func ServiceAdd() cli.Command {
 	return cli.Command{
 		Name:        "service-add",
 		Description: "expose a service to the network",
@@ -16,7 +15,7 @@ func ServiceAdd(l *zap.Logger) cli.Command {
 			cli.StringFlag{Name: "remoteaddress"},
 		),
 		Action: func(c *cli.Context) error {
-			e := edgevpn.New(cliToOpts(l, c)...)
+			e := edgevpn.New(cliToOpts(c)...)
 
 			mw, err := e.MessageWriter()
 			if err != nil {
@@ -38,7 +37,7 @@ func ServiceAdd(l *zap.Logger) cli.Command {
 	}
 }
 
-func ServiceConnect(l *zap.Logger) cli.Command {
+func ServiceConnect() cli.Command {
 	return cli.Command{
 		Name:        "service-connect",
 		Description: "bind a local port to connect to a remote service",
@@ -48,7 +47,7 @@ func ServiceConnect(l *zap.Logger) cli.Command {
 			cli.StringFlag{Name: "srcaddress"},
 		),
 		Action: func(c *cli.Context) error {
-			e := edgevpn.New(cliToOpts(l, c)...)
+			e := edgevpn.New(cliToOpts(c)...)
 
 			mw, err := e.MessageWriter()
 			if err != nil {

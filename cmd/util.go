@@ -3,23 +3,38 @@ package cmd
 import (
 	"github.com/ipfs/go-log"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
+	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/songgao/water"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
-func cliToOpts(l *zap.Logger, c *cli.Context) []edgevpn.Option {
+func cliToOpts(c *cli.Context) []edgevpn.Option {
 	config := c.String("config")
 	address := c.String("address")
 	iface := c.String("interface")
+	logLevel := c.String("log-level")
+	libp2plogLevel := c.String("libp2p-log-level")
+
+	lvl, err := log.LevelFromString(logLevel)
+	if err != nil {
+		lvl = log.LevelError
+	}
+
+	llger := logger.New(lvl)
+
+	libp2plvl, err := log.LevelFromString(libp2plogLevel)
+	if err != nil {
+		libp2plvl = log.LevelFatal
+	}
+
 	token := c.String("token")
 	if config == "" &&
 		token == "" {
-		l.Sugar().Fatal("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. At least a config file is required")
+		llger.Fatal("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. At least a config file is required")
 	}
 	return []edgevpn.Option{
-		edgevpn.Logger(l),
-		edgevpn.LogLevel(log.LevelInfo),
+		edgevpn.Logger(llger),
+		edgevpn.LibP2PLogLevel(libp2plvl),
 		edgevpn.MaxMessageSize(2 << 20), // 2MB
 		edgevpn.WithInterfaceMTU(1450),
 		edgevpn.WithPacketMTU(1420),

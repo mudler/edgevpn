@@ -42,23 +42,23 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 	//    which connect to the given address/Port and Send what we receive from the Stream.
 	e.config.StreamHandlers[protocol.ID(ServiceProtocol)] = func(stream network.Stream) {
 		go func() {
-			e.config.Logger.Sugar().Info("Received connection from", stream.Conn().RemotePeer().String())
+			e.config.Logger.Info("Received connection from", stream.Conn().RemotePeer().String())
 
 			// Retrieve current ID for ip in the blockchain
 			_, found := ledger.GetKey(UsersLedgerKey, stream.Conn().RemotePeer().String())
 			// If mismatch, update the blockchain
 			if !found {
-				e.config.Logger.Sugar().Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
+				e.config.Logger.Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
 				stream.Reset()
 				return
 			}
 
 			// we need a list of known peers
-			e.config.Logger.Sugar().Info("Dialing", dstaddress)
+			e.config.Logger.Info("Dialing", dstaddress)
 
 			c, err := net.Dial("tcp", dstaddress)
 			if err != nil {
-				e.config.Logger.Sugar().Info("Reset", stream.Conn().RemotePeer().String(), err.Error())
+				e.config.Logger.Info("Reset", stream.Conn().RemotePeer().String(), err.Error())
 				stream.Reset()
 				return
 			}
@@ -70,7 +70,7 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 			stream.Close()
 			c.Close()
 
-			e.config.Logger.Sugar().Info("Done", stream.Conn().RemotePeer().String())
+			e.config.Logger.Info("Done", stream.Conn().RemotePeer().String())
 
 		}()
 	}
@@ -82,7 +82,7 @@ func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, 
 	if err != nil {
 		return err
 	}
-	e.config.Logger.Sugar().Info("Listening on ", srcaddr)
+	e.config.Logger.Info("Listening on ", srcaddr)
 
 	// Announce ourselves so nodes accepts our connection
 	ledger.Announce(
@@ -107,10 +107,10 @@ func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, 
 		// Listen for an incoming connection.
 		conn, err := l.Accept()
 		if err != nil {
-			e.config.Logger.Sugar().Error("Error accepting: ", err.Error())
+			e.config.Logger.Error("Error accepting: ", err.Error())
 			continue
 		}
-		e.config.Logger.Sugar().Info("New connection from", l.Addr().String())
+		e.config.Logger.Info("New connection from", l.Addr().String())
 		// Handle connections in a new goroutine, forwarding to the p2p service
 		go func() {
 			// Retrieve current ID for ip in the blockchain
@@ -119,23 +119,23 @@ func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, 
 			existingValue.Unmarshal(service)
 			// If mismatch, update the blockchain
 			if !found {
-				e.config.Logger.Sugar().Info("service not found on blockchain")
+				e.config.Logger.Info("service not found on blockchain")
 				return
 			}
 			// Decode the Peer
 			d, err := peer.Decode(service.PeerID)
 			if err != nil {
-				e.config.Logger.Sugar().Infof("could not decode peer '%s'", service.PeerID)
+				e.config.Logger.Infof("could not decode peer '%s'", service.PeerID)
 				return
 			}
 
 			// Open a stream
 			stream, err := e.host.NewStream(context.Background(), d, ServiceProtocol)
 			if err != nil {
-				e.config.Logger.Sugar().Infof("could not open stream '%s'", err.Error())
+				e.config.Logger.Infof("could not open stream '%s'", err.Error())
 				return
 			}
-			e.config.Logger.Sugar().Info("Redirecting", l.Addr().String(), "to", serviceID)
+			e.config.Logger.Info("Redirecting", l.Addr().String(), "to", serviceID)
 
 			closer := make(chan struct{}, 2)
 			go copyStream(closer, stream, conn)
@@ -144,7 +144,7 @@ func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, 
 
 			stream.Close()
 			conn.Close()
-			e.config.Logger.Sugar().Info("Done handling", l.Addr().String(), "to", serviceID)
+			e.config.Logger.Info("Done handling", l.Addr().String(), "to", serviceID)
 		}()
 	}
 }

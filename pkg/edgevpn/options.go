@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 
-	"github.com/ipfs/go-log/v2"
+	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
@@ -12,8 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/songgao/water"
 	"github.com/xlzd/gotp"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v2"
 )
 
@@ -81,7 +79,7 @@ func WithInterfaceName(i string) func(cfg *Config) error {
 	}
 }
 
-func Logger(l *zap.Logger) func(cfg *Config) error {
+func Logger(l log.StandardLogger) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.Logger = l
 		return nil
@@ -168,18 +166,18 @@ func SealKeyLength(i int) func(cfg *Config) error {
 	}
 }
 
-func LogLevel(l log.LogLevel) func(cfg *Config) error {
+func LibP2PLogLevel(l log.LogLevel) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		log.SetAllLoggers(l)
-		log.SetLogLevel("edgevpn", zapcore.Level(l).String())
-		log.SetLogLevel("pubsub", "fatal")
-		log.SetLogLevel("dht/RtRefreshManager", "fatal")
-		log.SetLogLevel("swarm2", "fatal")
-		log.SetLogLevel("basichost", "fatal")
-		log.SetLogLevel("relay", "fatal")
-		log.SetLogLevel("dht", "fatal")
-		log.SetLogLevel("mdns", "fatal")
-		log.SetLogLevel("net/identify", "fatal")
+		//log.SetLogLevel("edgevpn", zapcore.Level(l).String())
+		// log.SetLogLevel("pubsub", "fatal")
+		// log.SetLogLevel("dht/RtRefreshManager", "fatal")
+		// log.SetLogLevel("swarm2", "fatal")
+		// log.SetLogLevel("basichost", "fatal")
+		// log.SetLogLevel("relay", "fatal")
+		// log.SetLogLevel("dht", "fatal")
+		// log.SetLogLevel("mdns", "fatal")
+		// log.SetLogLevel("net/identify", "fatal")
 		return nil
 	}
 }

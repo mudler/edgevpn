@@ -5,10 +5,9 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
-func API(l *zap.Logger) cli.Command {
+func API() cli.Command {
 	return cli.Command{
 		Name:        "api",
 		Description: "api starts an http server to display network informations",
@@ -19,7 +18,7 @@ func API(l *zap.Logger) cli.Command {
 			},
 		),
 		Action: func(c *cli.Context) error {
-			e := edgevpn.New(cliToOpts(l, c)...)
+			e := edgevpn.New(cliToOpts(c)...)
 
 			mw, err := e.MessageWriter()
 			if err != nil {

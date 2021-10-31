@@ -44,13 +44,13 @@ func (e *EdgeVPN) SendFile(ledger *blockchain.Ledger, fileID, filepath string) e
 	//    which connect to the given address/Port and Send what we receive from the Stream.
 	e.config.StreamHandlers[protocol.ID(FileProtocol)] = func(stream network.Stream) {
 		go func() {
-			e.config.Logger.Sugar().Info("Received connection from", stream.Conn().RemotePeer().String())
+			e.config.Logger.Info("Received connection from", stream.Conn().RemotePeer().String())
 
 			// Retrieve current ID for ip in the blockchain
 			_, found := ledger.GetKey(UsersLedgerKey, stream.Conn().RemotePeer().String())
 			// If mismatch, update the blockchain
 			if !found {
-				e.config.Logger.Sugar().Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
+				e.config.Logger.Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
 				stream.Reset()
 				return
 			}
@@ -63,7 +63,7 @@ func (e *EdgeVPN) SendFile(ledger *blockchain.Ledger, fileID, filepath string) e
 
 			stream.Close()
 
-			e.config.Logger.Sugar().Info("Done", stream.Conn().RemotePeer().String())
+			e.config.Logger.Info("Done", stream.Conn().RemotePeer().String())
 
 		}()
 	}
@@ -102,7 +102,7 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 		existingValue.Unmarshal(fi)
 		// If mismatch, update the blockchain
 		if !found {
-			e.config.Logger.Sugar().Info("file not found on blockchain")
+			e.config.Logger.Info("file not found on blockchain")
 			continue
 		} else {
 			break
@@ -129,7 +129,7 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 	if err != nil {
 		return err
 	}
-	e.config.Logger.Sugar().Info("Saving file")
+	e.config.Logger.Info("Saving file")
 
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
@@ -139,6 +139,6 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 	io.Copy(f, stream)
 
 	f.Close()
-	e.config.Logger.Sugar().Info("received", fileID)
+	e.config.Logger.Info("received", fileID)
 	return nil
 }

@@ -4,10 +4,9 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
-func FileSend(l *zap.Logger) cli.Command {
+func FileSend() cli.Command {
 	return cli.Command{
 		Name:        "file-send",
 		Description: "send a file to the network",
@@ -16,7 +15,7 @@ func FileSend(l *zap.Logger) cli.Command {
 			cli.StringFlag{Name: "path"},
 		),
 		Action: func(c *cli.Context) error {
-			e := edgevpn.New(cliToOpts(l, c)...)
+			e := edgevpn.New(cliToOpts(c)...)
 
 			mw, err := e.MessageWriter()
 			if err != nil {
@@ -38,7 +37,7 @@ func FileSend(l *zap.Logger) cli.Command {
 	}
 }
 
-func FileReceive(l *zap.Logger) cli.Command {
+func FileReceive() cli.Command {
 	return cli.Command{
 		Name:        "file-receive",
 		Description: "receive a file locally",
@@ -47,7 +46,7 @@ func FileReceive(l *zap.Logger) cli.Command {
 			cli.StringFlag{Name: "path"},
 		),
 		Action: func(c *cli.Context) error {
-			e := edgevpn.New(cliToOpts(l, c)...)
+			e := edgevpn.New(cliToOpts(c)...)
 
 			mw, err := e.MessageWriter()
 			if err != nil {

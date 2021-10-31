@@ -7,7 +7,6 @@ import (
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,6 +20,18 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "config",
 		Usage:  "Specify a path to a edgevpn config file",
 		EnvVar: "EDGEVPNCONFIG",
+	},
+	&cli.StringFlag{
+		Name:   "log-level",
+		Usage:  "Specify loglevel",
+		EnvVar: "EDGEVPNLOGLEVEL",
+		Value:  "info",
+	},
+	&cli.StringFlag{
+		Name:   "libp2p-log-level",
+		Usage:  "Specify libp2p loglevel",
+		EnvVar: "EDGEVPNLIBP2PLOGLEVEL",
+		Value:  "fatal",
 	},
 	&cli.StringFlag{
 		Name:   "token",
@@ -48,7 +59,7 @@ func MainFlags() []cli.Flag {
 		}}, CommonFlags...)
 }
 
-func Main(l *zap.Logger) func(c *cli.Context) error {
+func Main() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		if c.Bool("g") {
 			// Generates a new config and exit
@@ -68,16 +79,16 @@ func Main(l *zap.Logger) func(c *cli.Context) error {
 			os.Exit(0)
 		}
 
-		e := edgevpn.New(cliToOpts(l, c)...)
+		e := edgevpn.New(cliToOpts(c)...)
 
-		l.Sugar().Info(Copyright)
+		e.Logger().Info(Copyright)
 
-		l.Sugar().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
+		e.Logger().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
 
-		l.Sugar().Info("Start")
+		e.Logger().Info("Start")
 
 		if err := e.Start(); err != nil {
-			l.Sugar().Fatal(err.Error())
+			e.Logger().Fatal(err.Error())
 		}
 
 		return nil

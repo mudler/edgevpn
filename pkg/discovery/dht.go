@@ -5,8 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
-
+	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -25,7 +24,7 @@ type DHT struct {
 	RendezvousString     string
 	BootstrapPeers       AddrList
 	latestRendezvous     string
-	console              *zap.Logger
+	console              log.StandardLogger
 	RefreshDiscoveryTime int64
 	dht                  *dht.IpfsDHT
 }
@@ -64,7 +63,7 @@ func (d *DHT) startDHT(ctx context.Context, h host.Host) (*dht.IpfsDHT, error) {
 	return d.dht, nil
 }
 
-func (d *DHT) Run(c *zap.Logger, ctx context.Context, host host.Host) error {
+func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) error {
 	if d.KeyLength == 0 {
 		d.KeyLength = 12
 	}
@@ -84,7 +83,7 @@ func (d *DHT) Run(c *zap.Logger, ctx context.Context, host host.Host) error {
 
 	// Bootstrap the DHT. In the default configuration, this spawns a Background
 	// thread that will refresh the peer table every five minutes.
-	c.Sugar().Info("Bootstrapping the DHT")
+	c.Info("Bootstrapping the DHT")
 	if err = kademliaDHT.Bootstrap(ctx); err != nil {
 		return err
 	}
@@ -121,7 +120,7 @@ func (d *DHT) Run(c *zap.Logger, ctx context.Context, host host.Host) error {
 	return nil
 }
 
-func (d *DHT) bootstrapPeers(c *zap.Logger, ctx context.Context, host host.Host) {
+func (d *DHT) bootstrapPeers(c log.StandardLogger, ctx context.Context, host host.Host) {
 	// Let's connect to the bootstrap nodes first. They will tell us about the
 	// other nodes in the network.
 	var wg sync.WaitGroup
@@ -131,9 +130,9 @@ func (d *DHT) bootstrapPeers(c *zap.Logger, ctx context.Context, host host.Host)
 		go func() {
 			defer wg.Done()
 			if err := host.Connect(ctx, *peerinfo); err != nil {
-				c.Sugar().Warn(err.Error())
+				c.Debug(err.Error())
 			} else {
-				c.Sugar().Info("Connection established with bootstrap node:", *peerinfo)
+				c.Debug("Connection established with bootstrap node:", *peerinfo)
 			}
 		}()
 	}
@@ -141,13 +140,13 @@ func (d *DHT) bootstrapPeers(c *zap.Logger, ctx context.Context, host host.Host)
 }
 
 func (d *DHT) announceAndConnect(ctx context.Context, kademliaDHT *dht.IpfsDHT, host host.Host, rv string) error {
-	d.console.Sugar().Info("Announcing ourselves...")
+	d.console.Debug("Announcing ourselves...")
 	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
 	discovery.Advertise(ctx, routingDiscovery, rv)
-	d.console.Sugar().Info("Successfully announced!")
+	d.console.Debug("Successfully announced!")
 	// Now, look for others who have announced
 	// This is like your friend telling you the location to meet you.
-	d.console.Sugar().Info("Searching for other peers...")
+	d.console.Debug("Searching for other peers...")
 	peerChan, err := routingDiscovery.FindPeers(ctx, rv)
 	if err != nil {
 		return err
@@ -164,14 +163,14 @@ func (d *DHT) announceAndConnect(ctx context.Context, kademliaDHT *dht.IpfsDHT, 
 		//	defer wg.Done()
 
 		if host.Network().Connectedness(p.ID) != network.Connected {
-			d.console.Sugar().Info("Found peer:", p)
+			d.console.Debug("Found peer:", p)
 			if err := host.Connect(ctx, p); err != nil {
-				d.console.Sugar().Info("Failed connecting to", p)
+				d.console.Debug("Failed connecting to", p)
 			} else {
-				d.console.Sugar().Info("Connected to:", p)
+				d.console.Debug("Connected to:", p)
 			}
 		} else {
-			d.console.Sugar().Info("Known peer (already connected):", p)
+			d.console.Debug("Known peer (already connected):", p)
 		}
 		//}(p)
 

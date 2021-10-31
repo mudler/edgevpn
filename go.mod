@@ -3,6 +3,7 @@ module github.com/mudler/edgevpn
 go 1.16
 
 require (
+	github.com/gookit/color v1.5.0 // indirect
 	github.com/ipfs/go-ipns v0.1.2 // indirect
 	github.com/ipfs/go-log v1.0.5 // indirect
 	github.com/ipfs/go-log/v2 v2.3.0
@@ -15,8 +16,10 @@ require (
 	github.com/libp2p/go-libp2p-pubsub v0.5.4
 	github.com/libp2p/go-libp2p-quic-transport v0.12.0 // indirect
 	github.com/lthibault/jitterbug v2.0.0+incompatible
+	github.com/mudler/go-isterminal v0.0.0-20211031135732-5e4e06fc5a58 // indirect
 	github.com/multiformats/go-multiaddr v0.4.0
 	github.com/pkg/errors v0.9.1
+	github.com/pterm/pterm v0.12.33 // indirect
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/urfave/cli v1.22.5 // indirect
@@ -25,6 +28,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/zap v1.19.0
 	golang.org/x/net v0.0.0-20210913180222-943fd674d43e
+	golang.org/x/sys v0.0.0-20211031064116-611d5d643895 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
 
