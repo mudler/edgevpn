@@ -21,6 +21,12 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Specify a path to a edgevpn config file",
 		EnvVar: "EDGEVPNCONFIG",
 	},
+	&cli.IntFlag{
+		Name:   "mtu",
+		Usage:  "Specify a mtu",
+		EnvVar: "EDGEVPNMTU",
+		Value:  1200,
+	},
 	&cli.StringFlag{
 		Name:   "log-level",
 		Usage:  "Specify loglevel",

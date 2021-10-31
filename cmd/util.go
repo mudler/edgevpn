@@ -43,7 +43,7 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		edgevpn.Logger(llger),
 		edgevpn.LibP2PLogLevel(libp2plvl),
 		edgevpn.MaxMessageSize(2 << 20), // 2MB
-		edgevpn.WithInterfaceMTU(1450),
+		edgevpn.WithInterfaceMTU(c.Int("mtu")),
 		edgevpn.WithPacketMTU(1420),
 		edgevpn.WithInterfaceAddress(address),
 		edgevpn.WithInterfaceName(iface),
