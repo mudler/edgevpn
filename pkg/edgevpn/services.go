@@ -19,6 +19,9 @@ const (
 )
 
 func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress string) {
+
+	e.Logger().Infof("Exposing service '%s' (%s)", serviceID, dstaddress)
+
 	// 1) Register the ServiceID <-> PeerID Association
 	// By announcing periodically our service to the blockchain
 	ledger.Announce(
@@ -42,13 +45,13 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 	//    which connect to the given address/Port and Send what we receive from the Stream.
 	e.config.StreamHandlers[protocol.ID(ServiceProtocol)] = func(stream network.Stream) {
 		go func() {
-			e.config.Logger.Info("Received connection from", stream.Conn().RemotePeer().String())
+			e.config.Logger.Infof("(service %s) Received connection from %s", serviceID, stream.Conn().RemotePeer().String())
 
 			// Retrieve current ID for ip in the blockchain
 			_, found := ledger.GetKey(UsersLedgerKey, stream.Conn().RemotePeer().String())
 			// If mismatch, update the blockchain
 			if !found {
-				e.config.Logger.Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
+				e.config.Logger.Debugf("Reset '%s': not found in the ledger", stream.Conn().RemotePeer().String())
 				stream.Reset()
 				return
 			}
@@ -58,7 +61,7 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 
 			c, err := net.Dial("tcp", dstaddress)
 			if err != nil {
-				e.config.Logger.Info("Reset", stream.Conn().RemotePeer().String(), err.Error())
+				e.config.Logger.Debugf("Reset %s: %s", stream.Conn().RemotePeer().String(), err.Error())
 				stream.Reset()
 				return
 			}
@@ -70,19 +73,19 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 			stream.Close()
 			c.Close()
 
-			e.config.Logger.Info("Done", stream.Conn().RemotePeer().String())
-
+			e.config.Logger.Info("(service %s) Handled correctly '%s'", serviceID, stream.Conn().RemotePeer().String())
 		}()
 	}
 }
 
 func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, srcaddr string) error {
+
 	// Open local port for listening
 	l, err := net.Listen("tcp", srcaddr)
 	if err != nil {
 		return err
 	}
-	e.config.Logger.Info("Listening on ", srcaddr)
+	e.Logger().Info("Binding local port on", srcaddr)
 
 	// Announce ourselves so nodes accepts our connection
 	ledger.Announce(
@@ -110,6 +113,7 @@ func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, 
 			e.config.Logger.Error("Error accepting: ", err.Error())
 			continue
 		}
+
 		e.config.Logger.Info("New connection from", l.Addr().String())
 		// Handle connections in a new goroutine, forwarding to the p2p service
 		go func() {
@@ -119,23 +123,27 @@ func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, 
 			existingValue.Unmarshal(service)
 			// If mismatch, update the blockchain
 			if !found {
-				e.config.Logger.Info("service not found on blockchain")
+				conn.Close()
+				e.config.Logger.Debugf("service '%s' not found on blockchain", serviceID)
 				return
 			}
+
 			// Decode the Peer
 			d, err := peer.Decode(service.PeerID)
 			if err != nil {
-				e.config.Logger.Infof("could not decode peer '%s'", service.PeerID)
+				conn.Close()
+				e.config.Logger.Debugf("could not decode peer '%s'", service.PeerID)
 				return
 			}
 
 			// Open a stream
 			stream, err := e.host.NewStream(context.Background(), d, ServiceProtocol)
 			if err != nil {
-				e.config.Logger.Infof("could not open stream '%s'", err.Error())
+				conn.Close()
+				e.config.Logger.Debugf("could not open stream '%s'", err.Error())
 				return
 			}
-			e.config.Logger.Info("Redirecting", l.Addr().String(), "to", serviceID)
+			e.config.Logger.Debugf("(service %s) Redirecting", serviceID, l.Addr().String())
 
 			closer := make(chan struct{}, 2)
 			go copyStream(closer, stream, conn)
@@ -144,7 +152,7 @@ func (e *EdgeVPN) ConnectToService(ledger *blockchain.Ledger, serviceID string, 
 
 			stream.Close()
 			conn.Close()
-			e.config.Logger.Info("Done handling", l.Addr().String(), "to", serviceID)
+			e.config.Logger.Infof("(service %s) Done handling %s", serviceID, l.Addr().String())
 		}()
 	}
 }

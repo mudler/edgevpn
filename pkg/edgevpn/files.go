@@ -19,6 +19,9 @@ const (
 )
 
 func (e *EdgeVPN) SendFile(ledger *blockchain.Ledger, fileID, filepath string) error {
+
+	e.Logger().Infof("Serving '%s' as '%s", filepath, fileID)
+
 	// By announcing periodically our service to the blockchain
 	ledger.Announce(
 		context.Background(),
@@ -44,7 +47,7 @@ func (e *EdgeVPN) SendFile(ledger *blockchain.Ledger, fileID, filepath string) e
 	//    which connect to the given address/Port and Send what we receive from the Stream.
 	e.config.StreamHandlers[protocol.ID(FileProtocol)] = func(stream network.Stream) {
 		go func() {
-			e.config.Logger.Info("Received connection from", stream.Conn().RemotePeer().String())
+			e.config.Logger.Infof("(file %s) Received connection from %s", fileID, stream.Conn().RemotePeer().String())
 
 			// Retrieve current ID for ip in the blockchain
 			_, found := ledger.GetKey(UsersLedgerKey, stream.Conn().RemotePeer().String())
@@ -63,7 +66,7 @@ func (e *EdgeVPN) SendFile(ledger *blockchain.Ledger, fileID, filepath string) e
 
 			stream.Close()
 
-			e.config.Logger.Info("Done", stream.Conn().RemotePeer().String())
+			e.config.Logger.Infof("(file %s) Done handling %s", fileID, stream.Conn().RemotePeer().String())
 
 		}()
 	}
@@ -93,6 +96,9 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 	)
 	for {
 		time.Sleep(5 * time.Second)
+
+		e.config.Logger.Debug("Attempting to find file in the blockchain")
+
 		_, found := ledger.GetKey(UsersLedgerKey, e.host.ID().String())
 		if !found {
 			continue
@@ -102,7 +108,7 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 		existingValue.Unmarshal(fi)
 		// If mismatch, update the blockchain
 		if !found {
-			e.config.Logger.Info("file not found on blockchain")
+			e.config.Logger.Debug("file not found on blockchain, retrying in 5 seconds")
 			continue
 		} else {
 			break
@@ -114,10 +120,12 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 	existingValue, found := ledger.GetKey(FilesLedgerKey, fileID)
 	fi := &types.File{}
 	existingValue.Unmarshal(fi)
+
 	// If mismatch, update the blockchain
 	if !found {
 		return errors.New("file not found")
 	}
+
 	// Decode the Peer
 	d, err := peer.Decode(fi.PeerID)
 	if err != nil {
@@ -129,7 +137,7 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 	if err != nil {
 		return err
 	}
-	e.config.Logger.Info("Saving file")
+	e.config.Logger.Infof("Saving file %s to %s", fileID, path)
 
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
@@ -139,6 +147,7 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 	io.Copy(f, stream)
 
 	f.Close()
-	e.config.Logger.Info("received", fileID)
+
+	e.config.Logger.Infof("Received file %s to %s", fileID, path)
 	return nil
 }

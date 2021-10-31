@@ -2,11 +2,18 @@ package cmd
 
 import (
 	"github.com/ipfs/go-log"
+	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/songgao/water"
 	"github.com/urfave/cli"
 )
+
+func displayStart(e *edgevpn.EdgeVPN) {
+	e.Logger().Info(Copyright)
+
+	e.Logger().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
+}
 
 func cliToOpts(c *cli.Context) []edgevpn.Option {
 	config := c.String("config")

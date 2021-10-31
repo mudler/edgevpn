@@ -9,13 +9,27 @@ import (
 func FileSend() cli.Command {
 	return cli.Command{
 		Name:        "file-send",
-		Description: "send a file to the network",
+		Aliases:     []string{"fs"},
+		Usage:       "Serve a file to the network",
+		Description: `Serve a file to the network without connecting over VPN`,
+		UsageText:   "edgevpn file-send --name 'unique-id' --path '/src/path'",
 		Flags: append(CommonFlags,
-			cli.StringFlag{Name: "name"},
-			cli.StringFlag{Name: "path"},
+			cli.StringFlag{
+				Name:     "name",
+				Required: true,
+				Usage: `Unique name of the file to be served over the network. 
+This is also the ID used to refer when receiving it.`,
+			},
+			cli.StringFlag{
+				Name:     "path",
+				Usage:    `File to serve`,
+				Required: true,
+			},
 		),
 		Action: func(c *cli.Context) error {
 			e := edgevpn.New(cliToOpts(c)...)
+
+			displayStart(e)
 
 			mw, err := e.MessageWriter()
 			if err != nil {
@@ -40,13 +54,26 @@ func FileSend() cli.Command {
 func FileReceive() cli.Command {
 	return cli.Command{
 		Name:        "file-receive",
-		Description: "receive a file locally",
+		Aliases:     []string{"fr"},
+		Usage:       "Receive a file which is served from the network",
+		Description: `Receive a file from the network without connecting over VPN`,
+		UsageText:   "edgevpn file-receive --name 'unique-id' --path '/dst/path'",
 		Flags: append(CommonFlags,
-			cli.StringFlag{Name: "name"},
-			cli.StringFlag{Name: "path"},
+			cli.StringFlag{
+				Name:     "name",
+				Usage:    `Unique name of the file to be received over the network.`,
+				Required: true,
+			},
+			cli.StringFlag{
+				Name:     "path",
+				Usage:    `Destination where to save the file`,
+				Required: true,
+			},
 		),
 		Action: func(c *cli.Context) error {
 			e := edgevpn.New(cliToOpts(c)...)
+
+			displayStart(e)
 
 			mw, err := e.MessageWriter()
 			if err != nil {

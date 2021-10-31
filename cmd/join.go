@@ -14,6 +14,8 @@ func Join() cli.Command {
 		Action: func(c *cli.Context) error {
 			e := edgevpn.New(cliToOpts(c)...)
 
+			displayStart(e)
+
 			mw, err := e.MessageWriter()
 			if err != nil {
 				return err

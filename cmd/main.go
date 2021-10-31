@@ -1,10 +1,10 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 
-	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
@@ -45,6 +45,10 @@ func MainFlags() []cli.Flag {
 			Name:  "g",
 			Usage: "Generates a new configuration and prints it on screen",
 		},
+		&cli.BoolFlag{
+			Name:  "b",
+			Usage: "Encodes the new config in base64, so it can be used as a token",
+		},
 		&cli.StringFlag{
 			Name:   "address",
 			Usage:  "VPN virtual address",
@@ -75,17 +79,18 @@ func Main() func(c *cli.Context) error {
 				os.Exit(1)
 			}
 
-			fmt.Println(string(bytesData))
+			if c.Bool("b") {
+				fmt.Print(base64.StdEncoding.EncodeToString(bytesData))
+			} else {
+				fmt.Println(string(bytesData))
+			}
+
 			os.Exit(0)
 		}
 
 		e := edgevpn.New(cliToOpts(c)...)
 
-		e.Logger().Info(Copyright)
-
-		e.Logger().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
-
-		e.Logger().Info("Start")
+		displayStart(e)
 
 		if err := e.Start(); err != nil {
 			e.Logger().Fatal(err.Error())

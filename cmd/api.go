@@ -15,10 +15,13 @@ func API() cli.Command {
 			&cli.StringFlag{
 				Name:  "listen",
 				Value: ":8080",
+				Usage: "Listening address",
 			},
 		),
 		Action: func(c *cli.Context) error {
 			e := edgevpn.New(cliToOpts(c)...)
+
+			displayStart(e)
 
 			mw, err := e.MessageWriter()
 			if err != nil {
