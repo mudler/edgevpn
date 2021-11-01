@@ -241,7 +241,7 @@ func GenerateNewConnectionData() (*YAMLConnectionConfig, error) {
 	config.OTP.Crypto.Interval = 9000
 	config.OTP.Crypto.Length = 12
 	config.OTP.DHT.Length = 12
-	config.MaxBlockChainLength = 400
+	config.MaxBlockChainLength = 0
 	config.MaxMessageSize = 20 << 20 // 20MB
 
 	return &config, nil

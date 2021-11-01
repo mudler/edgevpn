@@ -1,21 +1,21 @@
 package blockchain
 
 type memory struct {
-	chain Blockchain
+	block *Block
 }
 
 func (m *memory) Add(b Block) {
-	m.chain = append(m.chain, b)
+	m.block = &b
 }
 
 func (m *memory) Reset() {
-	m.chain = []Block{}
+	m.block = &Block{}
 }
 
 func (m *memory) Len() int {
-	return len(m.chain)
+	return m.block.Index
 }
 
 func (m *memory) Last() Block {
-	return m.chain[len(m.chain)-1]
+	return *m.block
 }
