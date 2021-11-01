@@ -296,7 +296,7 @@ and any other way if not mentioned here.
 - [x] Send and receive files via p2p
 - [x] Expose remote/local services via p2p tunnelling
 - [x] Store arbitrary data on the blockchain
-- [ ] Allow to persist blockchain on disk\
+- [x] Allow to persist blockchain on disk
 
 # :notebook: LICENSE
 
