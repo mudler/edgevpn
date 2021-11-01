@@ -73,12 +73,6 @@ func (l *Ledger) Syncronizer(ctx context.Context, t time.Duration) {
 	}()
 }
 
-// String returns the blockchain as string
-func (l *Ledger) String() string {
-	bytes, _ := json.MarshalIndent(l.blockchain, "", "  ")
-	return string(bytes)
-}
-
 // Update the blockchain from a message
 func (l *Ledger) Update(h *hub.Message) (err error) {
 	//chain := make(Blockchain, 0)
@@ -265,6 +259,17 @@ func (l *Ledger) DeleteBucket(b string) {
 	}
 	l.Unlock()
 	l.writeData(new)
+}
+
+// String returns the blockchain as string
+func (l *Ledger) String() string {
+	bytes, _ := json.MarshalIndent(l.blockchain, "", "  ")
+	return string(bytes)
+}
+
+// Index returns last known blockchain index
+func (l *Ledger) Index() int {
+	return l.blockchain.Len()
 }
 
 func (l *Ledger) writeData(s map[string]map[string]Data) {
