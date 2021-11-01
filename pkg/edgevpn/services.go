@@ -73,7 +73,7 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 			stream.Close()
 			c.Close()
 
-			e.config.Logger.Info("(service %s) Handled correctly '%s'", serviceID, stream.Conn().RemotePeer().String())
+			e.config.Logger.Infof("(service %s) Handled correctly '%s'", serviceID, stream.Conn().RemotePeer().String())
 		}()
 	}
 }

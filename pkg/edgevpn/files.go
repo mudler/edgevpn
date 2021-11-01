@@ -20,7 +20,7 @@ const (
 
 func (e *EdgeVPN) SendFile(ledger *blockchain.Ledger, fileID, filepath string) error {
 
-	e.Logger().Infof("Serving '%s' as '%s", filepath, fileID)
+	e.Logger().Infof("Serving '%s' as '%s'", filepath, fileID)
 
 	// By announcing periodically our service to the blockchain
 	ledger.Announce(
@@ -137,7 +137,7 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 	if err != nil {
 		return err
 	}
-	e.config.Logger.Infof("Saving file %s to %s", fileID, path)
+	e.Logger().Infof("Saving file %s to %s", fileID, path)
 
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
@@ -148,6 +148,6 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 
 	f.Close()
 
-	e.config.Logger.Infof("Received file %s to %s", fileID, path)
+	e.Logger().Infof("Received file %s to %s", fileID, path)
 	return nil
 }

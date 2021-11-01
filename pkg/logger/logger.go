@@ -69,7 +69,7 @@ func (l Logger) Fatal(args ...interface{}) {
 
 func (l Logger) Fatalf(f string, args ...interface{}) {
 	if l.enabled(log.LevelFatal) {
-		pterm.Fatal.Printfln(pterm.Red(joinMsg(args...)))
+		pterm.Fatal.Printfln(pterm.Red(f), args...)
 	}
 }
 
@@ -81,7 +81,7 @@ func (l Logger) Info(args ...interface{}) {
 
 func (l Logger) Infof(f string, args ...interface{}) {
 	if l.enabled(log.LevelInfo) {
-		pterm.Info.Printfln(pterm.LightBlue(joinMsg(args...)))
+		pterm.Info.Printfln(pterm.LightBlue(f), args...)
 	}
 }
 
@@ -101,7 +101,7 @@ func (l Logger) Warn(args ...interface{}) {
 
 func (l Logger) Warnf(f string, args ...interface{}) {
 	if l.enabled(log.LevelWarn) {
-		pterm.Warning.Printfln(pterm.LightYellow(joinMsg(args...)))
+		pterm.Warning.Printfln(pterm.LightYellow(f), args...)
 	}
 }
 
