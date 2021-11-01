@@ -29,6 +29,7 @@ func API(l string, ledger *blockchain.Ledger) error {
 	ec := echo.New()
 	assetHandler := http.FileServer(getFileSystem())
 
+	// Get data from ledger
 	ec.GET("/api/files", func(c echo.Context) error {
 		list := []*types.File{}
 		for _, v := range ledger.CurrentData()[edgevpn.FilesLedgerKey] {
@@ -84,7 +85,6 @@ func API(l string, ledger *blockchain.Ledger) error {
 	ec.GET("/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
 
 	ec.GET("/api/blockchain", func(c echo.Context) error {
-		//		c.SetHandler()
 		return c.JSON(http.StatusOK, ledger.BlockChain())
 	})
 
@@ -95,16 +95,17 @@ func API(l string, ledger *blockchain.Ledger) error {
 	ec.GET("/api/ledger/:bucket/:key", func(c echo.Context) error {
 		bucket := c.Param("bucket")
 		key := c.Param("key")
-		//		c.SetHandler()
 		return c.JSON(http.StatusOK, ledger.CurrentData()[bucket][key])
 	})
 
 	ec.GET("/api/ledger/:bucket", func(c echo.Context) error {
 		bucket := c.Param("bucket")
-		//		c.SetHandler()
 		return c.JSON(http.StatusOK, ledger.CurrentData()[bucket])
 	})
 
+	announcing := struct{ State string }{"Announcing"}
+
+	// Store arbitrary data
 	ec.PUT("/api/ledger/:bucket/:key/:value", func(c echo.Context) error {
 		bucket := c.Param("bucket")
 		key := c.Param("key")
@@ -113,15 +114,47 @@ func API(l string, ledger *blockchain.Ledger) error {
 		put, cancel := context.WithCancel(context.Background())
 		ledger.Announce(put, 5*time.Second, func() {
 			v, exists := ledger.CurrentData()[bucket][key]
-			if !exists || string(v) != value {
+			switch {
+			case !exists || string(v) != value:
 				ledger.Add(bucket, map[string]interface{}{key: value})
-			}
-			if exists && string(v) == value {
+			case exists && string(v) == value:
 				cancel()
 			}
 		})
-		//		c.SetHandler()
-		return c.JSON(http.StatusOK, "Announcing")
+		return c.JSON(http.StatusOK, announcing)
 	})
+
+	// Delete data from ledger
+	ec.DELETE("/api/ledger/:bucket", func(c echo.Context) error {
+		bucket := c.Param("bucket")
+
+		put, cancel := context.WithCancel(context.Background())
+		ledger.Announce(put, 5*time.Second, func() {
+			_, exists := ledger.CurrentData()[bucket]
+			if exists {
+				ledger.DeleteBucket(bucket)
+			} else {
+				cancel()
+			}
+		})
+		return c.JSON(http.StatusOK, announcing)
+	})
+
+	ec.DELETE("/api/ledger/:bucket/:key", func(c echo.Context) error {
+		bucket := c.Param("bucket")
+		key := c.Param("key")
+
+		put, cancel := context.WithCancel(context.Background())
+		ledger.Announce(put, 5*time.Second, func() {
+			_, exists := ledger.CurrentData()[bucket][key]
+			if exists {
+				ledger.Delete(bucket, key)
+			} else {
+				cancel()
+			}
+		})
+		return c.JSON(http.StatusOK, announcing)
+	})
+
 	return ec.Start(l)
 }

@@ -172,6 +172,45 @@ func (l *Ledger) Add(b string, s map[string]interface{}) {
 	l.writeData(current)
 }
 
+// Deletes data from the blockchain
+func (l *Ledger) Delete(b string, k string) {
+	l.Lock()
+	new := make(map[string]map[string]Data)
+	for bb, kk := range l.lastBlock().Storage {
+		if _, exists := new[bb]; !exists {
+			new[bb] = make(map[string]Data)
+		}
+		// Copy all keys/v except b/k
+		for kkk, v := range kk {
+			if !(bb == b && kkk == k) {
+				new[bb][kkk] = v
+			}
+		}
+	}
+	l.Unlock()
+	l.writeData(new)
+}
+
+// Deletes data from the blockchain
+func (l *Ledger) DeleteBucket(b string) {
+	l.Lock()
+	new := make(map[string]map[string]Data)
+	for bb, kk := range l.lastBlock().Storage {
+		// Copy all except the specified bucket
+		if bb == b {
+			continue
+		}
+		if _, exists := new[bb]; !exists {
+			new[bb] = make(map[string]Data)
+		}
+		for kkk, v := range kk {
+			new[bb][kkk] = v
+		}
+	}
+	l.Unlock()
+	l.writeData(new)
+}
+
 func (l *Ledger) writeData(s map[string]map[string]Data) {
 	newBlock := l.lastBlock().NewBlock(s)
 

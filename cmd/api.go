@@ -9,8 +9,11 @@ import (
 
 func API() cli.Command {
 	return cli.Command{
-		Name:        "api",
-		Description: "api starts an http server to display network informations",
+		Name:  "api",
+		Usage: "Starts an http server to display network informations",
+		Description: `Start listening locally, providing an API for the network.
+A simple UI interface is available to display network data.`,
+		UsageText: "edgevpn api",
 		Flags: append(CommonFlags,
 			&cli.StringFlag{
 				Name:  "listen",

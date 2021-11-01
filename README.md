@@ -141,6 +141,8 @@ By default edgevpn will listen on the `8080` port. See `edgevpn api --help` for 
 
 ## :mag: API endpoint
 
+### GET
+
 #### `/api/users`
 
 Returns the users connected to services in the blockchain
@@ -156,6 +158,34 @@ Returns the machines connected to the VPN
 #### `/api/blockchain`
 
 Returns the latest available blockchain
+
+#### `/api/ledger`
+
+Returns the current data in the ledger
+
+#### `/api/ledger/:bucket`
+
+Returns the current data in the ledger inside the `:bucket`
+
+#### `/api/ledger/:bucket/:key`
+
+Returns the current data in the ledger inside the `:bucket` at given `:key`
+
+### PUT
+
+#### `/api/ledger/:bucket/:key/:value`
+
+Puts `:value` in the ledger inside the `:bucket` at given `:key`
+
+### DELETE
+
+#### `/api/ledger/:bucket/:key`
+
+Deletes the `:key` into `:bucket` inside the ledger
+
+#### `/api/ledger/:bucket`
+
+Deletes the `:bucket` from the ledger
 
 ## :mailbox: Sending and receiving files
 
