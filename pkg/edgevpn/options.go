@@ -207,6 +207,7 @@ type YAMLConnectionConfig struct {
 	Rendezvous          string `yaml:"rendezvous"`
 	MDNS                string `yaml:"mdns"`
 	MaxBlockChainLength int    `yaml:"max_blockchain_length"`
+	MaxMessageSize      int    `yaml:"max_message_size"`
 }
 
 func (y YAMLConnectionConfig) copy(cfg *Config) {
@@ -224,6 +225,7 @@ func (y YAMLConnectionConfig) copy(cfg *Config) {
 	cfg.ServiceDiscovery = []ServiceDiscovery{d, m}
 	cfg.SealKeyLength = y.OTP.Crypto.Length
 	cfg.MaxBlockChainLength = y.MaxBlockChainLength
+	cfg.MaxMessageSize = y.MaxMessageSize
 }
 
 func GenerateNewConnectionData() (*YAMLConnectionConfig, error) {
@@ -239,7 +241,8 @@ func GenerateNewConnectionData() (*YAMLConnectionConfig, error) {
 	config.OTP.Crypto.Interval = 9000
 	config.OTP.Crypto.Length = 12
 	config.OTP.DHT.Length = 12
-	config.MaxBlockChainLength = 1000
+	config.MaxBlockChainLength = 400
+	config.MaxMessageSize = 20 << 20 // 20MB
 
 	return &config, nil
 }
