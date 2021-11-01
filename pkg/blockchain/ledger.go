@@ -15,14 +15,14 @@ import (
 
 type Ledger struct {
 	sync.Mutex
-	blockchain store
+	blockchain Store
 
 	channel io.Writer
 
 	onDisk bool
 }
 
-type store interface {
+type Store interface {
 	Add(Block)
 	Reset()
 	Len() int
@@ -30,7 +30,7 @@ type store interface {
 }
 
 // New returns a new ledger which writes to the writer
-func New(w io.Writer, s store) *Ledger {
+func New(w io.Writer, s Store) *Ledger {
 	c := &Ledger{channel: w, blockchain: s}
 	c.newGenesis()
 	return c

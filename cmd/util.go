@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/ipfs/go-log"
 	"github.com/mudler/edgevpn/internal"
+	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/songgao/water"
@@ -46,7 +47,7 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		edgevpn.WithPacketMTU(1420),
 		edgevpn.WithInterfaceAddress(address),
 		edgevpn.WithInterfaceName(iface),
-		edgevpn.WithMaxBlockChainSize(1000),
+		edgevpn.WithStore(&blockchain.MemoryStore{}),
 		edgevpn.WithInterfaceType(water.TUN),
 		edgevpn.NetLinkBootstrap(true),
 		edgevpn.FromBase64(token),

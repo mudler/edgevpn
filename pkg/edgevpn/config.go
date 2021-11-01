@@ -9,6 +9,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/mudler/edgevpn/pkg/blockchain"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	"github.com/songgao/water"
@@ -44,6 +45,8 @@ type Config struct {
 	SealKeyLength int
 
 	NetLinkBootstrap bool
+
+	Store blockchain.Store
 
 	// Handle is a handle consumed by HumanInterfaces to handle received messages
 	Handle                     func(bool, *hub.Message)

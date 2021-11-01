@@ -7,6 +7,7 @@ import (
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/mudler/edgevpn/pkg/blockchain"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/utils"
 	"github.com/pkg/errors"
@@ -61,6 +62,13 @@ func WithPacketMTU(i int) func(cfg *Config) error {
 func WithInterfaceType(d water.DeviceType) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.DeviceType = d
+		return nil
+	}
+}
+
+func WithStore(s blockchain.Store) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.Store = s
 		return nil
 	}
 }

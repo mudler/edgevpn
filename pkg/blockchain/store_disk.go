@@ -8,22 +8,22 @@ import (
 	"github.com/peterbourgon/diskv"
 )
 
-type disk struct {
+type DiskStore struct {
 	chain *diskv.Diskv
 }
 
-func (m *disk) Add(b Block) {
+func (m *DiskStore) Add(b Block) {
 	bb, _ := json.Marshal(b)
 	m.chain.Write(fmt.Sprint(b.Index), bb)
 	m.chain.Write("index", []byte(fmt.Sprint(b.Index)))
 
 }
 
-func (m *disk) Reset() {
+func (m *DiskStore) Reset() {
 	m.chain.EraseAll()
 }
 
-func (m *disk) Len() int {
+func (m *DiskStore) Len() int {
 	count, err := m.chain.Read("index")
 	if err != nil {
 		return 0
@@ -33,7 +33,7 @@ func (m *disk) Len() int {
 
 }
 
-func (m *disk) Last() Block {
+func (m *DiskStore) Last() Block {
 	b := &Block{}
 
 	count, err := m.chain.Read("index")
