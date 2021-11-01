@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
@@ -55,6 +56,15 @@ func MainFlags() []cli.Flag {
 			Name:  "b",
 			Usage: "Encodes the new config in base64, so it can be used as a token",
 		},
+		&cli.BoolFlag{
+			Name:  "api",
+			Usage: "Starts also the API daemon locally for inspecting the network status",
+		},
+		&cli.StringFlag{
+			Name:  "api-listen",
+			Value: ":8080",
+			Usage: "API listening port",
+		},
 		&cli.StringFlag{
 			Name:   "address",
 			Usage:  "VPN virtual address",
@@ -97,6 +107,15 @@ func Main() func(c *cli.Context) error {
 		e := edgevpn.New(cliToOpts(c)...)
 
 		displayStart(e)
+
+		ledger, err := e.Ledger()
+		if err != nil {
+			return err
+		}
+
+		if c.Bool("api") {
+			go api.API(c.String("api-listen"), ledger)
+		}
 
 		if err := e.Start(); err != nil {
 			e.Logger().Fatal(err.Error())
