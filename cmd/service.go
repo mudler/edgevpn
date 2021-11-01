@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
 )
@@ -32,17 +31,15 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 
 			displayStart(e)
 
-			mw, err := e.MessageWriter()
+			ledger, err := e.Ledger()
 			if err != nil {
 				return err
 			}
 
-			ledger := blockchain.New(mw, 1000)
-
 			// Join the node to the network, using our ledger
 			e.ExposeService(ledger, c.String("name"), c.String("remoteaddress"))
 			// Join the node to the network, using our ledger
-			if err := e.Join(ledger); err != nil {
+			if err := e.Join(); err != nil {
 				return err
 			}
 
@@ -79,18 +76,12 @@ to the service over the network`,
 
 			displayStart(e)
 
-			mw, err := e.MessageWriter()
-			if err != nil {
-				return err
-			}
-
-			ledger := blockchain.New(mw, 1000)
-
 			// Join the node to the network, using our ledger
-			if err := e.Join(ledger); err != nil {
+			if err := e.Join(); err != nil {
 				return err
 			}
 
+			ledger, _ := e.Ledger()
 			return e.ConnectToService(ledger, c.String("name"), c.String("srcaddress"))
 		},
 	}

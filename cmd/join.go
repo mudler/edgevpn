@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
 )
@@ -19,15 +18,8 @@ Useful for setting up relays or hop nodes to improve the network connectivity.`,
 
 			displayStart(e)
 
-			mw, err := e.MessageWriter()
-			if err != nil {
-				return err
-			}
-
-			ledger := blockchain.New(mw, 1000)
-
 			// Join the node to the network, using our ledger
-			if err := e.Join(ledger); err != nil {
+			if err := e.Join(); err != nil {
 				return err
 			}
 

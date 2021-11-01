@@ -32,6 +32,8 @@ type EdgeVPN struct {
 	inputCh chan *hub.Message
 	seed    int64
 	host    host.Host
+
+	ledger *blockchain.Ledger
 }
 
 func New(p ...Option) *EdgeVPN {
@@ -51,10 +53,29 @@ func New(p ...Option) *EdgeVPN {
 	}
 }
 
+func (e *EdgeVPN) Ledger() (*blockchain.Ledger, error) {
+	if e.ledger != nil {
+		return e.ledger, nil
+	}
+	mw, err := e.MessageWriter()
+	if err != nil {
+		return nil, err
+	}
+
+	e.ledger = blockchain.New(mw, e.config.MaxBlockChainLength)
+	return e.ledger, nil
+}
+
 // Join the network with the ledger.
 // It does the minimal action required to be connected
 // without any active packet routing
-func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
+func (e *EdgeVPN) Join() error {
+
+	ledger, err := e.Ledger()
+	if err != nil {
+		return err
+	}
+
 	// Set the handler when we receive messages
 	// The ledger needs to read them and update the internal blockchain
 	e.config.Handlers = append(e.config.Handlers, ledger.Update)
@@ -62,7 +83,7 @@ func (e *EdgeVPN) Join(ledger *blockchain.Ledger) error {
 	e.config.Logger.Info("Starting EdgeVPN network")
 
 	// Startup libp2p network
-	err := e.startNetwork()
+	err = e.startNetwork()
 	if err != nil {
 		return err
 	}
@@ -94,12 +115,10 @@ func (e *EdgeVPN) Start() error {
 	}
 	defer ifce.Close()
 
-	mw, err := e.MessageWriter()
+	ledger, err := e.Ledger()
 	if err != nil {
 		return err
 	}
-
-	ledger := blockchain.New(mw, e.config.MaxBlockChainLength)
 
 	// Set the stream handler to get back the packets from the stream to the interface
 	e.config.StreamHandlers[protocol.ID(Protocol)] = streamHandler(ledger, ifce)
@@ -107,7 +126,7 @@ func (e *EdgeVPN) Start() error {
 	// Join the node to the network, using our ledger
 	// it also starts up a goroutine that periodically sends
 	// messages to the network with our blockchain content
-	if err := e.Join(ledger); err != nil {
+	if err := e.Join(); err != nil {
 		return err
 	}
 

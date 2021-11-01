@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
 )
@@ -31,17 +30,14 @@ This is also the ID used to refer when receiving it.`,
 
 			displayStart(e)
 
-			mw, err := e.MessageWriter()
+			ledger, err := e.Ledger()
 			if err != nil {
 				return err
 			}
-
-			ledger := blockchain.New(mw, 1000)
-
 			// Join the node to the network, using our ledger
 			e.SendFile(ledger, c.String("name"), c.String("path"))
 			// Join the node to the network, using our ledger
-			if err := e.Join(ledger); err != nil {
+			if err := e.Join(); err != nil {
 				return err
 			}
 
@@ -75,17 +71,12 @@ func FileReceive() cli.Command {
 
 			displayStart(e)
 
-			mw, err := e.MessageWriter()
-			if err != nil {
-				return err
-			}
-
-			ledger := blockchain.New(mw, 1000)
-
 			// Join the node to the network, using our ledger
-			if err := e.Join(ledger); err != nil {
+			if err := e.Join(); err != nil {
 				return err
 			}
+
+			ledger, _ := e.Ledger()
 
 			return e.ReceiveFile(ledger, c.String("name"), c.String("path"))
 		},

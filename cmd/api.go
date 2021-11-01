@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/mudler/edgevpn/api"
-	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
 )
@@ -26,18 +25,11 @@ A simple UI interface is available to display network data.`,
 
 			displayStart(e)
 
-			mw, err := e.MessageWriter()
-			if err != nil {
-				return err
-			}
-
-			ledger := blockchain.New(mw, 1000)
-
 			// Join the node to the network, using our ledger
-			if err := e.Join(ledger); err != nil {
+			if err := e.Join(); err != nil {
 				return err
 			}
-
+			ledger, _ := e.Ledger()
 			return api.API(c.String("listen"), ledger)
 		},
 	}

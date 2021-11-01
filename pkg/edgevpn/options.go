@@ -203,9 +203,10 @@ type OTP struct {
 type YAMLConnectionConfig struct {
 	OTP OTP `yaml:"otp"`
 
-	RoomName   string `yaml:"room"`
-	Rendezvous string `yaml:"rendezvous"`
-	MDNS       string `yaml:"mdns"`
+	RoomName            string `yaml:"room"`
+	Rendezvous          string `yaml:"rendezvous"`
+	MDNS                string `yaml:"mdns"`
+	MaxBlockChainLength int    `yaml:"max_blockchain_length"`
 }
 
 func (y YAMLConnectionConfig) copy(cfg *Config) {
@@ -222,6 +223,7 @@ func (y YAMLConnectionConfig) copy(cfg *Config) {
 	cfg.SealKeyInterval = y.OTP.Crypto.Interval
 	cfg.ServiceDiscovery = []ServiceDiscovery{d, m}
 	cfg.SealKeyLength = y.OTP.Crypto.Length
+	cfg.MaxBlockChainLength = y.MaxBlockChainLength
 }
 
 func GenerateNewConnectionData() (*YAMLConnectionConfig, error) {
@@ -237,6 +239,7 @@ func GenerateNewConnectionData() (*YAMLConnectionConfig, error) {
 	config.OTP.Crypto.Interval = 9000
 	config.OTP.Crypto.Length = 12
 	config.OTP.DHT.Length = 12
+	config.MaxBlockChainLength = 1000
 
 	return &config, nil
 }
