@@ -290,6 +290,14 @@ and any other way if not mentioned here.
 - [https://github.com/songgao/water](https://github.com/songgao/water) for tun/tap devices in golang
 - [Room example](https://github.com/libp2p/go-libp2p/tree/master/examples/chat-with-rendezvous) (shamelessly parts are copied by)
 
+# :notebook: TODO
+
+- [x] VPN
+- [x] Send and receive files via p2p
+- [x] Expose remote/local services via p2p tunnelling
+- [x] Store arbitrary data on the blockchain
+- [ ] Allow to persist blockchain on disk\
+
 # :notebook: LICENSE
 
 GNU GPLv3.
