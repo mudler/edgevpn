@@ -21,10 +21,6 @@ type Block struct {
 // Blockchain is a series of validated Blocks
 type Blockchain []Block
 
-func (b Blockchain) IsMoreRecent(bb Blockchain) bool {
-	return len(b) > len(bb) || len(b) == len(bb) && b[len(b)-1].Hash != bb[len(bb)-1].Hash
-}
-
 // make sure block is valid by checking index, and comparing the hash of the previous block
 func (newBlock Block) IsValid(oldBlock Block) bool {
 	if oldBlock.Index+1 != newBlock.Index {

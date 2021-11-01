@@ -17,8 +17,7 @@ type Ledger struct {
 	sync.Mutex
 	blockchain store
 
-	maxChainSize int
-	channel      io.Writer
+	channel io.Writer
 
 	onDisk bool
 }
@@ -31,8 +30,8 @@ type store interface {
 }
 
 // New returns a new ledger which writes to the writer
-func New(w io.Writer, maxChainSize int) *Ledger {
-	c := &Ledger{channel: w, maxChainSize: maxChainSize, blockchain: &memory{}}
+func New(w io.Writer, s store) *Ledger {
+	c := &Ledger{channel: w, blockchain: s}
 	c.newGenesis()
 	return c
 }
@@ -60,11 +59,6 @@ func (l *Ledger) Syncronizer(ctx context.Context, t time.Duration) {
 				}
 				l.channel.Write(bytes)
 
-				// Reset blockchain if we exceed chainsize
-				if l.maxChainSize != 0 && l.blockchain.Len() >= l.maxChainSize {
-					l.blockchain.Reset()
-					l.newGenesis()
-				}
 				l.Unlock()
 			case <-ctx.Done():
 				return
@@ -85,9 +79,8 @@ func (l *Ledger) Update(h *hub.Message) (err error) {
 	}
 
 	l.Lock()
-	if (l.maxChainSize == 0 || (l.maxChainSize != 0 && block.Index <= l.maxChainSize)) &&
-		block.Index > l.blockchain.Len() || block.Index == l.blockchain.Len() &&
-		block.Hash != l.blockchain.Last().Hash {
+	if block.Index > l.blockchain.Len() || (block.Index == l.blockchain.Len() &&
+		block.Hash != l.blockchain.Last().Hash) {
 		l.blockchain.Add(*block)
 	}
 	l.Unlock()

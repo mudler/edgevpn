@@ -51,13 +51,6 @@ func WithInterfaceMTU(i int) func(cfg *Config) error {
 	}
 }
 
-func WithMaxBlockChainSize(i int) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.MaxBlockChainLength = i
-		return nil
-	}
-}
-
 func WithPacketMTU(i int) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.MTU = i
@@ -224,7 +217,6 @@ func (y YAMLConnectionConfig) copy(cfg *Config) {
 	cfg.SealKeyInterval = y.OTP.Crypto.Interval
 	cfg.ServiceDiscovery = []ServiceDiscovery{d, m}
 	cfg.SealKeyLength = y.OTP.Crypto.Length
-	cfg.MaxBlockChainLength = y.MaxBlockChainLength
 	cfg.MaxMessageSize = y.MaxMessageSize
 }
 
@@ -241,7 +233,6 @@ func GenerateNewConnectionData() (*YAMLConnectionConfig, error) {
 	config.OTP.Crypto.Interval = 9000
 	config.OTP.Crypto.Length = 12
 	config.OTP.DHT.Length = 12
-	config.MaxBlockChainLength = 0
 	config.MaxMessageSize = 20 << 20 // 20MB
 
 	return &config, nil

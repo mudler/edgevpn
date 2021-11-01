@@ -62,7 +62,7 @@ func (e *EdgeVPN) Ledger() (*blockchain.Ledger, error) {
 		return nil, err
 	}
 
-	e.ledger = blockchain.New(mw, e.config.MaxBlockChainLength)
+	e.ledger = blockchain.New(mw, &blockchain.MemoryStore{})
 	return e.ledger, nil
 }
 

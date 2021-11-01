@@ -1,21 +1,21 @@
 package blockchain
 
-type memory struct {
+type MemoryStore struct {
 	block *Block
 }
 
-func (m *memory) Add(b Block) {
+func (m *MemoryStore) Add(b Block) {
 	m.block = &b
 }
 
-func (m *memory) Reset() {
+func (m *MemoryStore) Reset() {
 	m.block = &Block{}
 }
 
-func (m *memory) Len() int {
+func (m *MemoryStore) Len() int {
 	return m.block.Index
 }
 
-func (m *memory) Last() Block {
+func (m *MemoryStore) Last() Block {
 	return *m.block
 }
