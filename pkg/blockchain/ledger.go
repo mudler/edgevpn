@@ -1,9 +1,12 @@
 package blockchain
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"log"
 	"sync"
 	"time"
@@ -52,11 +55,13 @@ func (l *Ledger) Syncronizer(ctx context.Context, t time.Duration) {
 			select {
 			case <-t.C:
 				l.Lock()
+
 				bytes, err := json.Marshal(l.blockchain.Last())
 				if err != nil {
 					log.Println(err)
 				}
-				l.channel.Write(bytes)
+
+				l.channel.Write(compress(bytes).Bytes())
 
 				l.Unlock()
 			case <-ctx.Done():
@@ -66,12 +71,39 @@ func (l *Ledger) Syncronizer(ctx context.Context, t time.Duration) {
 	}()
 }
 
+func compress(b []byte) *bytes.Buffer {
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	gz.Write(b)
+	gz.Close()
+	return &buf
+}
+
+func deCompress(b []byte) (*bytes.Buffer, error) {
+	r, err := gzip.NewReader(bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	result, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.NewBuffer(result), nil
+}
+
 // Update the blockchain from a message
 func (l *Ledger) Update(h *hub.Message) (err error) {
 	//chain := make(Blockchain, 0)
 	block := &Block{}
 
-	err = json.Unmarshal([]byte(h.Message), block)
+	b, err := deCompress([]byte(h.Message))
+	if err != nil {
+		err = errors.Wrap(err, "failed decompressing")
+		return
+	}
+
+	err = json.Unmarshal(b.Bytes(), block)
 	if err != nil {
 		err = errors.Wrap(err, "failed unmarshalling blockchain data")
 		return
@@ -278,5 +310,5 @@ func (l *Ledger) writeData(s map[string]map[string]Data) {
 		log.Println(err)
 	}
 
-	l.channel.Write(bytes)
+	l.channel.Write(compress(bytes).Bytes())
 }
