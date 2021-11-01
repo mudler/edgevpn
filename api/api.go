@@ -88,6 +88,10 @@ func API(l string, ledger *blockchain.Ledger) error {
 		return c.JSON(http.StatusOK, ledger.BlockChain())
 	})
 
+	ec.GET("/api/ledger", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, ledger.CurrentData())
+	})
+
 	ec.GET("/api/ledger/:bucket/:key", func(c echo.Context) error {
 		bucket := c.Param("bucket")
 		key := c.Param("key")
