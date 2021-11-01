@@ -273,7 +273,7 @@ func (l *Ledger) writeData(s map[string]map[string]Data) {
 		l.Unlock()
 	}
 
-	bytes, err := json.Marshal(l.blockchain)
+	bytes, err := json.Marshal(l.blockchain.Last())
 	if err != nil {
 		log.Println(err)
 	}
