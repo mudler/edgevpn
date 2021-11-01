@@ -6,6 +6,7 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/mudler/edgevpn/pkg/logger"
+	"github.com/peterbourgon/diskv"
 	"github.com/songgao/water"
 	"github.com/urfave/cli"
 )
@@ -22,6 +23,8 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 	iface := c.String("interface")
 	logLevel := c.String("log-level")
 	libp2plogLevel := c.String("libp2p-log-level")
+
+	ledgerState := c.String("ledger-state")
 
 	lvl, err := log.LevelFromString(logLevel)
 	if err != nil {
@@ -40,17 +43,29 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		token == "" {
 		llger.Fatal("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. At least a config file is required")
 	}
-	return []edgevpn.Option{
+
+	opts := []edgevpn.Option{
 		edgevpn.Logger(llger),
 		edgevpn.LibP2PLogLevel(libp2plvl),
 		edgevpn.WithInterfaceMTU(c.Int("mtu")),
 		edgevpn.WithPacketMTU(1420),
 		edgevpn.WithInterfaceAddress(address),
 		edgevpn.WithInterfaceName(iface),
-		edgevpn.WithStore(&blockchain.MemoryStore{}),
 		edgevpn.WithInterfaceType(water.TUN),
 		edgevpn.NetLinkBootstrap(true),
 		edgevpn.FromBase64(token),
 		edgevpn.FromYaml(config),
 	}
+
+	if ledgerState != "" {
+		opts = append(opts, edgevpn.WithStore(blockchain.NewDiskStore(diskv.New(diskv.Options{
+			BasePath:     ledgerState,
+			CacheSizeMax: uint64(50), // 50MB
+		}))))
+	} else {
+		opts = append(opts, edgevpn.WithStore(&blockchain.MemoryStore{}))
+
+	}
+
+	return opts
 }

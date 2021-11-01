@@ -12,6 +12,10 @@ type DiskStore struct {
 	chain *diskv.Diskv
 }
 
+func NewDiskStore(d *diskv.Diskv) *DiskStore {
+	return &DiskStore{chain: d}
+}
+
 func (m *DiskStore) Add(b Block) {
 	bb, _ := json.Marshal(b)
 	m.chain.Write(fmt.Sprint(b.Index), bb)

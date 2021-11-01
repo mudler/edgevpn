@@ -29,6 +29,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Value:  1200,
 	},
 	&cli.StringFlag{
+		Name:   "ledger-state",
+		Usage:  "Specify a ledger state directory",
+		EnvVar: "EDGEVPNLEDGERSTATE",
+	},
+	&cli.StringFlag{
 		Name:   "log-level",
 		Usage:  "Specify loglevel",
 		EnvVar: "EDGEVPNLOGLEVEL",
