@@ -38,7 +38,7 @@ jobs:
           path: edgevpn
           if-no-files-found: error
   
-  test:
+  vpntest:
     runs-on: ubuntu-latest
     needs: build
     strategy:
@@ -67,4 +67,34 @@ jobs:
         run: |
               chmod +x edgevpn
               sudo EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=${{ matrix.ip }} ./edgevpn &
-              bash ./.github/test.sh ${{ matrix.target_ip }}
+              bash ./.github/vpntest.sh ${{ matrix.target_ip }}
+
+
+  filestest:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - role: "sender"
+          - role: "receiver"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: connection
+          path: ./
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: edgevpn
+          path: ./
+      - name: File test
+        run: |
+              chmod +x edgevpn
+              export EDGEVPNCONFIG=config.yaml
+              bash ./.github/filetest.sh ${{ matrix.role }}
