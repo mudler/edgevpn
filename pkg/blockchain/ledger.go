@@ -192,12 +192,12 @@ func (l *Ledger) CurrentData() map[string]map[string]Data {
 	return l.blockchain.Last().Storage
 }
 
-// // BlockChain returns the current blockchain (locking)
-// func (l *Ledger) BlockChain() Blockchain {
-// 	l.Lock()
-// 	defer l.Unlock()
-// 	return l.blockchain
-// }
+// LastBlock returns the last block in the blockchain
+func (l *Ledger) LastBlock() Block {
+	l.Lock()
+	defer l.Unlock()
+	return l.blockchain.Last()
+}
 
 // Add data to the blockchain
 func (l *Ledger) Add(b string, s map[string]interface{}) {

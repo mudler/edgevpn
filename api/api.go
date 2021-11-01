@@ -84,9 +84,9 @@ func API(l string, ledger *blockchain.Ledger) error {
 
 	ec.GET("/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
 
-	// ec.GET("/api/blockchain", func(c echo.Context) error {
-	// 	return c.JSON(http.StatusOK, ledger.BlockChain())
-	// })
+	ec.GET("/api/blockchain", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, ledger.LastBlock())
+	})
 
 	ec.GET("/api/ledger", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, ledger.CurrentData())

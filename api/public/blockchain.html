@@ -105,28 +105,36 @@
     </section>
           <script type="text/javascript">
             $(document).ready(function() {
-                var table = $('#table').DataTable( {
-                    "processing": true,
-                    "ajax": {
-                        "url": "/api/blockchain",
-                        "type": "GET",
-                        "dataSrc": '',
-                    },
-                    'language':{ 
-                      "loadingRecords": "&nbsp;",
-                      "processing": "Loading..."
-                    },
-                    "columns": [
-                        { "data": "Index" },
-                        { "data": "Timestamp" },
-                        { "data": "Hash" },
-                        { "data": "PrevHash" },
-                    ],
-                } );
+              var resp
+              var table = $('#table').DataTable()
+              sync = function() {
+                $.ajax({
+                    url: "/api/blockchain",
+                    type: "GET",
+                    cache: false,
+                    async: true,
 
-                setInterval( function () {
-                    table.ajax.reload();
-                }, 30000 );
+                    dataType: "json",
+                    success: function (response) {
+                        // response is JSON
+                        if (resp && response.Index <= resp.Index ) {
+                          return
+                        }
+
+                       resp = response
+                       table.row.add( [
+                            resp.Index,
+                            resp.Timestamp,
+                            resp.Hash,
+                            resp.PrevHash
+                          ] ).draw( false );
+                    }
+                });
+              }
+              sync()
+              setInterval( function () {
+                 sync()
+                }, 5000 );
             } );
         </script>  
         <footer class="footer">
