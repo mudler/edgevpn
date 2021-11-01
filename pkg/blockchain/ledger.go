@@ -24,7 +24,6 @@ type Ledger struct {
 
 type Store interface {
 	Add(Block)
-	Reset()
 	Len() int
 	Last() Block
 }

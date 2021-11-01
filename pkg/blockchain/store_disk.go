@@ -23,10 +23,6 @@ func (m *DiskStore) Add(b Block) {
 
 }
 
-func (m *DiskStore) Reset() {
-	m.chain.EraseAll()
-}
-
 func (m *DiskStore) Len() int {
 	count, err := m.chain.Read("index")
 	if err != nil {
