@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"embed"
 	"io/fs"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/mudler/edgevpn/pkg/blockchain"
@@ -86,5 +88,36 @@ func API(l string, ledger *blockchain.Ledger) error {
 		return c.JSON(http.StatusOK, ledger.BlockChain())
 	})
 
+	ec.GET("/api/ledger/:bucket/:key", func(c echo.Context) error {
+		bucket := c.Param("bucket")
+		key := c.Param("key")
+		//		c.SetHandler()
+		return c.JSON(http.StatusOK, ledger.CurrentData()[bucket][key])
+	})
+
+	ec.GET("/api/ledger/:bucket", func(c echo.Context) error {
+		bucket := c.Param("bucket")
+		//		c.SetHandler()
+		return c.JSON(http.StatusOK, ledger.CurrentData()[bucket])
+	})
+
+	ec.PUT("/api/ledger/:bucket/:key/:value", func(c echo.Context) error {
+		bucket := c.Param("bucket")
+		key := c.Param("key")
+		value := c.Param("value")
+
+		put, cancel := context.WithCancel(context.Background())
+		ledger.Announce(put, 5*time.Second, func() {
+			v, exists := ledger.CurrentData()[bucket][key]
+			if !exists || string(v) != value {
+				ledger.Add(bucket, map[string]interface{}{key: value})
+			}
+			if exists && string(v) == value {
+				cancel()
+			}
+		})
+		//		c.SetHandler()
+		return c.JSON(http.StatusOK, "Announcing")
+	})
 	return ec.Start(l)
 }
