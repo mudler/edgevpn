@@ -9,20 +9,30 @@ import (
 	"time"
 
 	"github.com/mudler/edgevpn/pkg/hub"
+
 	"github.com/pkg/errors"
 )
 
 type Ledger struct {
 	sync.Mutex
-	blockchain Blockchain
+	blockchain store
 
 	maxChainSize int
 	channel      io.Writer
+
+	onDisk bool
+}
+
+type store interface {
+	Add(Block)
+	Reset()
+	Len() int
+	Last() Block
 }
 
 // New returns a new ledger which writes to the writer
 func New(w io.Writer, maxChainSize int) *Ledger {
-	c := &Ledger{channel: w, maxChainSize: maxChainSize}
+	c := &Ledger{channel: w, maxChainSize: maxChainSize, blockchain: &memory{}}
 	c.newGenesis()
 	return c
 }
@@ -31,7 +41,7 @@ func (l *Ledger) newGenesis() {
 	t := time.Now()
 	genesisBlock := Block{}
 	genesisBlock = Block{0, t.String(), map[string]map[string]Data{}, genesisBlock.Checksum(), ""}
-	l.blockchain = append(l.blockchain, genesisBlock)
+	l.blockchain.Add(genesisBlock)
 }
 
 // Syncronizer starts a goroutine which
@@ -44,15 +54,15 @@ func (l *Ledger) Syncronizer(ctx context.Context, t time.Duration) {
 			select {
 			case <-t.C:
 				l.Lock()
-				bytes, err := json.Marshal(l.blockchain)
+				bytes, err := json.Marshal(l.blockchain.Last())
 				if err != nil {
 					log.Println(err)
 				}
 				l.channel.Write(bytes)
 
 				// Reset blockchain if we exceed chainsize
-				if l.maxChainSize != 0 && len(l.blockchain) >= l.maxChainSize {
-					l.blockchain = []Block{}
+				if l.maxChainSize != 0 && l.blockchain.Len() >= l.maxChainSize {
+					l.blockchain.Reset()
 					l.newGenesis()
 				}
 				l.Unlock()
@@ -71,18 +81,20 @@ func (l *Ledger) String() string {
 
 // Update the blockchain from a message
 func (l *Ledger) Update(h *hub.Message) (err error) {
-	chain := make(Blockchain, 0)
+	//chain := make(Blockchain, 0)
+	block := &Block{}
 
-	err = json.Unmarshal([]byte(h.Message), &chain)
+	err = json.Unmarshal([]byte(h.Message), block)
 	if err != nil {
 		err = errors.Wrap(err, "failed unmarshalling blockchain data")
 		return
 	}
 
 	l.Lock()
-	if (l.maxChainSize == 0 || (l.maxChainSize != 0 && len(chain) <= l.maxChainSize)) &&
-		chain.IsMoreRecent(l.blockchain) {
-		l.blockchain = chain
+	if (l.maxChainSize == 0 || (l.maxChainSize != 0 && block.Index <= l.maxChainSize)) &&
+		block.Index > l.blockchain.Len() || block.Index == l.blockchain.Len() &&
+		block.Hash != l.blockchain.Last().Hash {
+		l.blockchain.Add(*block)
 	}
 	l.Unlock()
 
@@ -153,17 +165,13 @@ func (l *Ledger) Persist(ctx context.Context, interval time.Duration, bucket, ke
 	})
 }
 
-func (l *Ledger) lastBlock() Block {
-	return (l.blockchain[len(l.blockchain)-1])
-}
-
 // GetKey retrieve the current key from the blockchain
 func (l *Ledger) GetKey(b, s string) (value Data, exists bool) {
 	l.Lock()
 	defer l.Unlock()
 
-	if len(l.blockchain) > 0 {
-		last := l.lastBlock()
+	if l.blockchain.Len() > 0 {
+		last := l.blockchain.Last()
 		if _, exists = last.Storage[b]; !exists {
 			return
 		}
@@ -179,8 +187,8 @@ func (l *Ledger) GetKey(b, s string) (value Data, exists bool) {
 func (l *Ledger) Exists(b string, f func(Data) bool) (exists bool) {
 	l.Lock()
 	defer l.Unlock()
-	if len(l.blockchain) > 0 {
-		for _, bv := range l.lastBlock().Storage[b] {
+	if l.blockchain.Len() > 0 {
+		for _, bv := range l.blockchain.Last().Storage[b] {
 			if f(bv) {
 				exists = true
 				return
@@ -195,20 +203,20 @@ func (l *Ledger) Exists(b string, f func(Data) bool) (exists bool) {
 func (l *Ledger) CurrentData() map[string]map[string]Data {
 	l.Lock()
 	defer l.Unlock()
-	return l.lastBlock().Storage
+	return l.blockchain.Last().Storage
 }
 
-// BlockChain returns the current blockchain (locking)
-func (l *Ledger) BlockChain() Blockchain {
-	l.Lock()
-	defer l.Unlock()
-	return l.blockchain
-}
+// // BlockChain returns the current blockchain (locking)
+// func (l *Ledger) BlockChain() Blockchain {
+// 	l.Lock()
+// 	defer l.Unlock()
+// 	return l.blockchain
+// }
 
 // Add data to the blockchain
 func (l *Ledger) Add(b string, s map[string]interface{}) {
 	l.Lock()
-	current := l.lastBlock().Storage
+	current := l.blockchain.Last().Storage
 	for s, k := range s {
 		if _, exists := current[b]; !exists {
 			current[b] = make(map[string]Data)
@@ -224,7 +232,7 @@ func (l *Ledger) Add(b string, s map[string]interface{}) {
 func (l *Ledger) Delete(b string, k string) {
 	l.Lock()
 	new := make(map[string]map[string]Data)
-	for bb, kk := range l.lastBlock().Storage {
+	for bb, kk := range l.blockchain.Last().Storage {
 		if _, exists := new[bb]; !exists {
 			new[bb] = make(map[string]Data)
 		}
@@ -243,7 +251,7 @@ func (l *Ledger) Delete(b string, k string) {
 func (l *Ledger) DeleteBucket(b string) {
 	l.Lock()
 	new := make(map[string]map[string]Data)
-	for bb, kk := range l.lastBlock().Storage {
+	for bb, kk := range l.blockchain.Last().Storage {
 		// Copy all except the specified bucket
 		if bb == b {
 			continue
@@ -260,11 +268,11 @@ func (l *Ledger) DeleteBucket(b string) {
 }
 
 func (l *Ledger) writeData(s map[string]map[string]Data) {
-	newBlock := l.lastBlock().NewBlock(s)
+	newBlock := l.blockchain.Last().NewBlock(s)
 
-	if newBlock.IsValid(l.lastBlock()) {
+	if newBlock.IsValid(l.blockchain.Last()) {
 		l.Lock()
-		l.blockchain = append(l.blockchain, newBlock)
+		l.blockchain.Add(newBlock)
 		l.Unlock()
 	}
 

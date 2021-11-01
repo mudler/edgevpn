@@ -18,6 +18,7 @@ require (
 	github.com/lthibault/jitterbug v2.0.0+incompatible
 	github.com/mudler/go-isterminal v0.0.0-20211031135732-5e4e06fc5a58 // indirect
 	github.com/multiformats/go-multiaddr v0.4.0
+	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.33 // indirect
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
