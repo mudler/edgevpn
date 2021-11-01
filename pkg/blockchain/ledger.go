@@ -51,8 +51,9 @@ func (l *Ledger) Syncronizer(ctx context.Context, t time.Duration) {
 				l.channel.Write(bytes)
 
 				// Reset blockchain if we exceed chainsize
-				if l.maxChainSize != 0 && len(l.blockchain) > l.maxChainSize {
+				if l.maxChainSize != 0 && len(l.blockchain) >= l.maxChainSize {
 					l.blockchain = []Block{}
+					l.newGenesis()
 				}
 				l.Unlock()
 			case <-ctx.Done():
@@ -79,7 +80,8 @@ func (l *Ledger) Update(h *hub.Message) (err error) {
 	}
 
 	l.Lock()
-	if chain.IsMoreRecent(l.blockchain) {
+	if (l.maxChainSize == 0 || (l.maxChainSize != 0 && len(chain) <= l.maxChainSize)) &&
+		chain.IsMoreRecent(l.blockchain) {
 		l.blockchain = chain
 	}
 	l.Unlock()
