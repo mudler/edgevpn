@@ -109,6 +109,50 @@ func (l *Ledger) Announce(ctx context.Context, t time.Duration, async func()) {
 	}()
 }
 
+// AnnounceDeleteBucket Announce a deletion of a bucket. It stops when the bucket is deleted
+func (l *Ledger) AnnounceDeleteBucket(ctx context.Context, interval time.Duration, bucket string) {
+	del, cancel := context.WithCancel(ctx)
+
+	l.Announce(del, interval, func() {
+		_, exists := l.CurrentData()[bucket]
+		if exists {
+			l.DeleteBucket(bucket)
+		} else {
+			cancel()
+		}
+	})
+}
+
+// AnnounceDeleteBucketKey Announce a deletion of a key from a bucket. It stops when the key is deleted
+func (l *Ledger) AnnounceDeleteBucketKey(ctx context.Context, interval time.Duration, bucket, key string) {
+	del, cancel := context.WithCancel(ctx)
+
+	l.Announce(del, interval, func() {
+		_, exists := l.CurrentData()[bucket][key]
+		if exists {
+			l.Delete(bucket, key)
+		} else {
+			cancel()
+		}
+	})
+}
+
+// Persist Keeps announcing something into the blockchain until it is reconciled
+func (l *Ledger) Persist(ctx context.Context, interval time.Duration, bucket, key string, value interface{}) {
+	put, cancel := context.WithCancel(ctx)
+
+	l.Announce(put, interval, func() {
+		v, exists := l.CurrentData()[bucket][key]
+		realv, _ := json.Marshal(value)
+		switch {
+		case !exists || string(v) != string(realv):
+			l.Add(bucket, map[string]interface{}{key: value})
+		case exists && string(v) == string(realv):
+			cancel()
+		}
+	})
+}
+
 func (l *Ledger) lastBlock() Block {
 	return (l.blockchain[len(l.blockchain)-1])
 }
@@ -131,7 +175,7 @@ func (l *Ledger) GetKey(b, s string) (value Data, exists bool) {
 	return
 }
 
-// ExistsValue returns true if there is one element with a matching value
+// Exists returns true if there is one element with a matching value
 func (l *Ledger) Exists(b string, f func(Data) bool) (exists bool) {
 	l.Lock()
 	defer l.Unlock()
@@ -147,12 +191,14 @@ func (l *Ledger) Exists(b string, f func(Data) bool) (exists bool) {
 	return
 }
 
+// CurrentData returns the current ledger data (locking)
 func (l *Ledger) CurrentData() map[string]map[string]Data {
 	l.Lock()
 	defer l.Unlock()
 	return l.lastBlock().Storage
 }
 
+// BlockChain returns the current blockchain (locking)
 func (l *Ledger) BlockChain() Blockchain {
 	l.Lock()
 	defer l.Unlock()
@@ -174,7 +220,7 @@ func (l *Ledger) Add(b string, s map[string]interface{}) {
 	l.writeData(current)
 }
 
-// Deletes data from the blockchain
+// Delete data from the ledger (locking)
 func (l *Ledger) Delete(b string, k string) {
 	l.Lock()
 	new := make(map[string]map[string]Data)
@@ -193,7 +239,7 @@ func (l *Ledger) Delete(b string, k string) {
 	l.writeData(new)
 }
 
-// Deletes data from the blockchain
+// DeleteBucket deletes a bucket from the ledger (locking)
 func (l *Ledger) DeleteBucket(b string) {
 	l.Lock()
 	new := make(map[string]map[string]Data)

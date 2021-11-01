@@ -111,16 +111,7 @@ func API(l string, ledger *blockchain.Ledger) error {
 		key := c.Param("key")
 		value := c.Param("value")
 
-		put, cancel := context.WithCancel(context.Background())
-		ledger.Announce(put, 5*time.Second, func() {
-			v, exists := ledger.CurrentData()[bucket][key]
-			switch {
-			case !exists || string(v) != value:
-				ledger.Add(bucket, map[string]interface{}{key: value})
-			case exists && string(v) == value:
-				cancel()
-			}
-		})
+		ledger.Persist(context.Background(), 5*time.Second, bucket, key, value)
 		return c.JSON(http.StatusOK, announcing)
 	})
 
@@ -128,15 +119,7 @@ func API(l string, ledger *blockchain.Ledger) error {
 	ec.DELETE("/api/ledger/:bucket", func(c echo.Context) error {
 		bucket := c.Param("bucket")
 
-		put, cancel := context.WithCancel(context.Background())
-		ledger.Announce(put, 5*time.Second, func() {
-			_, exists := ledger.CurrentData()[bucket]
-			if exists {
-				ledger.DeleteBucket(bucket)
-			} else {
-				cancel()
-			}
-		})
+		ledger.AnnounceDeleteBucket(context.Background(), 5*time.Second, bucket)
 		return c.JSON(http.StatusOK, announcing)
 	})
 
@@ -144,15 +127,7 @@ func API(l string, ledger *blockchain.Ledger) error {
 		bucket := c.Param("bucket")
 		key := c.Param("key")
 
-		put, cancel := context.WithCancel(context.Background())
-		ledger.Announce(put, 5*time.Second, func() {
-			_, exists := ledger.CurrentData()[bucket][key]
-			if exists {
-				ledger.Delete(bucket, key)
-			} else {
-				cancel()
-			}
-		})
+		ledger.AnnounceDeleteBucketKey(context.Background(), 5*time.Second, bucket, key)
 		return c.JSON(http.StatusOK, announcing)
 	})
 
