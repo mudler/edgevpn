@@ -25,7 +25,7 @@ type DHT struct {
 	BootstrapPeers       AddrList
 	latestRendezvous     string
 	console              log.StandardLogger
-	RefreshDiscoveryTime int64
+	RefreshDiscoveryTime time.Duration
 	dht                  *dht.IpfsDHT
 }
 
@@ -83,7 +83,7 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 
 	// Bootstrap the DHT. In the default configuration, this spawns a Background
 	// thread that will refresh the peer table every five minutes.
-	c.Info("Bootstrapping the DHT")
+	c.Info("Bootstrapping DHT")
 	if err = kademliaDHT.Bootstrap(ctx); err != nil {
 		return err
 	}
@@ -100,9 +100,8 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 
 	go func() {
 		connect()
-
 		t := jitterbug.New(
-			time.Second*time.Duration(d.RefreshDiscoveryTime),
+			d.RefreshDiscoveryTime,
 			&jitterbug.Norm{Stdev: time.Second * 10},
 		)
 		defer t.Stop()

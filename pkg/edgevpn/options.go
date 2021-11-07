@@ -3,6 +3,7 @@ package edgevpn
 import (
 	"encoding/base64"
 	"io/ioutil"
+	"time"
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
@@ -170,15 +171,6 @@ func SealKeyLength(i int) func(cfg *Config) error {
 func LibP2PLogLevel(l log.LogLevel) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		log.SetAllLoggers(l)
-		//log.SetLogLevel("edgevpn", zapcore.Level(l).String())
-		// log.SetLogLevel("pubsub", "fatal")
-		// log.SetLogLevel("dht/RtRefreshManager", "fatal")
-		// log.SetLogLevel("swarm2", "fatal")
-		// log.SetLogLevel("basichost", "fatal")
-		// log.SetLogLevel("relay", "fatal")
-		// log.SetLogLevel("dht", "fatal")
-		// log.SetLogLevel("mdns", "fatal")
-		// log.SetLogLevel("net/identify", "fatal")
 		return nil
 	}
 }
@@ -186,6 +178,27 @@ func LibP2PLogLevel(l log.LogLevel) func(cfg *Config) error {
 func MaxMessageSize(i int) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.MaxMessageSize = i
+		return nil
+	}
+}
+
+func WithLedgerAnnounceTime(t time.Duration) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.LedgerAnnounceTime = t
+		return nil
+	}
+}
+
+func WithLedgerInterval(t time.Duration) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.LedgerSyncronizationTime = t
+		return nil
+	}
+}
+
+func WithDiscoveryInterval(t time.Duration) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.DiscoveryInterval = t
 		return nil
 	}
 }
@@ -204,16 +217,15 @@ type OTP struct {
 type YAMLConnectionConfig struct {
 	OTP OTP `yaml:"otp"`
 
-	RoomName            string `yaml:"room"`
-	Rendezvous          string `yaml:"rendezvous"`
-	MDNS                string `yaml:"mdns"`
-	MaxBlockChainLength int    `yaml:"max_blockchain_length"`
-	MaxMessageSize      int    `yaml:"max_message_size"`
+	RoomName       string `yaml:"room"`
+	Rendezvous     string `yaml:"rendezvous"`
+	MDNS           string `yaml:"mdns"`
+	MaxMessageSize int    `yaml:"max_message_size"`
 }
 
 func (y YAMLConnectionConfig) copy(cfg *Config) {
 	d := &discovery.DHT{
-		RefreshDiscoveryTime: 60,
+		RefreshDiscoveryTime: cfg.DiscoveryInterval,
 		OTPInterval:          y.OTP.DHT.Interval,
 		OTPKey:               y.OTP.DHT.Key,
 		KeyLength:            y.OTP.DHT.Length,
@@ -228,22 +240,25 @@ func (y YAMLConnectionConfig) copy(cfg *Config) {
 	cfg.MaxMessageSize = y.MaxMessageSize
 }
 
-func GenerateNewConnectionData() (*YAMLConnectionConfig, error) {
-	config := YAMLConnectionConfig{}
-
-	config.RoomName = utils.RandStringRunes(23)
-	config.Rendezvous = utils.RandStringRunes(23)
-	config.MDNS = utils.RandStringRunes(23)
-
-	config.OTP.DHT.Key = gotp.RandomSecret(16)
-	config.OTP.Crypto.Key = gotp.RandomSecret(16)
-	config.OTP.DHT.Interval = 9000
-	config.OTP.Crypto.Interval = 9000
-	config.OTP.Crypto.Length = 12
-	config.OTP.DHT.Length = 12
-	config.MaxMessageSize = 20 << 20 // 20MB
-
-	return &config, nil
+func GenerateNewConnectionData() *YAMLConnectionConfig {
+	return &YAMLConnectionConfig{
+		MaxMessageSize: 20 << 20, // 20MB
+		RoomName:       utils.RandStringRunes(23),
+		Rendezvous:     utils.RandStringRunes(23),
+		MDNS:           utils.RandStringRunes(23),
+		OTP: OTP{
+			DHT: OTPConfig{
+				Key:      gotp.RandomSecret(16),
+				Interval: 9000,
+				Length:   12,
+			},
+			Crypto: OTPConfig{
+				Key:      gotp.RandomSecret(16),
+				Interval: 9000,
+				Length:   12,
+			},
+		},
+	}
 }
 
 func FromYaml(path string) func(cfg *Config) error {

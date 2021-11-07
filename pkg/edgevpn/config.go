@@ -53,7 +53,7 @@ type Config struct {
 	StreamHandlers             map[protocol.ID]StreamHandler
 	AdditionalOptions, Options []libp2p.Option
 
-	LedgerSyncronizationTime, LedgerAnnounceTime time.Duration
+	DiscoveryInterval, LedgerSyncronizationTime, LedgerAnnounceTime time.Duration
 }
 
 type StreamHandler func(stream network.Stream)

@@ -16,41 +16,6 @@ This program comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
 under certain conditions.`
 
-var CommonFlags []cli.Flag = []cli.Flag{
-	&cli.StringFlag{
-		Name:   "config",
-		Usage:  "Specify a path to a edgevpn config file",
-		EnvVar: "EDGEVPNCONFIG",
-	},
-	&cli.IntFlag{
-		Name:   "mtu",
-		Usage:  "Specify a mtu",
-		EnvVar: "EDGEVPNMTU",
-		Value:  1200,
-	},
-	&cli.StringFlag{
-		Name:   "ledger-state",
-		Usage:  "Specify a ledger state directory",
-		EnvVar: "EDGEVPNLEDGERSTATE",
-	},
-	&cli.StringFlag{
-		Name:   "log-level",
-		Usage:  "Specify loglevel",
-		EnvVar: "EDGEVPNLOGLEVEL",
-		Value:  "info",
-	},
-	&cli.StringFlag{
-		Name:   "libp2p-log-level",
-		Usage:  "Specify libp2p loglevel",
-		EnvVar: "EDGEVPNLIBP2PLOGLEVEL",
-		Value:  "fatal",
-	},
-	&cli.StringFlag{
-		Name:   "token",
-		Usage:  "Specify an edgevpn token in place of a config file",
-		EnvVar: "EDGEVPNTOKEN",
-	}}
-
 func MainFlags() []cli.Flag {
 	return append([]cli.Flag{
 		&cli.BoolFlag{
@@ -88,12 +53,7 @@ func Main() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		if c.Bool("g") {
 			// Generates a new config and exit
-			newData, err := edgevpn.GenerateNewConnectionData()
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-
+			newData := edgevpn.GenerateNewConnectionData()
 			bytesData, err := yaml.Marshal(newData)
 			if err != nil {
 				fmt.Println(err)

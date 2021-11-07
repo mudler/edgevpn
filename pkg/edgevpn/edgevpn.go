@@ -38,6 +38,7 @@ type EdgeVPN struct {
 
 func New(p ...Option) *EdgeVPN {
 	c := Config{
+		DiscoveryInterval:        120 * time.Second,
 		StreamHandlers:           make(map[protocol.ID]StreamHandler),
 		LedgerAnnounceTime:       5 * time.Second,
 		LedgerSyncronizationTime: 5 * time.Second,
@@ -135,6 +136,7 @@ func (e *EdgeVPN) Start() error {
 	if err != nil {
 		return err
 	}
+
 	ledger.Announce(
 		context.Background(),
 		e.config.LedgerAnnounceTime,
@@ -165,7 +167,7 @@ func (e *EdgeVPN) Start() error {
 
 // end signals the event loop to exit gracefully
 func (e *EdgeVPN) Stop() {
-	e.doneCh <- struct{}{}
+	close(e.doneCh)
 }
 
 // MessageWriter returns a new MessageWriter bound to the edgevpn instance
