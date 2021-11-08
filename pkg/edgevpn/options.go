@@ -203,6 +203,13 @@ func WithDiscoveryInterval(t time.Duration) func(cfg *Config) error {
 	}
 }
 
+func WithDiscoveryBootstrapPeers(a discovery.AddrList) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.DiscoveryBootstrapPeers = a
+		return nil
+	}
+}
+
 type OTPConfig struct {
 	Interval int    `yaml:"interval"`
 	Key      string `yaml:"key"`
@@ -230,6 +237,7 @@ func (y YAMLConnectionConfig) copy(cfg *Config) {
 		OTPKey:               y.OTP.DHT.Key,
 		KeyLength:            y.OTP.DHT.Length,
 		RendezvousString:     y.Rendezvous,
+		BootstrapPeers:       cfg.DiscoveryBootstrapPeers,
 	}
 	m := &discovery.MDNS{DiscoveryServiceTag: y.MDNS}
 	cfg.ExchangeKey = y.OTP.Crypto.Key

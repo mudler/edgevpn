@@ -6,6 +6,7 @@ import (
 	"github.com/ipfs/go-log"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
+	"github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/peterbourgon/diskv"
@@ -60,6 +61,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "EDGEVPNLIBP2PLOGLEVEL",
 		Value:  "fatal",
 	},
+	&cli.StringSliceFlag{
+		Name:   "discovery-bootstrap-peers",
+		Usage:  "List of discovery peers to use",
+		EnvVar: "EDGEVPNBOOTSTRAPPEERS",
+	},
 	&cli.StringFlag{
 		Name:   "token",
 		Usage:  "Specify an edgevpn token in place of a config file",
@@ -81,6 +87,9 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 
 	ledgerState := c.String("ledger-state")
 
+	addrsList := discovery.AddrList{}
+	peers := c.StringSlice("discovery-bootstrap-peers")
+
 	lvl, err := log.LevelFromString(logLevel)
 	if err != nil {
 		lvl = log.LevelError
@@ -99,11 +108,18 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		llger.Fatal("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. At least a config file is required")
 	}
 
+	for _, p := range peers {
+		if err := addrsList.Set(p); err != nil {
+			llger.Fatal("Failed reading bootstrap peer list", err.Error())
+		}
+	}
+
 	opts := []edgevpn.Option{
 		edgevpn.WithDiscoveryInterval(time.Duration(c.Int("discovery-interval")) * time.Second),
 		edgevpn.WithLedgerAnnounceTime(time.Duration(c.Int("ledger-announce-interval")) * time.Second),
 		edgevpn.WithLedgerInterval(time.Duration(c.Int("ledger-syncronization-interval")) * time.Second),
 		edgevpn.Logger(llger),
+		edgevpn.WithDiscoveryBootstrapPeers(addrsList),
 		edgevpn.LibP2PLogLevel(libp2plvl),
 		edgevpn.WithInterfaceMTU(c.Int("mtu")),
 		edgevpn.WithPacketMTU(1420),

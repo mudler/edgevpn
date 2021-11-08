@@ -54,6 +54,7 @@ type Config struct {
 	AdditionalOptions, Options []libp2p.Option
 
 	DiscoveryInterval, LedgerSyncronizationTime, LedgerAnnounceTime time.Duration
+	DiscoveryBootstrapPeers                                         discovery.AddrList
 }
 
 type StreamHandler func(stream network.Stream)
