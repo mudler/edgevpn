@@ -210,10 +210,6 @@ $ edgevpn file-receive --name 'unique-id' --path '/dst/path'
 - blockchain is used as a sealed encrypted store for the routing table
 - connections are created host to host
 
-# :warning: Caveats
-
-We might loose packets when the blockchain limit is reached. At that point EdgeVPN to avoid polluting memory will reset the blockchain, and the nodes will start to announce themselves again, there might be a small interval of time whereas node can't be reached. This _could_ happen if your network is having a lot of updates.
-
 # :question: Is it for me?
 
 EdgeVPN makes VPN decentralization a first strong requirement. 
