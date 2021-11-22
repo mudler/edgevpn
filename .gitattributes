@@ -1,1 +1,3 @@
 api/public/* linguist-vendored
+api/public/css/* linguist-vendored
+api/public/js/* linguist-vendored
