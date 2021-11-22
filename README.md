@@ -18,7 +18,8 @@
 
 <p align="center">
 	 <br>
-    Fully Decentralized. Immutable. Portable. Easy to use Statically compiled VPN and a reverse proxy over p2p.
+    Fully Decentralized. Immutable. Portable. Easy to use Statically compiled VPN and a reverse proxy over p2p.<br>
+    <b>VPN</b> -  <b>Reverse Proxy</b> - <b>Send files securely over p2p</b> -  <b>Blockchain</b>
 </p>
 
 
@@ -40,15 +41,13 @@ Users            |  Blockchain index
 
 EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p network.
 
-**VPN** Creates a vpn between p2p peers
+**VPN** :  Creates a vpn between p2p peers
 
-**Reverse Proxy** You can now share a tcp service like you would do with `ngrok`. Expose services to the p2p network. Creates reverse proxy and tunnels traffic into the p2p network.
+**Reverse Proxy** : Share a tcp service like you would do with `ngrok`. EdgeVPN let expose TCP services to the p2p network nodes without establishing a VPN connection: creates reverse proxy and tunnels traffic into the p2p network.
 
-**Send files via p2p** Send files over p2p between nodes.
+**Send files via p2p** : Send files over p2p between nodes without establishing a VPN connection.
 
-At implementation detail, EdgeVPN uses a blockchain to store *Services UUID*, *Files UUID*, *VPN Data* into the shared ledger.
-
-It connect and creates a small blockchain between nodes. 
+At implementation detail, EdgeVPN uses a blockchain to store *Services UUID*, *Files UUID*, *VPN Data* into the shared ledger: It connect and creates a small blockchain between nodes. 
 
 **The blockchain is ephemeral and on-memory**. Each node keeps broadcasting it's state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.  
 
@@ -68,14 +67,14 @@ Download the precompiled static release in the [releases page](https://github.co
 
 EdgeVPN needs only a config, or a token to connect machines to a network.
 
-To generate a config, do:
+To generate a config run:
 
 ```bash
 # Generate a new config file and use it later as EDGEVPNCONFIG
 $ edgevpn -g > config.yaml
 ```
 
-OR for a token:
+OR to generate a portable token:
 
 ```bash
 $ EDGEVPNTOKEN=$(edgevpn -g -b)
@@ -87,19 +86,21 @@ The commands below emplies that you either specify a `EDGEVPNTOKEN` (or `--token
 
 ## :satellite: As a VPN
 
-Run edgevpn on multiple hosts:
+To start the VPN, simply run `edgevpn` without any argument.
+
+An example of running edgevpn on multiple hosts:
 
 ```bash
 # on Node A
-$ EDGEVPNTOKEN=.. IFACE=edgevpn0 ADDRESS=10.1.0.11/24 edgevpn
+$ EDGEVPNTOKEN=.. edgevpn --address 10.1.0.11/24
 # on Node B
-$ EDGEVPNTOKEN=.. IFACE=edgevpn0 ADDRESS=10.1.0.12/24 edgevpn
+$ EDGEVPNTOKEN=.. edgevpn --address 10.1.0.12/24
 # on Node C ...
-$ EDGEVPNTOKEN=.. IFACE=edgevpn0 ADDRESS=10.1.0.13/24 edgevpn
+$ EDGEVPNTOKEN=.. edgevpn --address 10.1.0.13/24
 ...
 ```
 
-... and that's it! the `ADDRESS` is a _virtual_ unique IP for each node, and it is actually the ip where the node will be reachable to from the vpn, while `IFACE` is the interface name.
+... and that's it! the `--address` is a _virtual_ unique IP for each node, and it is actually the ip where the node will be reachable to from the vpn. You can assign IPs freely to the nodes of the network, while you can override the default `edgevpn0` interface with `IFACE` (or `--interface`)
 
 *Note*: It might take up time to build the connection between nodes. Wait at least 5 mins, it depends on the network behind the hosts.
 
@@ -127,6 +128,20 @@ $ edgevpn service-connect --name "MyCoolService" --srcaddress "127.0.0.1:9090"
 
 with the example above, 'sshing into `9090` locally would forward to `22`.
 
+## :mailbox: Sending and receiving files
+
+### :outbox_tray: Sending
+
+```bash
+$ edgevpn file-send --name 'unique-id' --path '/src/path'
+```
+
+### :inbox_tray: Receiving
+
+```bash
+$ edgevpn file-receive --name 'unique-id' --path '/dst/path'
+```
+
 ## :globe_with_meridians: Web interface
 
 To access the web interface, run 
@@ -138,6 +153,8 @@ $ edgevpn api
 with the same `EDGEVPNCONFIG` or `EDGEVPNTOKEN`. It will connect to the network without routing any packet. 
 
 By default edgevpn will listen on the `8080` port. See `edgevpn api --help` for the available options
+
+API can also be started together with the vpn.
 
 ## :mag: API endpoint
 
@@ -187,19 +204,6 @@ Deletes the `:key` into `:bucket` inside the ledger
 
 Deletes the `:bucket` from the ledger
 
-## :mailbox: Sending and receiving files
-
-### :outbox_tray: Sending
-
-```bash
-$ edgevpn file-send --name 'unique-id' --path '/src/path'
-```
-
-### :inbox_tray: Receiving
-
-```bash
-$ edgevpn file-receive --name 'unique-id' --path '/dst/path'
-```
 
 # Architecture
 
