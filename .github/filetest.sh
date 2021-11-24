@@ -35,7 +35,7 @@ else
     fi
 
     curl -X PUT http://localhost:8080/api/ledger/tests/test/done
-
+    sleep 80
     t=$(cat $PWD/test)
 
     if [ $t != "test" ]; then

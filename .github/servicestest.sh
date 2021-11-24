@@ -41,7 +41,7 @@ else
     if [[ $rc -eq 0 ]] ; then
         echo "Alright"
         curl -X PUT http://localhost:8080/api/ledger/tests/services/doneservice
-        sleep 20
+        sleep 80
         exit 0
     else
         echo "Test failed"
