@@ -56,9 +56,7 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 				return
 			}
 
-			// we need a list of known peers
-			e.config.Logger.Info("Dialing", dstaddress)
-
+			e.config.Logger.Infof("Connecting to '%s'", dstaddress)
 			c, err := net.Dial("tcp", dstaddress)
 			if err != nil {
 				e.config.Logger.Debugf("Reset %s: %s", stream.Conn().RemotePeer().String(), err.Error())

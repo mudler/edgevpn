@@ -11,6 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	conngater "github.com/libp2p/go-libp2p/p2p/net/conngater"
+	"github.com/mudler/edgevpn/pkg/discovery"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	multiaddr "github.com/multiformats/go-multiaddr"
 	"github.com/xlzd/gotp"
@@ -23,7 +24,6 @@ const (
 )
 
 var defaultLibp2pOptions = []libp2p.Option{
-	libp2p.EnableAutoRelay(),
 	libp2p.EnableNATService(),
 	libp2p.NATPortMap(),
 }
@@ -82,7 +82,16 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 	opts = append(opts, e.config.AdditionalOptions...)
 
 	if e.config.Insecure {
+		e.config.Logger.Info("Disabling Security transport layer")
 		opts = append(opts, libp2p.NoSecurity)
+	}
+
+	for _, d := range e.config.ServiceDiscovery {
+		switch d.(type) {
+		case *discovery.DHT:
+			opts = append(opts, libp2p.EnableAutoRelay())
+			e.config.Logger.Info("DHT Discovery enabled, enabling autorelay")
+		}
 	}
 
 	opts = append(opts, libp2p.FallbackDefaults)

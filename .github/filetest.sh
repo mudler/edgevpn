@@ -6,7 +6,7 @@ if [ $1 == "sender" ]; then
 
     ./edgevpn file-send --name "test" --path $PWD/test &
 
-    ((count = 100))                        
+    ((count = 240))                        
     while [[ $count -ne 0 ]] ; do
         sleep 2
         curl http://localhost:8080/api/ledger/tests/test | grep "done"
@@ -28,6 +28,11 @@ if [ $1 == "sender" ]; then
     
 else
     ./edgevpn file-receive --name "test" --path $PWD/test
+
+    if [ ! -e $PWD/test ]; then
+        echo "No file downloaded"
+        exit 1
+    fi
 
     curl -X PUT http://localhost:8080/api/ledger/tests/test/done
 

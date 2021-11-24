@@ -27,7 +27,7 @@ if [ $1 == "expose" ]; then
 else
     ./edgevpn service-connect --name "testservice" --srcaddress ":9090" &
 
-    ((count = 100))                        
+    ((count = 240))                        
     while [[ $count -ne 0 ]] ; do
         sleep 2
         curl http://localhost:9090/ | grep "EdgeVPN"

@@ -230,7 +230,7 @@ type YAMLConnectionConfig struct {
 	MaxMessageSize int    `yaml:"max_message_size"`
 }
 
-func (y YAMLConnectionConfig) copy(cfg *Config) {
+func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config) {
 	d := &discovery.DHT{
 		RefreshDiscoveryTime: cfg.DiscoveryInterval,
 		OTPInterval:          y.OTP.DHT.Interval,
@@ -243,7 +243,13 @@ func (y YAMLConnectionConfig) copy(cfg *Config) {
 	cfg.ExchangeKey = y.OTP.Crypto.Key
 	cfg.RoomName = y.RoomName
 	cfg.SealKeyInterval = y.OTP.Crypto.Interval
-	cfg.ServiceDiscovery = []ServiceDiscovery{d, m}
+	//	cfg.ServiceDiscovery = []ServiceDiscovery{d, m}
+	if mdns {
+		cfg.ServiceDiscovery = append(cfg.ServiceDiscovery, m)
+	}
+	if dht {
+		cfg.ServiceDiscovery = append(cfg.ServiceDiscovery, d)
+	}
 	cfg.SealKeyLength = y.OTP.Crypto.Length
 	cfg.MaxMessageSize = y.MaxMessageSize
 }
@@ -269,7 +275,7 @@ func GenerateNewConnectionData() *YAMLConnectionConfig {
 	}
 }
 
-func FromYaml(path string) func(cfg *Config) error {
+func FromYaml(enablemDNS, enableDHT bool, path string) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		if len(path) == 0 {
 			return nil
@@ -285,12 +291,12 @@ func FromYaml(path string) func(cfg *Config) error {
 			return errors.Wrap(err, "parsing yaml")
 		}
 
-		t.copy(cfg)
+		t.copy(enablemDNS, enableDHT, cfg)
 		return nil
 	}
 }
 
-func FromBase64(bb string) func(cfg *Config) error {
+func FromBase64(enablemDNS, enableDHT bool, bb string) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		if len(bb) == 0 {
 			return nil
@@ -304,7 +310,7 @@ func FromBase64(bb string) func(cfg *Config) error {
 		if err := yaml.Unmarshal(configDec, &t); err != nil {
 			return errors.Wrap(err, "parsing yaml")
 		}
-		t.copy(cfg)
+		t.copy(enablemDNS, enableDHT, cfg)
 		return nil
 	}
 }

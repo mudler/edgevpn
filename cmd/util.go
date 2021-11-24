@@ -49,6 +49,16 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Specify a ledger state directory",
 		EnvVar: "EDGEVPNLEDGERSTATE",
 	},
+	&cli.BoolFlag{
+		Name:   "enable-mdns",
+		Usage:  "Enable mDNS for peer discovery",
+		EnvVar: "EDGEVPNMDNS",
+	},
+	&cli.BoolTFlag{
+		Name:   "enable-dht",
+		Usage:  "Enable DHT for peer discovery",
+		EnvVar: "EDGEVPNDHT",
+	},
 	&cli.StringFlag{
 		Name:   "log-level",
 		Usage:  "Specify loglevel",
@@ -84,6 +94,7 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 	iface := c.String("interface")
 	logLevel := c.String("log-level")
 	libp2plogLevel := c.String("libp2p-log-level")
+	dht, mDNS := c.Bool("enable-dht"), c.Bool("enable-mdns")
 
 	ledgerState := c.String("ledger-state")
 
@@ -127,8 +138,8 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		edgevpn.WithInterfaceName(iface),
 		edgevpn.WithInterfaceType(water.TUN),
 		edgevpn.NetLinkBootstrap(true),
-		edgevpn.FromBase64(token),
-		edgevpn.FromYaml(config),
+		edgevpn.FromBase64(mDNS, dht, token),
+		edgevpn.FromYaml(mDNS, dht, config),
 	}
 
 	if ledgerState != "" {
