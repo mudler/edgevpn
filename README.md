@@ -117,29 +117,33 @@ A Service is a generalized TCP service running in a host (also outside the netwo
 To expose a service to your EdgeVPN network then:
 
 ```bash
-$ edgevpn service-add --name "MyCoolService" --remoteaddress "127.0.0.1:22"
+$ edgevpn service-add "MyCoolService" "127.0.0.1:22"
 ```
 
 To reach the service, EdgeVPN will setup a local port and bind to it, it will tunnel the traffic to the service over the VPN, for e.g. to bind locally to `9090`:
 
 ```bash
-$ edgevpn service-connect --name "MyCoolService" --srcaddress "127.0.0.1:9090"
+$ edgevpn service-connect "MyCoolService" "127.0.0.1:9090"
 ```
 
 with the example above, 'sshing into `9090` locally would forward to `22`.
 
 ## :mailbox: Sending and receiving files
 
+EdgeVPN can be used to send and receive files between hosts via p2p with the  `file-send` and `file-receive` subcommand.
+
+Sending and receiving files, as services, don't establish a VPN connection.
+
 ### :outbox_tray: Sending
 
 ```bash
-$ edgevpn file-send --name 'unique-id' --path '/src/path'
+$ edgevpn file-send 'unique-id' '/src/path'
 ```
 
 ### :inbox_tray: Receiving
 
 ```bash
-$ edgevpn file-receive --name 'unique-id' --path '/dst/path'
+$ edgevpn file-receive 'unique-id' '/dst/path'
 ```
 
 ## :globe_with_meridians: Web interface

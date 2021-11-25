@@ -2,7 +2,7 @@
 ./edgevpn api &
 
 if [ $1 == "expose" ]; then
-    ./edgevpn service-add --name "testservice" --remoteaddress "127.0.0.1:8080" &
+    ./edgevpn service-add testservice 127.0.0.1:8080 &
 
     ((count = 100))                        
     while [[ $count -ne 0 ]] ; do
@@ -25,7 +25,7 @@ if [ $1 == "expose" ]; then
     fi
     
 else
-    ./edgevpn service-connect --name "testservice" --srcaddress ":9090" &
+    ./edgevpn service-connect testservice :9090 &
 
     ((count = 240))                        
     while [[ $count -ne 0 ]] ; do

@@ -1,9 +1,31 @@
 package cmd
 
 import (
+	"errors"
+
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
 )
+
+func cliNamePath(c *cli.Context) (name, path string, err error) {
+	name = c.Args().Get(0)
+	path = c.Args().Get(1)
+	if name == "" && c.String("name") == "" {
+		err = errors.New("Either a file UUID as first argument or with --name needs to be provided")
+		return
+	}
+	if path == "" && c.String("path") == "" {
+		err = errors.New("Either a file UUID as first argument or with --name needs to be provided")
+		return
+	}
+	if c.String("name") != "" {
+		name = c.String("name")
+	}
+	if c.String("path") != "" {
+		path = c.String("path")
+	}
+	return name, path, nil
+}
 
 func FileSend() cli.Command {
 	return cli.Command{
@@ -11,7 +33,7 @@ func FileSend() cli.Command {
 		Aliases:     []string{"fs"},
 		Usage:       "Serve a file to the network",
 		Description: `Serve a file to the network without connecting over VPN`,
-		UsageText:   "edgevpn file-send --name 'unique-id' --path '/src/path'",
+		UsageText:   "edgevpn file-send unique-id /src/path",
 		Flags: append(CommonFlags,
 			cli.StringFlag{
 				Name:     "name",
@@ -26,6 +48,10 @@ This is also the ID used to refer when receiving it.`,
 			},
 		),
 		Action: func(c *cli.Context) error {
+			name, path, err := cliNamePath(c)
+			if err != nil {
+				return err
+			}
 			e := edgevpn.New(cliToOpts(c)...)
 
 			displayStart(e)
@@ -35,7 +61,7 @@ This is also the ID used to refer when receiving it.`,
 				return err
 			}
 			// Join the node to the network, using our ledger
-			e.SendFile(ledger, c.String("name"), c.String("path"))
+			e.SendFile(ledger, name, path)
 			// Join the node to the network, using our ledger
 			if err := e.Join(); err != nil {
 				return err
@@ -53,20 +79,23 @@ func FileReceive() cli.Command {
 		Aliases:     []string{"fr"},
 		Usage:       "Receive a file which is served from the network",
 		Description: `Receive a file from the network without connecting over VPN`,
-		UsageText:   "edgevpn file-receive --name 'unique-id' --path '/dst/path'",
+		UsageText:   "edgevpn file-receive unique-id /dst/path",
 		Flags: append(CommonFlags,
 			cli.StringFlag{
-				Name:     "name",
-				Usage:    `Unique name of the file to be received over the network.`,
-				Required: true,
+				Name:  "name",
+				Usage: `Unique name of the file to be received over the network.`,
 			},
 			cli.StringFlag{
-				Name:     "path",
-				Usage:    `Destination where to save the file`,
-				Required: true,
+				Name:  "path",
+				Usage: `Destination where to save the file`,
 			},
 		),
 		Action: func(c *cli.Context) error {
+			name, path, err := cliNamePath(c)
+			if err != nil {
+				return err
+			}
+
 			e := edgevpn.New(cliToOpts(c)...)
 
 			displayStart(e)
@@ -78,7 +107,7 @@ func FileReceive() cli.Command {
 
 			ledger, _ := e.Ledger()
 
-			return e.ReceiveFile(ledger, c.String("name"), c.String("path"))
+			return e.ReceiveFile(ledger, name, path)
 		},
 	}
 }
