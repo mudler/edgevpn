@@ -4,7 +4,7 @@
 if [ $1 == "expose" ]; then
     ./edgevpn service-add testservice 127.0.0.1:8080 &
 
-    ((count = 100))                        
+    ((count = 240))                        
     while [[ $count -ne 0 ]] ; do
         sleep 2
         curl http://localhost:8080/api/ledger/tests/services | grep "doneservice"

@@ -1,12 +1,14 @@
 package client
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn/types"
 )
 
@@ -60,7 +62,8 @@ func NewClient(o ...Option) *Client {
 }
 
 func (c *Client) do(method, endpoint string, params map[string]string) (*http.Response, error) {
-	baseURL := fmt.Sprintf("%s/%s", c.host, endpoint)
+	baseURL := fmt.Sprintf("%s%s", c.host, endpoint)
+
 	req, err := http.NewRequest(method, baseURL, nil)
 	if err != nil {
 		return nil, err
@@ -123,7 +126,7 @@ func (c *Client) Users() (data []types.User, err error) {
 	return
 }
 
-func (c *Client) Ledger() (data map[string]string, err error) {
+func (c *Client) Ledger() (data map[string]map[string]blockchain.Data, err error) {
 	res, err := c.do(http.MethodGet, ledgerURL, nil)
 	if err != nil {
 		return
@@ -139,7 +142,7 @@ func (c *Client) Ledger() (data map[string]string, err error) {
 	return
 }
 
-func (c *Client) Blockchain() (data []map[string]string, err error) {
+func (c *Client) Blockchain() (data blockchain.Block, err error) {
 	res, err := c.do(http.MethodGet, blockchainURL, nil)
 	if err != nil {
 		return
@@ -168,5 +171,144 @@ func (c *Client) Machines() (resp []types.Machine, err error) {
 	if err = json.Unmarshal(body, &resp); err != nil {
 		return resp, err
 	}
+	return
+}
+
+func (c *Client) GetBucket(b string) (resp map[string]blockchain.Data, err error) {
+	res, err := c.do(http.MethodGet, fmt.Sprintf("%s/%s", ledgerURL, b), nil)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return resp, err
+	}
+	if err = json.Unmarshal(body, &resp); err != nil {
+		return resp, err
+	}
+	return
+}
+
+func (c *Client) GetBucketKeys(b string) (resp []string, err error) {
+	d, err := c.GetBucket(b)
+	if err != nil {
+		return resp, err
+	}
+	for k := range d {
+		resp = append(resp, k)
+	}
+	return
+}
+
+func (c *Client) GetBuckets() (resp []string, err error) {
+	d, err := c.Ledger()
+	if err != nil {
+		return resp, err
+	}
+	for k := range d {
+		resp = append(resp, k)
+	}
+	return
+}
+
+func (c *Client) GetBucketKey(b, k string) (resp blockchain.Data, err error) {
+	res, err := c.do(http.MethodGet, fmt.Sprintf("%s/%s/%s", ledgerURL, b, k), nil)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return resp, err
+	}
+
+	var r string
+	if err = json.Unmarshal(body, &r); err != nil {
+		return resp, err
+	}
+
+	if err = json.Unmarshal([]byte(r), &r); err != nil {
+		return resp, err
+	}
+
+	d, err := base64.URLEncoding.DecodeString(r)
+	if err != nil {
+		return resp, err
+	}
+	resp = blockchain.Data(string(d))
+	return
+}
+
+func (c *Client) Put(b, k string, v interface{}) (err error) {
+	s := struct{ State string }{}
+
+	dat, err := json.Marshal(v)
+	if err != nil {
+		return
+	}
+
+	d := base64.URLEncoding.EncodeToString(dat)
+
+	res, err := c.do(http.MethodPut, fmt.Sprintf("%s/%s/%s/%s", ledgerURL, b, k, d), nil)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(body, &s); err != nil {
+		return err
+	}
+
+	if s.State != "Announcing" {
+		return fmt.Errorf("unexpected state '%s'", s.State)
+	}
+
+	return
+}
+
+func (c *Client) Delete(b, k string) (err error) {
+	s := struct{ State string }{}
+	res, err := c.do(http.MethodDelete, fmt.Sprintf("%s/%s/%s", ledgerURL, b, k), nil)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	if err = json.Unmarshal(body, &s); err != nil {
+		return err
+	}
+	if s.State != "Announcing" {
+		return fmt.Errorf("unexpected state '%s'", s.State)
+	}
+
+	return
+}
+
+func (c *Client) DeleteBucket(b string) (err error) {
+	s := struct{ State string }{}
+	res, err := c.do(http.MethodDelete, fmt.Sprintf("%s/%s", ledgerURL, b), nil)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	if err = json.Unmarshal(body, &s); err != nil {
+		return err
+	}
+	if s.State != "Announcing" {
+		return fmt.Errorf("unexpected state '%s'", s.State)
+	}
+
 	return
 }
