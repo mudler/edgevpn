@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
+	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -36,6 +37,12 @@ type EdgeVPN struct {
 	ledger *blockchain.Ledger
 }
 
+var defaultLibp2pOptions = []libp2p.Option{
+	libp2p.EnableNATService(),
+	libp2p.NATPortMap(),
+	libp2p.EnableAutoRelay(),
+}
+
 func New(p ...Option) *EdgeVPN {
 	c := Config{
 		DiscoveryInterval:        120 * time.Second,
@@ -43,6 +50,7 @@ func New(p ...Option) *EdgeVPN {
 		LedgerAnnounceTime:       5 * time.Second,
 		LedgerSyncronizationTime: 5 * time.Second,
 		SealKeyLength:            12,
+		Options:                  defaultLibp2pOptions,
 	}
 	c.Apply(p...)
 

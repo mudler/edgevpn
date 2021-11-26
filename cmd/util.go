@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
+	"github.com/libp2p/go-libp2p"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/discovery"
@@ -53,6 +54,21 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "enable-mdns",
 		Usage:  "Enable mDNS for peer discovery",
 		EnvVar: "EDGEVPNMDNS",
+	},
+	&cli.BoolTFlag{
+		Name:   "autorelay",
+		Usage:  "Automatically act as a relay if the node can accept inbound connections",
+		EnvVar: "EDGEVPNAUTORELAY",
+	},
+	&cli.BoolTFlag{
+		Name:   "natservice",
+		Usage:  "Tries to determine reachability status of nodes",
+		EnvVar: "EDGEVPNNATSERVICE",
+	},
+	&cli.BoolTFlag{
+		Name:   "natmap",
+		Usage:  "Tries to open a port in the firewall via upnp",
+		EnvVar: "EDGEVPNNATMAP",
 	},
 	&cli.BoolTFlag{
 		Name:   "enable-dht",
@@ -141,6 +157,22 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		edgevpn.FromBase64(mDNS, dht, token),
 		edgevpn.FromYaml(mDNS, dht, config),
 	}
+
+	libp2pOpts := []libp2p.Option{}
+
+	if c.Bool("autorelay") {
+		libp2pOpts = append(libp2pOpts, libp2p.EnableAutoRelay())
+	}
+
+	if c.Bool("natservice") {
+		libp2pOpts = append(libp2pOpts, libp2p.EnableNATService())
+	}
+
+	if c.Bool("natmap") {
+		libp2pOpts = append(libp2pOpts, libp2p.NATPortMap())
+	}
+
+	opts = append(opts, edgevpn.WithLibp2pOptions(libp2pOpts...))
 
 	if ledgerState != "" {
 		opts = append(opts, edgevpn.WithStore(blockchain.NewDiskStore(diskv.New(diskv.Options{
