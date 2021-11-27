@@ -32,6 +32,13 @@ func WithLibp2pAdditionalOptions(i ...libp2p.Option) func(cfg *Config) error {
 	}
 }
 
+func WithNetworkService(ns ...NetworkService) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.NetworkServices = append(cfg.NetworkServices, ns...)
+		return nil
+	}
+}
+
 func WithInterface(i *water.Interface) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.Interface = i

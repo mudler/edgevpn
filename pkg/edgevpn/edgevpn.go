@@ -100,6 +100,11 @@ func (e *EdgeVPN) Join() error {
 	// Send periodically messages to the channel with our blockchain content
 	ledger.Syncronizer(context.Background(), e.config.LedgerSyncronizationTime)
 
+	// Start eventual declared NetworkServices
+	for _, s := range e.config.NetworkServices {
+		go s(context.Background(), e, ledger)
+	}
+
 	return nil
 }
 

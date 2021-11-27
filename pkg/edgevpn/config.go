@@ -40,6 +40,7 @@ type Config struct {
 	MTU              int
 	DeviceType       water.DeviceType
 	ServiceDiscovery []ServiceDiscovery
+	NetworkServices  []NetworkService
 	Logger           log.StandardLogger
 
 	SealKeyLength int
@@ -56,6 +57,8 @@ type Config struct {
 	DiscoveryInterval, LedgerSyncronizationTime, LedgerAnnounceTime time.Duration
 	DiscoveryBootstrapPeers                                         discovery.AddrList
 }
+
+type NetworkService func(context.Context, *EdgeVPN, *blockchain.Ledger) error
 
 type StreamHandler func(stream network.Stream)
 
