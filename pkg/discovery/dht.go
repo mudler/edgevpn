@@ -13,7 +13,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/routing"
 	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/lthibault/jitterbug"
 	"github.com/xlzd/gotp"
 )
 
@@ -100,18 +99,18 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 
 	go func() {
 		connect()
-		t := jitterbug.New(
-			d.RefreshDiscoveryTime,
-			&jitterbug.Norm{Stdev: time.Second * 10},
-		)
-		defer t.Stop()
 		for {
+			// We don't want a ticker here but a timer
+			// this is less "talkative" as a DHT connect() can take up
+			// long time and can exceed d.RefreshdiscoveryTime.
+			// In this way we ensure we wait at least timeout to fire a connect()
+			timer := time.NewTimer(d.RefreshDiscoveryTime)
 			select {
-			case <-t.C:
-				connect()
-
 			case <-ctx.Done():
+				timer.Stop()
 				return
+			case <-timer.C:
+				connect()
 			}
 		}
 	}()
