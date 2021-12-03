@@ -1,8 +1,10 @@
 <h1 align="center">
   <br>
- :sailboat: EdgeVPN
-<br>
+	<img src="https://user-images.githubusercontent.com/2420543/144679248-1f6e4c10-a558-424c-b6f5-b3695269c906.png" width=128
+         alt="logo"><br>
+    EdgeVPN
 
+<br>
 </h1>
 
 <h3 align="center">Create Decentralized private networks </h3>
@@ -293,6 +295,7 @@ and any other way if not mentioned here.
 - The awesome [libp2p](https://github.com/libp2p) library
 - [https://github.com/songgao/water](https://github.com/songgao/water) for tun/tap devices in golang
 - [Room example](https://github.com/libp2p/go-libp2p/tree/master/examples/chat-with-rendezvous) (shamelessly parts are copied by)
+- Logo originally made by [Uniconlabs](https://www.flaticon.com/authors/uniconlabs) from [www.flaticon.com](https://www.flaticon.com/), modified by me
 
 # :notebook: TODO
 
