@@ -127,10 +127,12 @@ func (d *DHT) bootstrapPeers(c log.StandardLogger, ctx context.Context, host hos
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := host.Connect(ctx, *peerinfo); err != nil {
-				c.Debug(err.Error())
-			} else {
-				c.Debug("Connection established with bootstrap node:", *peerinfo)
+			if host.Network().Connectedness(peerinfo.ID) != network.Connected {
+				if err := host.Connect(ctx, *peerinfo); err != nil {
+					c.Debug(err.Error())
+				} else {
+					c.Debug("Connection established with bootstrap node:", *peerinfo)
+				}
 			}
 		}()
 	}
@@ -149,16 +151,12 @@ func (d *DHT) announceAndConnect(ctx context.Context, kademliaDHT *dht.IpfsDHT, 
 	if err != nil {
 		return err
 	}
-	//	var wg sync.WaitGroup
 
 	for p := range peerChan {
 		// Don't dial ourselves or peers without address
 		if p.ID == host.ID() || len(p.Addrs) == 0 {
 			continue
 		}
-		//	wg.Add(1)
-		//	go func(a peer.AddrInfo) {
-		//	defer wg.Done()
 
 		if host.Network().Connectedness(p.ID) != network.Connected {
 			d.console.Debug("Found peer:", p)
@@ -170,10 +168,7 @@ func (d *DHT) announceAndConnect(ctx context.Context, kademliaDHT *dht.IpfsDHT, 
 		} else {
 			d.console.Debug("Known peer (already connected):", p)
 		}
-		//}(p)
-
 	}
-	//	wg.Wait()
 
 	return nil
 }
