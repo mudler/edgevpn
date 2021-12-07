@@ -25,7 +25,7 @@ func getFileSystem() http.FileSystem {
 	return http.FS(fsys)
 }
 
-func API(l string, ledger *blockchain.Ledger) error {
+func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Ledger) error {
 	ec := echo.New()
 	assetHandler := http.FileServer(getFileSystem())
 
@@ -111,7 +111,7 @@ func API(l string, ledger *blockchain.Ledger) error {
 		key := c.Param("key")
 		value := c.Param("value")
 
-		ledger.Persist(context.Background(), 5*time.Second, bucket, key, value)
+		ledger.Persist(context.Background(), defaultInterval, timeout, bucket, key, value)
 		return c.JSON(http.StatusOK, announcing)
 	})
 
@@ -119,7 +119,7 @@ func API(l string, ledger *blockchain.Ledger) error {
 	ec.DELETE("/api/ledger/:bucket", func(c echo.Context) error {
 		bucket := c.Param("bucket")
 
-		ledger.AnnounceDeleteBucket(context.Background(), 5*time.Second, bucket)
+		ledger.AnnounceDeleteBucket(context.Background(), defaultInterval, timeout, bucket)
 		return c.JSON(http.StatusOK, announcing)
 	})
 
@@ -127,7 +127,7 @@ func API(l string, ledger *blockchain.Ledger) error {
 		bucket := c.Param("bucket")
 		key := c.Param("key")
 
-		ledger.AnnounceDeleteBucketKey(context.Background(), 5*time.Second, bucket, key)
+		ledger.AnnounceDeleteBucketKey(context.Background(), defaultInterval, timeout, bucket, key)
 		return c.JSON(http.StatusOK, announcing)
 	})
 

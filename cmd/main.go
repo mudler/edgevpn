@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
@@ -79,7 +80,7 @@ func Main() func(c *cli.Context) error {
 		}
 
 		if c.Bool("api") {
-			go api.API(c.String("api-listen"), ledger)
+			go api.API(c.String("api-listen"), 5*time.Second, 20*time.Second, ledger)
 		}
 
 		if err := e.Start(); err != nil {

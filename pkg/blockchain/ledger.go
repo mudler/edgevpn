@@ -140,8 +140,11 @@ func (l *Ledger) Announce(ctx context.Context, t time.Duration, async func()) {
 }
 
 // AnnounceDeleteBucket Announce a deletion of a bucket. It stops when the bucket is deleted
-func (l *Ledger) AnnounceDeleteBucket(ctx context.Context, interval time.Duration, bucket string) {
-	del, cancel := context.WithCancel(ctx)
+// It takes an interval time and a max timeout.
+// It is best effort, and the timeout is necessary, or we might flood network with requests
+// if more writers are attempting to write to the same resource
+func (l *Ledger) AnnounceDeleteBucket(ctx context.Context, interval, timeout time.Duration, bucket string) {
+	del, cancel := context.WithTimeout(ctx, timeout)
 
 	l.Announce(del, interval, func() {
 		_, exists := l.CurrentData()[bucket]
@@ -154,8 +157,8 @@ func (l *Ledger) AnnounceDeleteBucket(ctx context.Context, interval time.Duratio
 }
 
 // AnnounceDeleteBucketKey Announce a deletion of a key from a bucket. It stops when the key is deleted
-func (l *Ledger) AnnounceDeleteBucketKey(ctx context.Context, interval time.Duration, bucket, key string) {
-	del, cancel := context.WithCancel(ctx)
+func (l *Ledger) AnnounceDeleteBucketKey(ctx context.Context, interval, timeout time.Duration, bucket, key string) {
+	del, cancel := context.WithTimeout(ctx, timeout)
 
 	l.Announce(del, interval, func() {
 		_, exists := l.CurrentData()[bucket][key]
@@ -168,8 +171,8 @@ func (l *Ledger) AnnounceDeleteBucketKey(ctx context.Context, interval time.Dura
 }
 
 // Persist Keeps announcing something into the blockchain until it is reconciled
-func (l *Ledger) Persist(ctx context.Context, interval time.Duration, bucket, key string, value interface{}) {
-	put, cancel := context.WithCancel(ctx)
+func (l *Ledger) Persist(ctx context.Context, interval, timeout time.Duration, bucket, key string, value interface{}) {
+	put, cancel := context.WithTimeout(ctx, timeout)
 
 	l.Announce(put, interval, func() {
 		v, exists := l.CurrentData()[bucket][key]

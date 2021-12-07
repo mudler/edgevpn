@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
@@ -30,7 +32,7 @@ A simple UI interface is available to display network data.`,
 				return err
 			}
 			ledger, _ := e.Ledger()
-			return api.API(c.String("listen"), ledger)
+			return api.API(c.String("listen"), 5*time.Second, 20*time.Second, ledger)
 		},
 	}
 }
