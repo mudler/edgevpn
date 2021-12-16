@@ -39,9 +39,7 @@ func (d *MDNS) Option(ctx context.Context) func(c *libp2p.Config) error {
 func (d *MDNS) Run(l log.StandardLogger, ctx context.Context, host host.Host) error {
 
 	// setup mDNS discovery to find local peers
-	disc := mdns.NewMdnsService(host, d.DiscoveryServiceTag)
+	disc := mdns.NewMdnsService(host, d.DiscoveryServiceTag, &discoveryNotifee{h: host, c: l})
 
-	n := discoveryNotifee{h: host, c: l}
-	disc.RegisterNotifee(&n)
-	return nil
+	return disc.Start()
 }

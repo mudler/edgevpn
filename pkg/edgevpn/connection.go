@@ -78,7 +78,7 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 
 	opts = append(opts, libp2p.FallbackDefaults)
 
-	return libp2p.New(ctx, opts...)
+	return libp2p.New(opts...)
 }
 
 func (e *EdgeVPN) sealkey() string {
