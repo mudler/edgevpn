@@ -297,6 +297,26 @@ and any other way if not mentioned here.
 - [Room example](https://github.com/libp2p/go-libp2p/tree/master/examples/chat-with-rendezvous) (shamelessly parts are copied by)
 - Logo originally made by [Uniconlabs](https://www.flaticon.com/authors/uniconlabs) from [www.flaticon.com](https://www.flaticon.com/), modified by me
 
+# :notebook: Troubleshooting
+
+If during bootstrap you see messages like:
+
+```
+edgevpn[3679]:             * [/ip4/104.131.131.82/tcp/4001] failed to negotiate stream multiplexer: context deadline exceeded     
+```
+
+or
+
+```
+edgevpn[9971]: 2021/12/16 20:56:34 failed to sufficiently increase receive buffer size (was: 208 kiB, wanted: 2048 kiB, got: 416 kiB). See https://github.com/lucas-clemente/quic-go/wiki/UDP-Receive-Buffer-Size for details.
+```
+
+or generally experiencing poor network performance, it is recommended to increase the maximum buffer size by running:
+
+```
+sysctl -w net.core.rmem_max=2500000
+```
+
 # :notebook: TODO
 
 - [x] VPN
