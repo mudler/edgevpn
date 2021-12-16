@@ -33,8 +33,8 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 	} else {
 		r = mrand.New(mrand.NewSource(e.seed))
 	}
-	// Creates a new RSA key pair for this host.
-	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
+
+	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.Ed25519, 4096, r)
 	if err != nil {
 		return nil, err
 	}
