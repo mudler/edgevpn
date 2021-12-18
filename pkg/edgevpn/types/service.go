@@ -1,6 +1,7 @@
 package types
 
 type Service struct {
-	PeerID string
-	Name   string
+	PeerID    string
+	Name      string
+	VirtualIP string
 }

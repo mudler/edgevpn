@@ -37,6 +37,10 @@ func ServiceAdd() cli.Command {
 		UsageText: "edgevpn service-add unique-id ip:port",
 		Flags: append(CommonFlags,
 			cli.StringFlag{
+				Name:  "virtual-ip",
+				Usage: `VirtualIP for the service inside the VPN network. For example 10.1.0.10:90`,
+			},
+			cli.StringFlag{
 				Name:  "name",
 				Usage: `Unique name of the service to be server over the network.`,
 			},
@@ -61,7 +65,7 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 			}
 
 			// Join the node to the network, using our ledger
-			e.ExposeService(ledger, name, address)
+			e.ExposeService(ledger, name, c.String("virtual-ip"), address)
 			// Join the node to the network, using our ledger
 			if err := e.Join(); err != nil {
 				return err

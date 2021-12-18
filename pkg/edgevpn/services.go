@@ -18,7 +18,7 @@ const (
 	UsersLedgerKey    = "users"
 )
 
-func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress string) {
+func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, virtualIP, dstaddress string) {
 
 	e.Logger().Infof("Exposing service '%s' (%s)", serviceID, dstaddress)
 
@@ -35,7 +35,11 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 			// If mismatch, update the blockchain
 			if !found || service.PeerID != e.host.ID().String() {
 				updatedMap := map[string]interface{}{}
-				updatedMap[serviceID] = types.Service{PeerID: e.host.ID().String(), Name: serviceID}
+				updatedMap[serviceID] = types.Service{
+					PeerID:    e.host.ID().String(),
+					Name:      serviceID,
+					VirtualIP: virtualIP,
+				}
 				ledger.Add(ServicesLedgerKey, updatedMap)
 			}
 		},
@@ -49,11 +53,26 @@ func (e *EdgeVPN) ExposeService(ledger *blockchain.Ledger, serviceID, dstaddress
 
 			// Retrieve current ID for ip in the blockchain
 			_, found := ledger.GetKey(UsersLedgerKey, stream.Conn().RemotePeer().String())
-			// If mismatch, update the blockchain
+
+			// TODO: Unsticky this.
+			// Maybe Services and files should have their own controllers
 			if !found {
-				e.config.Logger.Debugf("Reset '%s': not found in the ledger", stream.Conn().RemotePeer().String())
-				stream.Reset()
-				return
+				// No user found, so we check if the connection was originated from a VPN node
+				data := ledger.LastBlock().Storage[MachinesLedgerKey]
+				for _, m := range data {
+					machine := &types.Machine{}
+					m.Unmarshal(machine)
+					if machine.PeerID == stream.Conn().RemotePeer().String() {
+						found = true
+					}
+				}
+
+				if !found {
+					// We didn't find again any match, so we close the connection
+					e.config.Logger.Debugf("Reset '%s': not found in the ledger", stream.Conn().RemotePeer().String())
+					stream.Reset()
+					return
+				}
 			}
 
 			e.config.Logger.Infof("Connecting to '%s'", dstaddress)

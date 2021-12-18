@@ -2,12 +2,15 @@ package edgevpn
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"os"
 	"runtime"
 	"time"
 
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -225,6 +228,9 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 		}
 		frame = frame[:n]
 
+		framecopy := make([]byte, n)
+		copy(framecopy, frame)
+
 		header, err := ipv4.ParseHeader(frame)
 		if err != nil {
 			e.config.Logger.Debugf("could not parase ipv4 header from frame")
@@ -236,7 +242,63 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 		// Query the routing table
 		value, found := ledger.GetKey(MachinesLedgerKey, dst)
 		if !found {
+			// No machines found. Try by Services VirtualIPs
+			// TODO: Unsticky this in its own controller
 			e.config.Logger.Debugf("'%s' not found in the routing table", dst)
+
+			e.config.Logger.Debug("Searching into services")
+
+			var (
+				eth     layers.Ethernet
+				ip4     layers.IPv4
+				ip6     layers.IPv6
+				tcp     layers.TCP
+				udp     layers.UDP
+				dns     layers.DNS
+				payload gopacket.Payload
+			)
+			parser := gopacket.NewDecodingLayerParser(layers.LayerTypeIPv4, &eth, &ip4, &ip6, &tcp, &udp, &dns, &payload)
+			var decoded []gopacket.LayerType
+			if err := parser.DecodeLayers(framecopy, &decoded); err != nil {
+
+				e.config.Logger.Debug("failed decoding layer with gopacket")
+
+			}
+			var dstPort uint16
+			for _, layerType := range decoded {
+				switch layerType {
+				case layers.LayerTypeTCP:
+					dstPort = uint16(tcp.DstPort)
+				case layers.LayerTypeUDP:
+					dstPort = uint16(udp.DstPort)
+				}
+			}
+			e.config.Logger.Debugf("Destination %s:%d", dst, dstPort)
+
+			services := ledger.LastBlock().Storage[ServicesLedgerKey]
+			for id, s := range services {
+				service := &types.Service{}
+				s.Unmarshal(service)
+				if service.VirtualIP == fmt.Sprintf("%s:%d", dst, dstPort) {
+					e.config.Logger.Debugf("'%s' matches %s:%d", id, dst, dstPort)
+					// Decode the Peer
+					d, err := peer.Decode(service.PeerID)
+					if err != nil {
+						e.config.Logger.Debugf("could not decode peer '%s'", value)
+						continue
+					}
+
+					// Open a stream
+					stream, err := e.host.NewStream(ctx, d, ServiceProtocol)
+					if err != nil {
+						e.config.Logger.Debugf("could not open stream '%s'", err.Error())
+						continue
+					}
+					stream.Write(frame)
+					stream.Close()
+					break
+				}
+			}
 			continue
 		}
 		machine := &types.Machine{}
