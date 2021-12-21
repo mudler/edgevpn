@@ -45,13 +45,36 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "EDGEVPNLEDGERSYNCINTERVAL",
 		Value:  10,
 	},
+	&cli.IntFlag{
+		Name:   "nat-ratelimit-global",
+		Usage:  "Rate limit global requests",
+		EnvVar: "EDGEVPNNATRATELIMITGLOBAL",
+		Value:  10,
+	},
+	&cli.IntFlag{
+		Name:   "nat-ratelimit-peer",
+		Usage:  "Rate limit perr requests",
+		EnvVar: "EDGEVPNNATRATELIMITPEER",
+		Value:  10,
+	},
+	&cli.IntFlag{
+		Name:   "nat-ratelimit-interval",
+		Usage:  "Rate limit interval",
+		EnvVar: "EDGEVPNNATRATELIMITINTERVAL",
+		Value:  60,
+	},
+	&cli.BoolTFlag{
+		Name:   "nat-ratelimit",
+		Usage:  "Changes the default rate limiting configured in helping other peers determine their reachability status",
+		EnvVar: "EDGEVPNNATRATELIMIT",
+	},
 	&cli.StringFlag{
 		Name:   "ledger-state",
 		Usage:  "Specify a ledger state directory",
 		EnvVar: "EDGEVPNLEDGERSTATE",
 	},
-	&cli.BoolFlag{
-		Name:   "enable-mdns",
+	&cli.BoolTFlag{
+		Name:   "mdns",
 		Usage:  "Enable mDNS for peer discovery",
 		EnvVar: "EDGEVPNMDNS",
 	},
@@ -59,6 +82,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "autorelay",
 		Usage:  "Automatically act as a relay if the node can accept inbound connections",
 		EnvVar: "EDGEVPNAUTORELAY",
+	},
+	&cli.BoolTFlag{
+		Name:   "holepunch",
+		Usage:  "Automatically try holepunching when possible",
+		EnvVar: "EDGEVPNHOLEPUNCH",
 	},
 	&cli.BoolTFlag{
 		Name:   "natservice",
@@ -71,7 +99,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "EDGEVPNNATMAP",
 	},
 	&cli.BoolTFlag{
-		Name:   "enable-dht",
+		Name:   "dht",
 		Usage:  "Enable DHT for peer discovery",
 		EnvVar: "EDGEVPNDHT",
 	},
@@ -110,7 +138,7 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 	iface := c.String("interface")
 	logLevel := c.String("log-level")
 	libp2plogLevel := c.String("libp2p-log-level")
-	dht, mDNS := c.Bool("enable-dht"), c.Bool("enable-mdns")
+	dht, mDNS := c.Bool("dht"), c.Bool("mdns")
 
 	ledgerState := c.String("ledger-state")
 
@@ -158,10 +186,22 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		edgevpn.FromYaml(mDNS, dht, config),
 	}
 
-	libp2pOpts := []libp2p.Option{}
+	libp2pOpts := []libp2p.Option{libp2p.UserAgent("edgevpn")}
 
 	if c.Bool("autorelay") {
 		libp2pOpts = append(libp2pOpts, libp2p.EnableAutoRelay())
+	}
+
+	if c.Bool("nat-ratelimit") {
+		libp2pOpts = append(libp2pOpts, libp2p.AutoNATServiceRateLimit(
+			c.Int("nat-ratelimit-global"),
+			c.Int("nat-ratelimit-peer"),
+			time.Duration(c.Int("nat-ratelimit-interval"))*time.Second,
+		))
+	}
+
+	if c.Bool("holepunch") {
+		libp2pOpts = append(libp2pOpts, libp2p.EnableHolePunching())
 	}
 
 	if c.Bool("natservice") {
