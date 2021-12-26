@@ -215,6 +215,10 @@ func streamHandler(ledger *blockchain.Ledger, ifce *water.Interface) func(stream
 // redirects packets from the interface to the node using the routing table in the blockchain
 func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) error {
 	ctx := context.Background()
+	ip, _, err := net.ParseCIDR(e.config.InterfaceAddress)
+	if err != nil {
+		return err
+	}
 	for {
 		var frame ethernet.Frame
 		frame.Resize(e.config.MTU)
@@ -232,6 +236,9 @@ func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) 
 		}
 
 		dst := header.Dst.String()
+		if e.config.RouterAddress != "" && header.Src.Equal(ip) {
+			dst = e.config.RouterAddress
+		}
 
 		// Query the routing table
 		value, found := ledger.GetKey(MachinesLedgerKey, dst)

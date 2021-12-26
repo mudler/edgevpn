@@ -43,6 +43,11 @@ func MainFlags() []cli.Flag {
 			Value:  "10.1.0.1/24",
 		},
 		&cli.StringFlag{
+			Name:   "router",
+			Usage:  "Sends all packets to this node",
+			EnvVar: "ROUTER",
+		},
+		&cli.StringFlag{
 			Name:   "interface",
 			Usage:  "Interface name",
 			Value:  "edgevpn0",

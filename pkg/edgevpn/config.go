@@ -36,6 +36,7 @@ type Config struct {
 	Interface        *water.Interface
 	InterfaceName    string
 	InterfaceAddress string
+	RouterAddress    string
 	InterfaceMTU     int
 	MTU              int
 	DeviceType       water.DeviceType

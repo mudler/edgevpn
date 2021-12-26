@@ -135,6 +135,7 @@ func displayStart(e *edgevpn.EdgeVPN) {
 func cliToOpts(c *cli.Context) []edgevpn.Option {
 	config := c.String("config")
 	address := c.String("address")
+	router := c.String("router")
 	iface := c.String("interface")
 	logLevel := c.String("log-level")
 	libp2plogLevel := c.String("libp2p-log-level")
@@ -179,6 +180,7 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		edgevpn.WithInterfaceMTU(c.Int("mtu")),
 		edgevpn.WithPacketMTU(1420),
 		edgevpn.WithInterfaceAddress(address),
+		edgevpn.WithRouterAddress(router),
 		edgevpn.WithInterfaceName(iface),
 		edgevpn.WithInterfaceType(water.TUN),
 		edgevpn.NetLinkBootstrap(true),

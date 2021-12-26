@@ -53,6 +53,13 @@ func WithInterfaceAddress(i string) func(cfg *Config) error {
 	}
 }
 
+func WithRouterAddress(i string) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.RouterAddress = i
+		return nil
+	}
+}
+
 func WithInterfaceMTU(i int) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.InterfaceMTU = i
