@@ -5,12 +5,22 @@ package edgevpn
 
 import (
 	"net"
+	"os/exec"
+	"fmt"
+	"log"
 
 	"github.com/songgao/water"
 )
 
 func (e *EdgeVPN) prepareInterface() error {
-
+	err := netsh("interface", "ip", "set", "address", "name=", e.config.InterfaceName, "static", e.config.InterfaceAddress)
+	if err != nil {
+		log.Println(err)
+	}
+	err = netsh("interface", "ipv4", "set", "subinterface", e.config.InterfaceName, "mtu=", fmt.Sprintf("%d", e.config.InterfaceMTU))
+	if err != nil {
+		log.Println(err)
+	}
 	return nil
 }
 
@@ -37,4 +47,10 @@ func (e *EdgeVPN) createInterface() (*water.Interface, error) {
 	}
 
 	return water.New(config)
+}
+
+func netsh(args ...string) (err error) {
+	cmd := exec.Command("netsh", args...)
+	err = cmd.Run()
+	return
 }
