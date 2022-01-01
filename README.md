@@ -41,6 +41,7 @@ Users            |  Blockchain index
 :-------------------------:|:-------------------------:
 ![Screenshot 2021-10-31 at 23-04-12 EdgeVPN - Users connected](https://user-images.githubusercontent.com/2420543/139602708-d102ae09-12f2-4c4c-bcc2-d8f4366355e0.png) | ![Screenshot 2021-10-31 at 23-04-20 EdgeVPN - Blockchain index](https://user-images.githubusercontent.com/2420543/139602709-244960bb-ea1d-413b-8c3e-8959133427ae.png)
 
+
 EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p network.
 
 **VPN** :  Creates a vpn between p2p peers
@@ -52,6 +53,16 @@ EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p net
 At implementation detail, EdgeVPN uses a blockchain to store *Services UUID*, *Files UUID*, *VPN Data* into the shared ledger: It connect and creates a small blockchain between nodes. 
 
 **The blockchain is ephemeral and on-memory**. Each node keeps broadcasting it's state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.  
+
+# :new: GUI
+
+A Desktop GUI application (alpha) for Linux is available [here](https://github.com/mudler/edgevpn-gui)
+
+Dashboard            |  Connections index
+:-------------------------:|:-------------------------:
+![edgevpn-gui-2](https://user-images.githubusercontent.com/2420543/147854909-a223a7c1-5caa-4e90-b0ac-0ae04dc0949d.png) | ![edgevpn-3](https://user-images.githubusercontent.com/2420543/147854904-09d96991-8752-421a-a301-8f0bdd9d5542.png)
+![edgevpn-gui](https://user-images.githubusercontent.com/2420543/147854907-1e4a4715-3181-4dc2-8bc0-d052b3bf46d3.png) | 
+
 
 # :question: Why? 
 
