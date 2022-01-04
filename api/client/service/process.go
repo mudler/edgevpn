@@ -33,11 +33,12 @@ type ProcessController struct {
 }
 
 // Process returns a process associated within binaries inside the state dir
-func (a *ProcessController) Process(state, p string, args ...string) *process.Process {
+func (a *ProcessController) Process(state, p string, opts ...process.Option) *process.Process {
 	return process.New(
-		process.WithName(a.BinaryPath(p)),
-		process.WithArgs(args...),
-		process.WithStateDir(filepath.Join(a.stateDir, "proc", state)),
+		append(opts,
+			process.WithName(a.BinaryPath(p)),
+			process.WithStateDir(filepath.Join(a.stateDir, "proc", state)),
+		)...,
 	)
 }
 
