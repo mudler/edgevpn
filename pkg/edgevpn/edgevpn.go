@@ -22,6 +22,7 @@ import (
 	"net"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/ipfs/go-log"
@@ -62,12 +63,14 @@ var defaultLibp2pOptions = []libp2p.Option{
 
 func New(p ...Option) *EdgeVPN {
 	c := Config{
+		Concurrency:              1,
 		DiscoveryInterval:        120 * time.Second,
 		StreamHandlers:           make(map[protocol.ID]StreamHandler),
 		LedgerAnnounceTime:       5 * time.Second,
 		LedgerSyncronizationTime: 5 * time.Second,
 		SealKeyLength:            12,
 		Options:                  defaultLibp2pOptions,
+		Timeout:                  15 * time.Second,
 	}
 	c.Apply(p...)
 
@@ -139,7 +142,7 @@ func newBlockChainData(e *EdgeVPN, address string) types.Machine {
 }
 
 // Start the vpn. Returns an error in case of failure
-func (e *EdgeVPN) Start() error {
+func (e *EdgeVPN) Start(ctx context.Context) error {
 	ifce, err := e.createInterface()
 	if err != nil {
 		return err
@@ -192,7 +195,7 @@ func (e *EdgeVPN) Start() error {
 	}
 
 	// read packets from the interface
-	return e.readPackets(ledger, ifce)
+	return e.readPackets(ctx, ledger, ifce)
 }
 
 // end signals the event loop to exit gracefully
@@ -281,21 +284,53 @@ func (e *EdgeVPN) handleFrame(frame ethernet.Frame, ip net.IP, ledger *blockchai
 	return nil
 }
 
+func (e *EdgeVPN) connectionWorker(
+	p chan ethernet.Frame,
+	ip net.IP,
+	wg *sync.WaitGroup,
+	ledger *blockchain.Ledger,
+	ifce *water.Interface) {
+	defer wg.Done()
+	for f := range p {
+		if err := e.handleFrame(f, ip, ledger, ifce); err != nil {
+			e.config.Logger.Debugf("could not handle frame: %s", err.Error())
+		}
+	}
+}
+
 // redirects packets from the interface to the node using the routing table in the blockchain
-func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) error {
+func (e *EdgeVPN) readPackets(ctx context.Context, ledger *blockchain.Ledger, ifce *water.Interface) error {
 	ip, _, err := net.ParseCIDR(e.config.InterfaceAddress)
 	if err != nil {
 		return err
 	}
-	for {
-		frame, err := e.getFrame(ifce)
-		if err != nil {
-			e.config.Logger.Errorf("could not get frame '%s'", err.Error())
-			continue
-		}
 
-		if err := e.handleFrame(frame, ip, ledger, ifce); err != nil {
-			e.config.Logger.Errorf("could not handle frame '%s'", err.Error())
+	wg := new(sync.WaitGroup)
+
+	packets := make(chan ethernet.Frame, e.config.ChannelBufferSize)
+
+	defer func() {
+		close(packets)
+		go wg.Wait()
+	}()
+
+	for i := 0; i < e.config.Concurrency; i++ {
+		wg.Add(1)
+		go e.connectionWorker(packets, ip, wg, ledger, ifce)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			frame, err := e.getFrame(ifce)
+			if err != nil {
+				e.config.Logger.Errorf("could not get frame '%s'", err.Error())
+				continue
+			}
+
+			packets <- frame
 		}
 	}
 }

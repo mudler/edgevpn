@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"runtime"
 	"time"
 
 	"github.com/ipfs/go-log"
@@ -47,6 +48,12 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Specify a mtu",
 		EnvVar: "EDGEVPNMTU",
 		Value:  1200,
+	},
+	&cli.IntFlag{
+		Name:   "channel-buffer-size",
+		Usage:  "Specify a channel buffer size",
+		EnvVar: "EDGEVPNCHANNELBUFFERSIZE",
+		Value:  0,
 	},
 	&cli.IntFlag{
 		Name:   "discovery-interval",
@@ -103,6 +110,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "autorelay",
 		Usage:  "Automatically act as a relay if the node can accept inbound connections",
 		EnvVar: "EDGEVPNAUTORELAY",
+	},
+	&cli.IntFlag{
+		Name:  "concurrency",
+		Usage: "Number of concurrent requests to serve",
+		Value: runtime.NumCPU(),
 	},
 	&cli.BoolTFlag{
 		Name:   "holepunch",
@@ -206,6 +218,7 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		edgevpn.WithTimeout(c.String("timeout")),
 		edgevpn.WithInterfaceType(water.TUN),
 		edgevpn.NetLinkBootstrap(true),
+		edgevpn.WithChannelBufferSize(c.Int("channel-buffer-size")),
 		edgevpn.FromBase64(mDNS, dht, token),
 		edgevpn.FromYaml(mDNS, dht, config),
 	}

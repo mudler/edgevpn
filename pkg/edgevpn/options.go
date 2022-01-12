@@ -55,6 +55,20 @@ func WithTimeout(s string) Option {
 	}
 }
 
+func WithConcurrency(i int) Option {
+	return func(cfg *Config) error {
+		cfg.Concurrency = i
+		return nil
+	}
+}
+
+func WithChannelBufferSize(i int) Option {
+	return func(cfg *Config) error {
+		cfg.ChannelBufferSize = i
+		return nil
+	}
+}
+
 func WithNetworkService(ns ...NetworkService) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.NetworkServices = append(cfg.NetworkServices, ns...)

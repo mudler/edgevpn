@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -34,6 +35,7 @@ under certain conditions.`
 
 func MainFlags() []cli.Flag {
 	return append([]cli.Flag{
+
 		&cli.BoolFlag{
 			Name:  "g",
 			Usage: "Generates a new configuration and prints it on screen",
@@ -103,7 +105,7 @@ func Main() func(c *cli.Context) error {
 			go api.API(c.String("api-listen"), 5*time.Second, 20*time.Second, ledger)
 		}
 
-		if err := e.Start(); err != nil {
+		if err := e.Start(context.Background()); err != nil {
 			e.Logger().Fatal(err.Error())
 		}
 

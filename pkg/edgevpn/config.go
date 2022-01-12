@@ -73,7 +73,9 @@ type Config struct {
 	DiscoveryInterval, LedgerSyncronizationTime, LedgerAnnounceTime time.Duration
 	DiscoveryBootstrapPeers                                         discovery.AddrList
 
-	Timeout time.Duration
+	Timeout           time.Duration
+	Concurrency       int
+	ChannelBufferSize int
 }
 
 type NetworkService func(context.Context, *EdgeVPN, *blockchain.Ledger) error
