@@ -17,6 +17,7 @@ package edgevpn
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -34,6 +35,7 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn/types"
 	hub "github.com/mudler/edgevpn/pkg/hub"
+	"github.com/pkg/errors"
 	"github.com/songgao/packets/ethernet"
 	"github.com/songgao/water"
 	"golang.org/x/net/ipv4"
@@ -227,58 +229,74 @@ func streamHandler(ledger *blockchain.Ledger, ifce *water.Interface) func(stream
 	}
 }
 
+func (e *EdgeVPN) getFrame(ifce *water.Interface) (ethernet.Frame, error) {
+	var frame ethernet.Frame
+	frame.Resize(e.config.MTU)
+
+	n, err := ifce.Read([]byte(frame))
+	if err != nil {
+		return frame, errors.Wrap(err, "could not read from interface")
+	}
+
+	frame = frame[:n]
+	return frame, nil
+}
+
+func (e *EdgeVPN) handleFrame(frame ethernet.Frame, ip net.IP, ledger *blockchain.Ledger, ifce *water.Interface) error {
+	ctx, cancel := context.WithTimeout(context.Background(), e.config.Timeout)
+	defer cancel()
+
+	header, err := ipv4.ParseHeader(frame)
+	if err != nil {
+		return errors.Wrap(err, "could not parse ipv4 header from frame")
+	}
+
+	dst := header.Dst.String()
+	if e.config.RouterAddress != "" && header.Src.Equal(ip) {
+		dst = e.config.RouterAddress
+	}
+
+	// Query the routing table
+	value, found := ledger.GetKey(MachinesLedgerKey, dst)
+	if !found {
+		return fmt.Errorf("'%s' not found in the routing table", dst)
+	}
+	machine := &types.Machine{}
+	value.Unmarshal(machine)
+
+	// Decode the Peer
+	d, err := peer.Decode(machine.PeerID)
+	if err != nil {
+		return errors.Wrap(err, "could not decode peer")
+	}
+
+	// Open a stream
+	stream, err := e.host.NewStream(ctx, d, Protocol)
+	if err != nil {
+		return errors.Wrap(err, "could not open stream")
+	}
+
+	stream.Write(frame)
+	stream.Close()
+	return nil
+}
+
 // redirects packets from the interface to the node using the routing table in the blockchain
 func (e *EdgeVPN) readPackets(ledger *blockchain.Ledger, ifce *water.Interface) error {
-	ctx := context.Background()
 	ip, _, err := net.ParseCIDR(e.config.InterfaceAddress)
 	if err != nil {
 		return err
 	}
 	for {
-		var frame ethernet.Frame
-		frame.Resize(e.config.MTU)
-		n, err := ifce.Read([]byte(frame))
+		frame, err := e.getFrame(ifce)
 		if err != nil {
-			e.config.Logger.Debug("could not read from interface")
-			return err
-		}
-		frame = frame[:n]
-
-		header, err := ipv4.ParseHeader(frame)
-		if err != nil {
-			e.config.Logger.Debugf("could not parase ipv4 header from frame")
+			e.config.Logger.Errorf("could not get frame '%s'", err.Error())
 			continue
 		}
 
-		dst := header.Dst.String()
-		if e.config.RouterAddress != "" && header.Src.Equal(ip) {
-			dst = e.config.RouterAddress
+		if err := e.handleFrame(frame, ip, ledger, ifce); err != nil {
+			e.config.Logger.Errorf("could not handle frame '%s'", err.Error())
 		}
-
-		// Query the routing table
-		value, found := ledger.GetKey(MachinesLedgerKey, dst)
-		if !found {
-			e.config.Logger.Debugf("'%s' not found in the routing table", dst)
-			continue
-		}
-		machine := &types.Machine{}
-		value.Unmarshal(machine)
-
-		// Decode the Peer
-		d, err := peer.Decode(machine.PeerID)
-		if err != nil {
-			e.config.Logger.Debugf("could not decode peer '%s'", value)
-			continue
-		}
-
-		// Open a stream
-		stream, err := e.host.NewStream(ctx, d, Protocol)
-		if err != nil {
-			e.config.Logger.Debugf("could not open stream '%s'", err.Error())
-			continue
-		}
-		stream.Write(frame)
-		stream.Close()
 	}
 }
 

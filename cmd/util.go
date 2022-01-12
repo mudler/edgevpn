@@ -36,6 +36,12 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Specify a path to a edgevpn config file",
 		EnvVar: "EDGEVPNCONFIG",
 	},
+	&cli.StringFlag{
+		Name:   "timeout",
+		Usage:  "Specify a default timeout for connection stream",
+		EnvVar: "EDGEVPNTIMEOUT",
+		Value:  "15s",
+	},
 	&cli.IntFlag{
 		Name:   "mtu",
 		Usage:  "Specify a mtu",
@@ -197,6 +203,7 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		edgevpn.WithInterfaceAddress(address),
 		edgevpn.WithRouterAddress(router),
 		edgevpn.WithInterfaceName(iface),
+		edgevpn.WithTimeout(c.String("timeout")),
 		edgevpn.WithInterfaceType(water.TUN),
 		edgevpn.NetLinkBootstrap(true),
 		edgevpn.FromBase64(mDNS, dht, token),

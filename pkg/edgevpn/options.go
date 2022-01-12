@@ -47,6 +47,14 @@ func WithLibp2pAdditionalOptions(i ...libp2p.Option) func(cfg *Config) error {
 	}
 }
 
+func WithTimeout(s string) Option {
+	return func(cfg *Config) error {
+		d, err := time.ParseDuration(s)
+		cfg.Timeout = d
+		return err
+	}
+}
+
 func WithNetworkService(ns ...NetworkService) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.NetworkServices = append(cfg.NetworkServices, ns...)
