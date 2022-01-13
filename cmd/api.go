@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"context"
 	"time"
 
 	"github.com/mudler/edgevpn/api"
@@ -43,7 +44,7 @@ A simple UI interface is available to display network data.`,
 			displayStart(e)
 
 			// Join the node to the network, using our ledger
-			if err := e.Join(); err != nil {
+			if err := e.Join(context.Background()); err != nil {
 				return err
 			}
 			ledger, _ := e.Ledger()

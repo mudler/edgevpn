@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 
 	"github.com/mudler/edgevpn/pkg/edgevpn"
@@ -78,7 +79,7 @@ This is also the ID used to refer when receiving it.`,
 			// Join the node to the network, using our ledger
 			e.SendFile(ledger, name, path)
 			// Join the node to the network, using our ledger
-			if err := e.Join(); err != nil {
+			if err := e.Join(context.Background()); err != nil {
 				return err
 			}
 
@@ -116,7 +117,7 @@ func FileReceive() cli.Command {
 			displayStart(e)
 
 			// Join the node to the network, using our ledger
-			if err := e.Join(); err != nil {
+			if err := e.Join(context.Background()); err != nil {
 				return err
 			}
 

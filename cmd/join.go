@@ -16,6 +16,8 @@
 package cmd
 
 import (
+	"context"
+
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
 )
@@ -34,7 +36,7 @@ Useful for setting up relays or hop nodes to improve the network connectivity.`,
 			displayStart(e)
 
 			// Join the node to the network, using our ledger
-			if err := e.Join(); err != nil {
+			if err := e.Join(context.Background()); err != nil {
 				return err
 			}
 

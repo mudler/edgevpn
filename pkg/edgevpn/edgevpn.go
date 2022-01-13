@@ -98,7 +98,7 @@ func (e *EdgeVPN) Ledger() (*blockchain.Ledger, error) {
 // Join the network with the ledger.
 // It does the minimal action required to be connected
 // without any active packet routing
-func (e *EdgeVPN) Join() error {
+func (e *EdgeVPN) Join(ctx context.Context) error {
 
 	ledger, err := e.Ledger()
 	if err != nil {
@@ -118,11 +118,11 @@ func (e *EdgeVPN) Join() error {
 	}
 
 	// Send periodically messages to the channel with our blockchain content
-	ledger.Syncronizer(context.Background(), e.config.LedgerSyncronizationTime)
+	ledger.Syncronizer(ctx, e.config.LedgerSyncronizationTime)
 
 	// Start eventual declared NetworkServices
 	for _, s := range e.config.NetworkServices {
-		go s(context.Background(), e, ledger)
+		go s(ctx, e, ledger)
 	}
 
 	return nil
@@ -160,7 +160,7 @@ func (e *EdgeVPN) Start(ctx context.Context) error {
 	// Join the node to the network, using our ledger
 	// it also starts up a goroutine that periodically sends
 	// messages to the network with our blockchain content
-	if err := e.Join(); err != nil {
+	if err := e.Join(ctx); err != nil {
 		return err
 	}
 
@@ -311,7 +311,7 @@ func (e *EdgeVPN) readPackets(ctx context.Context, ledger *blockchain.Ledger, if
 
 	defer func() {
 		close(packets)
-		go wg.Wait()
+		wg.Wait()
 	}()
 
 	for i := 0; i < e.config.Concurrency; i++ {

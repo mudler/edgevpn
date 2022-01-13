@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 
 	"github.com/mudler/edgevpn/pkg/edgevpn"
@@ -78,7 +79,7 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 			// Join the node to the network, using our ledger
 			e.ExposeService(ledger, name, address)
 			// Join the node to the network, using our ledger
-			if err := e.Join(); err != nil {
+			if err := e.Join(context.Background()); err != nil {
 				return err
 			}
 
@@ -118,7 +119,7 @@ to the service over the network`,
 			displayStart(e)
 
 			// Join the node to the network, using our ledger
-			if err := e.Join(); err != nil {
+			if err := e.Join(context.Background()); err != nil {
 				return err
 			}
 
