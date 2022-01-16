@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"time"
@@ -25,7 +24,6 @@ import (
 	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/urfave/cli"
-	"gopkg.in/yaml.v2"
 )
 
 const Copyright string = `	edgevpn  Copyright (C) 2021 Ettore Di Giacinto
@@ -77,16 +75,10 @@ func Main() func(c *cli.Context) error {
 		if c.Bool("g") {
 			// Generates a new config and exit
 			newData := edgevpn.GenerateNewConnectionData()
-			bytesData, err := yaml.Marshal(newData)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-
 			if c.Bool("b") {
-				fmt.Print(base64.StdEncoding.EncodeToString(bytesData))
+				fmt.Print(newData.Base64())
 			} else {
-				fmt.Println(string(bytesData))
+				fmt.Println(newData.YAML())
 			}
 
 			os.Exit(0)

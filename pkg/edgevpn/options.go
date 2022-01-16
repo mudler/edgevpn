@@ -281,6 +281,18 @@ type YAMLConnectionConfig struct {
 	MaxMessageSize int    `yaml:"max_message_size"`
 }
 
+// Base64 returns the base64 string representation of the connection
+func (y YAMLConnectionConfig) Base64() string {
+	bytesData, _ := yaml.Marshal(y)
+	return base64.StdEncoding.EncodeToString(bytesData)
+}
+
+// YAML returns the connection config as yaml string
+func (y YAMLConnectionConfig) YAML() string {
+	bytesData, _ := yaml.Marshal(y)
+	return string(bytesData)
+}
+
 func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config) {
 	d := &discovery.DHT{
 		RefreshDiscoveryTime: cfg.DiscoveryInterval,
