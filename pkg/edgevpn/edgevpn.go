@@ -36,6 +36,7 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/edgevpn/types"
 	hub "github.com/mudler/edgevpn/pkg/hub"
+	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/pkg/errors"
 	"github.com/songgao/packets/ethernet"
 	"github.com/songgao/water"
@@ -71,6 +72,7 @@ func New(p ...Option) *EdgeVPN {
 		SealKeyLength:            12,
 		Options:                  defaultLibp2pOptions,
 		Timeout:                  15 * time.Second,
+		Logger:                   logger.New(log.LevelDebug),
 	}
 	c.Apply(p...)
 
