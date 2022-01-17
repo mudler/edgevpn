@@ -268,25 +268,46 @@ We have used flannel here, but other CNI should work as well.
 
 # :notebook: As a library
 
-EdgeVPN can be used as a library. It is very portable and offers a functional interface:
+EdgeVPN can be used as a library. It is very portable and offers a functional interface.
+
+To join a node in a network from a token, without starting the vpn:
 
 ```golang
 
 import (
-    edgevpn "github.com/mudler/edgevpn/pkg/node"
+    node "github.com/mudler/edgevpn/pkg/node"
 )
 
-e := edgevpn.New(edgevpn.Logger(l),
-    edgevpn.LogLevel(log.LevelInfo),
-    edgevpn.MaxMessageSize(2 << 20),
-    edgevpn.WithMTU(1500),
-    edgevpn.WithInterfaceMTU(1300),
-    edgevpn.WithInterfaceAddress(os.Getenv("ADDRESS")),
-    edgevpn.WithInterfaceName(os.Getenv("IFACE")),
+e := node.New(edgevpn.Logger(l),
+    node.LogLevel(log.LevelInfo),
+    node.MaxMessageSize(2 << 20),
+    node.FromBase64( mDNSEnabled, DHTEnabled, token ),
     // ....
-    edgevpn.WithInterfaceType(water.TAP))
+  )
 
-e.Start()
+e.Start(ctx)
+
+```
+
+or to start a VPN:
+
+```golang
+
+import (
+    vpn "github.com/mudler/edgevpn/pkg/vpn"
+    node "github.com/mudler/edgevpn/pkg/node"
+)
+
+e := node.New(edgevpn.Logger(l),
+    node.LogLevel(log.LevelInfo),
+    node.MaxMessageSize(2 << 20),
+    node.FromBase64( mDNSEnabled, DHTEnabled, token ),
+    // ....
+  )
+
+ledger := e.Ledger()
+
+vpn.Start(ctx, ledger, e, opts..)
 
 ```
 
