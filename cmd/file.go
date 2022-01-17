@@ -80,7 +80,7 @@ This is also the ID used to refer when receiving it.`,
 				return err
 			}
 
-			services.SendFile(ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
+			services.SendFile(context.Background(), ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
 
 			// Start the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {
@@ -127,7 +127,7 @@ func FileReceive() cli.Command {
 
 			ledger, _ := e.Ledger()
 
-			return services.ReceiveFile(ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
+			return services.ReceiveFile(context.Background(), ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
 		},
 	}
 }

@@ -31,13 +31,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func SendFile(ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID, filepath string) error {
+func SendFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID, filepath string) error {
 
 	l.Infof("Serving '%s' as '%s'", filepath, fileID)
 
 	// By announcing periodically our service to the blockchain
 	ledger.Announce(
-		context.Background(),
+		ctx,
 		announcetime,
 		func() {
 			// Retrieve current ID for ip in the blockchain
@@ -88,11 +88,10 @@ func SendFile(ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, 
 	return nil
 }
 
-func ReceiveFile(ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID string, path string) error {
-
+func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID string, path string) error {
 	// Announce ourselves so nodes accepts our connection
 	ledger.Announce(
-		context.Background(),
+		ctx,
 		announcetime,
 		func() {
 			// Retrieve current ID for ip in the blockchain
@@ -108,60 +107,62 @@ func ReceiveFile(ledger *blockchain.Ledger, node types.Node, l log.StandardLogge
 			}
 		},
 	)
+
 	for {
-		time.Sleep(5 * time.Second)
+		select {
+		case <-ctx.Done():
+			return errors.New("context canceled")
+		default:
+			time.Sleep(5 * time.Second)
 
-		l.Debug("Attempting to find file in the blockchain")
+			l.Debug("Attempting to find file in the blockchain")
 
-		_, found := ledger.GetKey(protocol.UsersLedgerKey, node.Host().ID().String())
-		if !found {
-			continue
+			_, found := ledger.GetKey(protocol.UsersLedgerKey, node.Host().ID().String())
+			if !found {
+				continue
+			}
+			existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
+			fi := &types.File{}
+			existingValue.Unmarshal(fi)
+			// If mismatch, update the blockchain
+			if !found {
+				l.Debug("file not found on blockchain, retrying in 5 seconds")
+				continue
+			} else {
+				// Retrieve current ID for ip in the blockchain
+				existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
+				fi := &types.File{}
+				existingValue.Unmarshal(fi)
+
+				// If mismatch, update the blockchain
+				if !found {
+					return errors.New("file not found")
+				}
+
+				// Decode the Peer
+				d, err := peer.Decode(fi.PeerID)
+				if err != nil {
+					return err
+				}
+
+				// Open a stream
+				stream, err := node.Host().NewStream(context.Background(), d, protocol.FileProtocol.ID())
+				if err != nil {
+					return err
+				}
+				l.Infof("Saving file %s to %s", fileID, path)
+
+				f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+				if err != nil {
+					return err
+				}
+
+				io.Copy(f, stream)
+
+				f.Close()
+
+				l.Infof("Received file %s to %s", fileID, path)
+			}
 		}
-		existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
-		fi := &types.File{}
-		existingValue.Unmarshal(fi)
-		// If mismatch, update the blockchain
-		if !found {
-			l.Debug("file not found on blockchain, retrying in 5 seconds")
-			continue
-		} else {
-			break
-		}
 	}
-	// Listen for an incoming connection.
-
-	// Retrieve current ID for ip in the blockchain
-	existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
-	fi := &types.File{}
-	existingValue.Unmarshal(fi)
-
-	// If mismatch, update the blockchain
-	if !found {
-		return errors.New("file not found")
-	}
-
-	// Decode the Peer
-	d, err := peer.Decode(fi.PeerID)
-	if err != nil {
-		return err
-	}
-
-	// Open a stream
-	stream, err := node.Host().NewStream(context.Background(), d, protocol.FileProtocol.ID())
-	if err != nil {
-		return err
-	}
-	l.Infof("Saving file %s to %s", fileID, path)
-
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
-	if err != nil {
-		return err
-	}
-
-	io.Copy(f, stream)
-
-	f.Close()
-
-	l.Infof("Received file %s to %s", fileID, path)
-	return nil
 }

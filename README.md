@@ -273,7 +273,7 @@ EdgeVPN can be used as a library. It is very portable and offers a functional in
 ```golang
 
 import (
-    edgevpn "github.com/mudler/edgevpn/pkg/edgevpn"
+    edgevpn "github.com/mudler/edgevpn/pkg/node"
 )
 
 e := edgevpn.New(edgevpn.Logger(l),
