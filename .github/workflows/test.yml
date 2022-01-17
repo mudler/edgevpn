@@ -63,6 +63,7 @@ jobs:
           path: ./
       - name: Test suite
         run: |
+              sudo sysctl -w net.core.rmem_max=2500000
               chmod +x edgevpn
               EDGEVPNCONFIG=config.yaml ./.github/tests.sh
 
@@ -94,6 +95,7 @@ jobs:
       - name: Ping test
         run: |
               chmod +x edgevpn
+              sudo sysctl -w net.core.rmem_max=2500000
               sudo EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=${{ matrix.ip }} ./edgevpn --api &
               bash ./.github/vpntest.sh ${{ matrix.target_ip }}
 
@@ -124,6 +126,7 @@ jobs:
         run: |
               chmod +x edgevpn
               export EDGEVPNCONFIG=config.yaml
+              sudo sysctl -w net.core.rmem_max=2500000
               bash ./.github/servicestest.sh ${{ matrix.role }}
 
   filestest:
@@ -153,4 +156,5 @@ jobs:
         run: |
               chmod +x edgevpn
               export EDGEVPNCONFIG=config.yaml
+              sudo sysctl -w net.core.rmem_max=2500000
               bash ./.github/filetest.sh ${{ matrix.role }}
