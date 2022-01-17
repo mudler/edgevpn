@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package edgevpn_test
+package node_test
 
 import (
 	"context"
@@ -25,8 +25,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/mudler/edgevpn/pkg/blockchain"
-	. "github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/mudler/edgevpn/pkg/logger"
+	. "github.com/mudler/edgevpn/pkg/node"
 )
 
 var _ = Describe("EdgeVPN", func() {
@@ -41,8 +41,8 @@ var _ = Describe("EdgeVPN", func() {
 		It("see each other node ID", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			e.Join(ctx)
-			e2.Join(ctx)
+			e.Start(ctx)
+			e2.Start(ctx)
 
 			Eventually(func() []peer.ID {
 				return e.Host().Network().Peers()

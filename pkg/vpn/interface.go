@@ -16,33 +16,33 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package edgevpn
+package vpn
 
 import (
 	"github.com/songgao/water"
 	"github.com/vishvananda/netlink"
 )
 
-func (e *EdgeVPN) createInterface() (*water.Interface, error) {
+func createInterface(c *Config) (*water.Interface, error) {
 	config := water.Config{
-		DeviceType: e.config.DeviceType,
+		DeviceType: c.DeviceType,
 	}
-	config.Name = e.config.InterfaceName
+	config.Name = c.InterfaceName
 
 	return water.New(config)
 }
 
-func (e *EdgeVPN) prepareInterface() error {
-	link, err := netlink.LinkByName(e.config.InterfaceName)
+func prepareInterface(c *Config) error {
+	link, err := netlink.LinkByName(c.InterfaceName)
 	if err != nil {
 		return err
 	}
-	addr, err := netlink.ParseAddr(e.config.InterfaceAddress)
+	addr, err := netlink.ParseAddr(c.InterfaceAddress)
 	if err != nil {
 		return err
 	}
 
-	err = netlink.LinkSetMTU(link, e.config.InterfaceMTU)
+	err = netlink.LinkSetMTU(link, c.InterfaceMTU)
 	if err != nil {
 		return err
 	}

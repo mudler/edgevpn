@@ -18,8 +18,10 @@ package cmd
 import (
 	"context"
 	"errors"
+	"time"
 
-	"github.com/mudler/edgevpn/pkg/edgevpn"
+	"github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/urfave/cli"
 )
 
@@ -68,7 +70,8 @@ This is also the ID used to refer when receiving it.`,
 			if err != nil {
 				return err
 			}
-			e := edgevpn.New(cliToOpts(c)...)
+			o, _ := cliToOpts(c)
+			e := node.New(o...)
 
 			displayStart(e)
 
@@ -76,10 +79,11 @@ This is also the ID used to refer when receiving it.`,
 			if err != nil {
 				return err
 			}
-			// Join the node to the network, using our ledger
-			e.SendFile(ledger, name, path)
-			// Join the node to the network, using our ledger
-			if err := e.Join(context.Background()); err != nil {
+
+			services.SendFile(ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
+
+			// Start the node to the network, using our ledger
+			if err := e.Start(context.Background()); err != nil {
 				return err
 			}
 
@@ -111,19 +115,19 @@ func FileReceive() cli.Command {
 			if err != nil {
 				return err
 			}
-
-			e := edgevpn.New(cliToOpts(c)...)
+			o, _ := cliToOpts(c)
+			e := node.New(o...)
 
 			displayStart(e)
 
-			// Join the node to the network, using our ledger
-			if err := e.Join(context.Background()); err != nil {
+			// Start the node to the network, using our ledger
+			if err := e.Start(context.Background()); err != nil {
 				return err
 			}
 
 			ledger, _ := e.Ledger()
 
-			return e.ReceiveFile(ledger, name, path)
+			return services.ReceiveFile(ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
 		},
 	}
 }

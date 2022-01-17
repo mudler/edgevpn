@@ -18,25 +18,26 @@ package cmd
 import (
 	"context"
 
-	"github.com/mudler/edgevpn/pkg/edgevpn"
+	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/urfave/cli"
 )
 
-func Join() cli.Command {
+func Start() cli.Command {
 	return cli.Command{
-		Name:  "join",
-		Usage: "Join the network without activating any interface",
+		Name:  "Start",
+		Usage: "Start the network without activating any interface",
 		Description: `Connect over the p2p network without establishing a VPN.
 Useful for setting up relays or hop nodes to improve the network connectivity.`,
-		UsageText: "edgevpn join",
+		UsageText: "edgevpn Start",
 		Flags:     CommonFlags,
 		Action: func(c *cli.Context) error {
-			e := edgevpn.New(cliToOpts(c)...)
+			o, _ := cliToOpts(c)
+			e := node.New(o...)
 
 			displayStart(e)
 
-			// Join the node to the network, using our ledger
-			if err := e.Join(context.Background()); err != nil {
+			// Start the node to the network, using our ledger
+			if err := e.Start(context.Background()); err != nil {
 				return err
 			}
 

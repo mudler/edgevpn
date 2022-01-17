@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package edgevpn
+package node
 
 import (
 	"context"
@@ -31,17 +31,12 @@ import (
 	"github.com/xlzd/gotp"
 )
 
-const (
-	Protocol        = "/edgevpn/0.1"
-	ServiceProtocol = "/edgevpn/service/0.1"
-	FileProtocol    = "/edgevpn/file/0.1"
-)
-
-func (e *EdgeVPN) Host() host.Host {
+// Host returns the libp2p peer host
+func (e *Node) Host() host.Host {
 	return e.host
 }
 
-func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
+func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 	var r io.Reader
 	if e.seed == 0 {
 		r = rand.Reader
@@ -96,11 +91,11 @@ func (e *EdgeVPN) genHost(ctx context.Context) (host.Host, error) {
 	return libp2p.New(opts...)
 }
 
-func (e *EdgeVPN) sealkey() string {
+func (e *Node) sealkey() string {
 	return gotp.NewTOTP(e.config.ExchangeKey, e.config.SealKeyLength, e.config.SealKeyInterval, nil).Now()
 }
 
-func (e *EdgeVPN) handleEvents(ctx context.Context) {
+func (e *Node) handleEvents(ctx context.Context) {
 	for {
 		select {
 		case m := <-e.inputCh:
@@ -115,13 +110,11 @@ func (e *EdgeVPN) handleEvents(ctx context.Context) {
 			e.handleReceivedMessage(m)
 		case <-ctx.Done():
 			return
-		case <-e.doneCh:
-			return
 		}
 	}
 }
 
-func (e *EdgeVPN) handleReceivedMessage(m *hub.Message) {
+func (e *Node) handleReceivedMessage(m *hub.Message) {
 	for _, h := range e.config.Handlers {
 		if err := h(m); err != nil {
 			e.config.Logger.Warnf("handler error: %s", err)
@@ -129,7 +122,7 @@ func (e *EdgeVPN) handleReceivedMessage(m *hub.Message) {
 	}
 }
 
-func (e *EdgeVPN) handleOutgoingMessage(m *hub.Message) {
+func (e *Node) handleOutgoingMessage(m *hub.Message) {
 	err := e.HubRoom.PublishMessage(m)
 	if err != nil {
 		e.config.Logger.Warnf("publish error: %s", err)

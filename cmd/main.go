@@ -22,11 +22,12 @@ import (
 	"time"
 
 	"github.com/mudler/edgevpn/api"
-	"github.com/mudler/edgevpn/pkg/edgevpn"
+	edgevpn "github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/vpn"
 	"github.com/urfave/cli"
 )
 
-const Copyright string = `	edgevpn  Copyright (C) 2021 Ettore Di Giacinto
+const Copyright string = `	edgevpn  Copyright (C) 2021-2022 Ettore Di Giacinto
 This program comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
 under certain conditions.`
@@ -83,8 +84,9 @@ func Main() func(c *cli.Context) error {
 
 			os.Exit(0)
 		}
+		o, vpnOpts := cliToOpts(c)
 
-		e := edgevpn.New(cliToOpts(c)...)
+		e := edgevpn.New(o...)
 
 		displayStart(e)
 
@@ -97,7 +99,7 @@ func Main() func(c *cli.Context) error {
 			go api.API(c.String("api-listen"), 5*time.Second, 20*time.Second, ledger)
 		}
 
-		if err := e.Start(context.Background()); err != nil {
+		if err := vpn.Start(context.Background(), ledger, e, vpnOpts...); err != nil {
 			e.Logger().Fatal(err.Error())
 		}
 

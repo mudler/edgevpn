@@ -18,8 +18,10 @@ package cmd
 import (
 	"context"
 	"errors"
+	"time"
 
-	"github.com/mudler/edgevpn/pkg/edgevpn"
+	"github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/urfave/cli"
 )
 
@@ -67,7 +69,8 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 			if err != nil {
 				return err
 			}
-			e := edgevpn.New(cliToOpts(c)...)
+			o, _ := cliToOpts(c)
+			e := node.New(o...)
 
 			displayStart(e)
 
@@ -76,10 +79,10 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 				return err
 			}
 
+			services.ExposeService(ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)
+
 			// Join the node to the network, using our ledger
-			e.ExposeService(ledger, name, address)
-			// Join the node to the network, using our ledger
-			if err := e.Join(context.Background()); err != nil {
+			if err := e.Start(context.Background()); err != nil {
 				return err
 			}
 
@@ -114,17 +117,18 @@ to the service over the network`,
 			if err != nil {
 				return err
 			}
-			e := edgevpn.New(cliToOpts(c)...)
+			o, _ := cliToOpts(c)
+			e := node.New(o...)
 
 			displayStart(e)
 
 			// Join the node to the network, using our ledger
-			if err := e.Join(context.Background()); err != nil {
+			if err := e.Start(context.Background()); err != nil {
 				return err
 			}
 
 			ledger, _ := e.Ledger()
-			return e.ConnectToService(ledger, name, address)
+			return services.ConnectToService(ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)
 		},
 	}
 }

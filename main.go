@@ -36,7 +36,7 @@ func main() {
 		Copyright:   cmd.Copyright,
 		Flags:       cmd.MainFlags(),
 		Commands: []cli.Command{
-			cmd.Join(),
+			cmd.Start(),
 			cmd.API(),
 			cmd.ServiceAdd(),
 			cmd.ServiceConnect(),

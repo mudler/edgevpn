@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/mudler/edgevpn/pkg/blockchain"
-	"github.com/mudler/edgevpn/pkg/edgevpn/types"
+	"github.com/mudler/edgevpn/pkg/types"
 )
 
 type (

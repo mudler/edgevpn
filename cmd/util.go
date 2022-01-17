@@ -24,8 +24,9 @@ import (
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/discovery"
-	"github.com/mudler/edgevpn/pkg/edgevpn"
 	"github.com/mudler/edgevpn/pkg/logger"
+	node "github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/vpn"
 	"github.com/peterbourgon/diskv"
 	"github.com/songgao/water"
 	"github.com/urfave/cli"
@@ -159,13 +160,13 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "EDGEVPNTOKEN",
 	}}
 
-func displayStart(e *edgevpn.EdgeVPN) {
+func displayStart(e *node.Node) {
 	e.Logger().Info(Copyright)
 
 	e.Logger().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
 }
 
-func cliToOpts(c *cli.Context) []edgevpn.Option {
+func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option) {
 	config := c.String("config")
 	address := c.String("address")
 	router := c.String("router")
@@ -203,24 +204,31 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		}
 	}
 
-	opts := []edgevpn.Option{
-		edgevpn.WithDiscoveryInterval(time.Duration(c.Int("discovery-interval")) * time.Second),
-		edgevpn.WithLedgerAnnounceTime(time.Duration(c.Int("ledger-announce-interval")) * time.Second),
-		edgevpn.WithLedgerInterval(time.Duration(c.Int("ledger-syncronization-interval")) * time.Second),
-		edgevpn.Logger(llger),
-		edgevpn.WithDiscoveryBootstrapPeers(addrsList),
-		edgevpn.LibP2PLogLevel(libp2plvl),
-		edgevpn.WithInterfaceMTU(c.Int("mtu")),
-		edgevpn.WithPacketMTU(1420),
-		edgevpn.WithInterfaceAddress(address),
-		edgevpn.WithRouterAddress(router),
-		edgevpn.WithInterfaceName(iface),
-		edgevpn.WithTimeout(c.String("timeout")),
-		edgevpn.WithInterfaceType(water.TUN),
-		edgevpn.NetLinkBootstrap(true),
-		edgevpn.WithChannelBufferSize(c.Int("channel-buffer-size")),
-		edgevpn.FromBase64(mDNS, dht, token),
-		edgevpn.FromYaml(mDNS, dht, config),
+	opts := []node.Option{
+		node.WithDiscoveryInterval(time.Duration(c.Int("discovery-interval")) * time.Second),
+		node.WithLedgerAnnounceTime(time.Duration(c.Int("ledger-announce-interval")) * time.Second),
+		node.WithLedgerInterval(time.Duration(c.Int("ledger-syncronization-interval")) * time.Second),
+		node.Logger(llger),
+		node.WithDiscoveryBootstrapPeers(addrsList),
+		node.LibP2PLogLevel(libp2plvl),
+		node.WithInterfaceAddress(address),
+		node.FromBase64(mDNS, dht, token),
+		node.FromYaml(mDNS, dht, config),
+	}
+
+	vpnOpts := []vpn.Option{
+		vpn.WithConcurrency(c.Int("concurrency")),
+		vpn.WithInterfaceAddress(address),
+		vpn.WithLedgerAnnounceTime(time.Duration(c.Int("ledger-announce-interval")) * time.Second),
+		vpn.Logger(llger),
+		vpn.WithTimeout(c.String("timeout")),
+		vpn.WithInterfaceType(water.TUN),
+		vpn.NetLinkBootstrap(true),
+		vpn.WithChannelBufferSize(c.Int("channel-buffer-size")),
+		vpn.WithInterfaceMTU(c.Int("mtu")),
+		vpn.WithPacketMTU(1420),
+		vpn.WithRouterAddress(router),
+		vpn.WithInterfaceName(iface),
 	}
 
 	libp2pOpts := []libp2p.Option{libp2p.UserAgent("edgevpn")}
@@ -249,17 +257,17 @@ func cliToOpts(c *cli.Context) []edgevpn.Option {
 		libp2pOpts = append(libp2pOpts, libp2p.NATPortMap())
 	}
 
-	opts = append(opts, edgevpn.WithLibp2pOptions(libp2pOpts...))
+	opts = append(opts, node.WithLibp2pOptions(libp2pOpts...))
 
 	if ledgerState != "" {
-		opts = append(opts, edgevpn.WithStore(blockchain.NewDiskStore(diskv.New(diskv.Options{
+		opts = append(opts, node.WithStore(blockchain.NewDiskStore(diskv.New(diskv.Options{
 			BasePath:     ledgerState,
 			CacheSizeMax: uint64(50), // 50MB
 		}))))
 	} else {
-		opts = append(opts, edgevpn.WithStore(&blockchain.MemoryStore{}))
+		opts = append(opts, node.WithStore(&blockchain.MemoryStore{}))
 
 	}
 
-	return opts
+	return opts, vpnOpts
 }

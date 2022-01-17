@@ -24,8 +24,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/mudler/edgevpn/pkg/blockchain"
-	"github.com/mudler/edgevpn/pkg/edgevpn"
-	"github.com/mudler/edgevpn/pkg/edgevpn/types"
+	"github.com/mudler/edgevpn/pkg/protocol"
+	"github.com/mudler/edgevpn/pkg/types"
 )
 
 //go:embed public
@@ -47,7 +47,7 @@ func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Le
 	// Get data from ledger
 	ec.GET("/api/files", func(c echo.Context) error {
 		list := []*types.File{}
-		for _, v := range ledger.CurrentData()[edgevpn.FilesLedgerKey] {
+		for _, v := range ledger.CurrentData()[protocol.FilesLedgerKey] {
 			machine := &types.File{}
 			v.Unmarshal(machine)
 			list = append(list, machine)
@@ -56,10 +56,10 @@ func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Le
 	})
 
 	ec.GET("/api/summary", func(c echo.Context) error {
-		files := len(ledger.CurrentData()[edgevpn.FilesLedgerKey])
-		machines := len(ledger.CurrentData()[edgevpn.MachinesLedgerKey])
-		users := len(ledger.CurrentData()[edgevpn.UsersLedgerKey])
-		services := len(ledger.CurrentData()[edgevpn.ServicesLedgerKey])
+		files := len(ledger.CurrentData()[protocol.FilesLedgerKey])
+		machines := len(ledger.CurrentData()[protocol.MachinesLedgerKey])
+		users := len(ledger.CurrentData()[protocol.UsersLedgerKey])
+		services := len(ledger.CurrentData()[protocol.ServicesLedgerKey])
 		blockchain := ledger.Index()
 
 		return c.JSON(http.StatusOK, struct {
@@ -69,7 +69,7 @@ func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Le
 
 	ec.GET("/api/machines", func(c echo.Context) error {
 		list := []*types.Machine{}
-		for _, v := range ledger.CurrentData()[edgevpn.MachinesLedgerKey] {
+		for _, v := range ledger.CurrentData()[protocol.MachinesLedgerKey] {
 			machine := &types.Machine{}
 			v.Unmarshal(machine)
 			list = append(list, machine)
@@ -79,7 +79,7 @@ func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Le
 
 	ec.GET("/api/users", func(c echo.Context) error {
 		user := []*types.User{}
-		for _, v := range ledger.CurrentData()[edgevpn.UsersLedgerKey] {
+		for _, v := range ledger.CurrentData()[protocol.UsersLedgerKey] {
 			u := &types.User{}
 			v.Unmarshal(u)
 			user = append(user, u)
@@ -89,7 +89,7 @@ func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Le
 
 	ec.GET("/api/services", func(c echo.Context) error {
 		list := []*types.Service{}
-		for _, v := range ledger.CurrentData()[edgevpn.ServicesLedgerKey] {
+		for _, v := range ledger.CurrentData()[protocol.ServicesLedgerKey] {
 			srvc := &types.Service{}
 			v.Unmarshal(srvc)
 			list = append(list, srvc)

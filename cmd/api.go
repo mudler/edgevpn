@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/mudler/edgevpn/api"
-	"github.com/mudler/edgevpn/pkg/edgevpn"
+	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/urfave/cli"
 )
 
@@ -39,14 +39,16 @@ A simple UI interface is available to display network data.`,
 			},
 		),
 		Action: func(c *cli.Context) error {
-			e := edgevpn.New(cliToOpts(c)...)
+			o, _ := cliToOpts(c)
+			e := node.New(o...)
 
 			displayStart(e)
 
-			// Join the node to the network, using our ledger
-			if err := e.Join(context.Background()); err != nil {
+			// Start the node to the network, using our ledger
+			if err := e.Start(context.Background()); err != nil {
 				return err
 			}
+
 			ledger, _ := e.Ledger()
 			return api.API(c.String("listen"), 5*time.Second, 20*time.Second, ledger)
 		},

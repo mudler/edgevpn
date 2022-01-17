@@ -32,7 +32,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	edgeVPNClient "github.com/mudler/edgevpn/api/client"
-	"github.com/mudler/edgevpn/pkg/edgevpn"
+	edgevpn "github.com/mudler/edgevpn/pkg/node"
 )
 
 // Node is the service Node.

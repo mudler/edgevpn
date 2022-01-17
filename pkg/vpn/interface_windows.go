@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package edgevpn
+package vpn
 
 import (
 	"fmt"
@@ -27,24 +27,24 @@ import (
 	"github.com/songgao/water"
 )
 
-func (e *EdgeVPN) prepareInterface() error {
-	err := netsh("interface", "ip", "set", "address", "name=", e.config.InterfaceName, "static", e.config.InterfaceAddress)
+func prepareInterface(c *Config) error {
+	err := netsh("interface", "ip", "set", "address", "name=", c.InterfaceName, "static", c.InterfaceAddress)
 	if err != nil {
 		log.Println(err)
 	}
-	err = netsh("interface", "ipv4", "set", "subinterface", e.config.InterfaceName, "mtu=", fmt.Sprintf("%d", e.config.InterfaceMTU))
+	err = netsh("interface", "ipv4", "set", "subinterface", c.InterfaceName, "mtu=", fmt.Sprintf("%d", c.InterfaceMTU))
 	if err != nil {
 		log.Println(err)
 	}
 	return nil
 }
 
-func (e *EdgeVPN) createInterface() (*water.Interface, error) {
+func createInterface(c *Config) (*water.Interface, error) {
 	// TUN on Windows requires address and network to be set on device creation stage
 	// We also set network to 0.0.0.0/0 so we able to reach networks behind the node
 	// https://github.com/songgao/water/blob/master/params_windows.go
 	// https://gitlab.com/openconnect/openconnect/-/blob/master/tun-win32.c
-	ip, _, err := net.ParseCIDR(e.config.InterfaceAddress)
+	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -53,10 +53,10 @@ func (e *EdgeVPN) createInterface() (*water.Interface, error) {
 		Mask: net.IPv4Mask(0, 0, 0, 0),
 	}
 	config := water.Config{
-		DeviceType: e.config.DeviceType,
+		DeviceType: c.DeviceType,
 		PlatformSpecificParams: water.PlatformSpecificParams{
 			ComponentID:   "tap0901",
-			InterfaceName: e.config.InterfaceName,
+			InterfaceName: c.InterfaceName,
 			Network:       network.String(),
 		},
 	}

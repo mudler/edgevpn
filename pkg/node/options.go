@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package edgevpn
+package node
 
 import (
 	"encoding/base64"
@@ -25,9 +25,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
+	"github.com/mudler/edgevpn/pkg/types"
 	"github.com/mudler/edgevpn/pkg/utils"
 	"github.com/pkg/errors"
-	"github.com/songgao/water"
 	"github.com/xlzd/gotp"
 	"gopkg.in/yaml.v2"
 )
@@ -47,38 +47,9 @@ func WithLibp2pAdditionalOptions(i ...libp2p.Option) func(cfg *Config) error {
 	}
 }
 
-func WithTimeout(s string) Option {
-	return func(cfg *Config) error {
-		d, err := time.ParseDuration(s)
-		cfg.Timeout = d
-		return err
-	}
-}
-
-func WithConcurrency(i int) Option {
-	return func(cfg *Config) error {
-		cfg.Concurrency = i
-		return nil
-	}
-}
-
-func WithChannelBufferSize(i int) Option {
-	return func(cfg *Config) error {
-		cfg.ChannelBufferSize = i
-		return nil
-	}
-}
-
 func WithNetworkService(ns ...NetworkService) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.NetworkServices = append(cfg.NetworkServices, ns...)
-		return nil
-	}
-}
-
-func WithInterface(i *water.Interface) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.Interface = i
 		return nil
 	}
 }
@@ -90,51 +61,15 @@ func WithInterfaceAddress(i string) func(cfg *Config) error {
 	}
 }
 
-func WithRouterAddress(i string) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.RouterAddress = i
-		return nil
-	}
-}
-
-func WithInterfaceMTU(i int) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.InterfaceMTU = i
-		return nil
-	}
-}
-
-func WithPacketMTU(i int) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.MTU = i
-		return nil
-	}
-}
-
-func WithInterfaceType(d water.DeviceType) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.DeviceType = d
-		return nil
-	}
-}
-
-func WithStore(s blockchain.Store) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.Store = s
-		return nil
-	}
-}
-
-func WithInterfaceName(i string) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.InterfaceName = i
-		return nil
-	}
-}
-
 func Logger(l log.StandardLogger) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.Logger = l
+		return nil
+	}
+}
+func WithStore(s blockchain.Store) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.Store = s
 		return nil
 	}
 }
@@ -148,7 +83,7 @@ func Handlers(h ...Handler) func(cfg *Config) error {
 }
 
 // StreamHandlers adds a handler to the list that is called on each received message
-func WithStreamHandler(id protocol.ID, h StreamHandler) func(cfg *Config) error {
+func WithStreamHandler(id protocol.ID, h types.StreamHandler) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.StreamHandlers[id] = h
 		return nil
@@ -173,13 +108,6 @@ func ListenAddresses(ss ...string) func(cfg *Config) error {
 			}
 			cfg.ListenAddresses = append(cfg.ListenAddresses, *a)
 		}
-		return nil
-	}
-}
-
-func NetLinkBootstrap(b bool) func(cfg *Config) error {
-	return func(cfg *Config) error {
-		cfg.NetLinkBootstrap = b
 		return nil
 	}
 }

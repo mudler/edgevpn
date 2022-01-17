@@ -1,4 +1,4 @@
-// Copyright © 2021 Ettore Di Giacinto <mudler@mocaccino.org>
+// Copyright © 2021-2022 Ettore Di Giacinto <mudler@mocaccino.org>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package edgevpn
+package services
 
 import (
 	"context"
@@ -21,36 +21,34 @@ import (
 	"os"
 	"time"
 
+	"github.com/ipfs/go-log"
+	"github.com/mudler/edgevpn/pkg/protocol"
+
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/mudler/edgevpn/pkg/blockchain"
-	"github.com/mudler/edgevpn/pkg/edgevpn/types"
+	"github.com/mudler/edgevpn/pkg/types"
 	"github.com/pkg/errors"
 )
 
-const (
-	FilesLedgerKey = "files"
-)
+func SendFile(ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID, filepath string) error {
 
-func (e *EdgeVPN) SendFile(ledger *blockchain.Ledger, fileID, filepath string) error {
-
-	e.Logger().Infof("Serving '%s' as '%s'", filepath, fileID)
+	l.Infof("Serving '%s' as '%s'", filepath, fileID)
 
 	// By announcing periodically our service to the blockchain
 	ledger.Announce(
 		context.Background(),
-		e.config.LedgerAnnounceTime,
+		announcetime,
 		func() {
 			// Retrieve current ID for ip in the blockchain
-			existingValue, found := ledger.GetKey(FilesLedgerKey, fileID)
+			existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
 			service := &types.Service{}
 			existingValue.Unmarshal(service)
 			// If mismatch, update the blockchain
-			if !found || service.PeerID != e.host.ID().String() {
+			if !found || service.PeerID != node.Host().ID().String() {
 				updatedMap := map[string]interface{}{}
-				updatedMap[fileID] = types.File{PeerID: e.host.ID().String(), Name: fileID}
-				ledger.Add(FilesLedgerKey, updatedMap)
+				updatedMap[fileID] = types.File{PeerID: node.Host().ID().String(), Name: fileID}
+				ledger.Add(protocol.FilesLedgerKey, updatedMap)
 			}
 		},
 	)
@@ -58,17 +56,18 @@ func (e *EdgeVPN) SendFile(ledger *blockchain.Ledger, fileID, filepath string) e
 	if err != nil {
 		return err
 	}
+
 	// 2) Set a stream handler
 	//    which connect to the given address/Port and Send what we receive from the Stream.
-	e.config.StreamHandlers[protocol.ID(FileProtocol)] = func(stream network.Stream) {
+	node.AddStreamHandler(protocol.FileProtocol, func(stream network.Stream) {
 		go func() {
-			e.config.Logger.Infof("(file %s) Received connection from %s", fileID, stream.Conn().RemotePeer().String())
+			l.Infof("(file %s) Received connection from %s", fileID, stream.Conn().RemotePeer().String())
 
 			// Retrieve current ID for ip in the blockchain
-			_, found := ledger.GetKey(UsersLedgerKey, stream.Conn().RemotePeer().String())
+			_, found := ledger.GetKey(protocol.UsersLedgerKey, stream.Conn().RemotePeer().String())
 			// If mismatch, update the blockchain
 			if !found {
-				e.config.Logger.Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
+				l.Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
 				stream.Reset()
 				return
 			}
@@ -81,49 +80,49 @@ func (e *EdgeVPN) SendFile(ledger *blockchain.Ledger, fileID, filepath string) e
 
 			stream.Close()
 
-			e.config.Logger.Infof("(file %s) Done handling %s", fileID, stream.Conn().RemotePeer().String())
+			l.Infof("(file %s) Done handling %s", fileID, stream.Conn().RemotePeer().String())
 
 		}()
-	}
+	})
 
 	return nil
 }
 
-func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path string) error {
+func ReceiveFile(ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID string, path string) error {
 
 	// Announce ourselves so nodes accepts our connection
 	ledger.Announce(
 		context.Background(),
-		e.config.LedgerAnnounceTime,
+		announcetime,
 		func() {
 			// Retrieve current ID for ip in the blockchain
-			_, found := ledger.GetKey(UsersLedgerKey, e.host.ID().String())
+			_, found := ledger.GetKey(protocol.UsersLedgerKey, node.Host().ID().String())
 			// If mismatch, update the blockchain
 			if !found {
 				updatedMap := map[string]interface{}{}
-				updatedMap[e.host.ID().String()] = &types.User{
-					PeerID:    e.host.ID().String(),
+				updatedMap[node.Host().ID().String()] = &types.User{
+					PeerID:    node.Host().ID().String(),
 					Timestamp: time.Now().String(),
 				}
-				ledger.Add(UsersLedgerKey, updatedMap)
+				ledger.Add(protocol.UsersLedgerKey, updatedMap)
 			}
 		},
 	)
 	for {
 		time.Sleep(5 * time.Second)
 
-		e.config.Logger.Debug("Attempting to find file in the blockchain")
+		l.Debug("Attempting to find file in the blockchain")
 
-		_, found := ledger.GetKey(UsersLedgerKey, e.host.ID().String())
+		_, found := ledger.GetKey(protocol.UsersLedgerKey, node.Host().ID().String())
 		if !found {
 			continue
 		}
-		existingValue, found := ledger.GetKey(FilesLedgerKey, fileID)
+		existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
 		fi := &types.File{}
 		existingValue.Unmarshal(fi)
 		// If mismatch, update the blockchain
 		if !found {
-			e.config.Logger.Debug("file not found on blockchain, retrying in 5 seconds")
+			l.Debug("file not found on blockchain, retrying in 5 seconds")
 			continue
 		} else {
 			break
@@ -132,7 +131,7 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 	// Listen for an incoming connection.
 
 	// Retrieve current ID for ip in the blockchain
-	existingValue, found := ledger.GetKey(FilesLedgerKey, fileID)
+	existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
 	fi := &types.File{}
 	existingValue.Unmarshal(fi)
 
@@ -148,11 +147,11 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 	}
 
 	// Open a stream
-	stream, err := e.host.NewStream(context.Background(), d, FileProtocol)
+	stream, err := node.Host().NewStream(context.Background(), d, protocol.FileProtocol.ID())
 	if err != nil {
 		return err
 	}
-	e.Logger().Infof("Saving file %s to %s", fileID, path)
+	l.Infof("Saving file %s to %s", fileID, path)
 
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
@@ -163,6 +162,6 @@ func (e *EdgeVPN) ReceiveFile(ledger *blockchain.Ledger, fileID string, path str
 
 	f.Close()
 
-	e.Logger().Infof("Received file %s to %s", fileID, path)
+	l.Infof("Received file %s to %s", fileID, path)
 	return nil
 }
