@@ -148,8 +148,10 @@ func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node
 				// Open a stream
 				stream, err := node.Host().NewStream(context.Background(), d, protocol.FileProtocol.ID())
 				if err != nil {
-					return err
+					l.Debugf("failed to dial %s, retrying in 5 seconds", d)
+					continue
 				}
+
 				l.Infof("Saving file %s to %s", fileID, path)
 
 				f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
@@ -162,6 +164,7 @@ func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node
 				f.Close()
 
 				l.Infof("Received file %s to %s", fileID, path)
+				return nil
 			}
 		}
 	}

@@ -82,7 +82,7 @@ func Handlers(h ...Handler) func(cfg *Config) error {
 	}
 }
 
-// StreamHandlers adds a handler to the list that is called on each received message
+// WithStreamHandler adds a handler to the list that is called on each received message
 func WithStreamHandler(id protocol.ID, h types.StreamHandler) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.StreamHandlers[id] = h
