@@ -122,7 +122,7 @@ func (e *Node) Start(ctx context.Context) error {
 
 	// Start eventual declared NetworkServices
 	for _, s := range e.config.NetworkServices {
-		go s(ctx, e.config, e, ledger)
+		s(ctx, e.config, e, ledger)
 	}
 
 	return nil
