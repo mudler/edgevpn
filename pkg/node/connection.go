@@ -99,11 +99,13 @@ func (e *Node) handleEvents(ctx context.Context) {
 	for {
 		select {
 		case m := <-e.inputCh:
+			m = m.Copy()
 			if err := m.Seal(e.sealkey()); err != nil {
 				e.config.Logger.Warn(err.Error())
 			}
 			e.handleOutgoingMessage(m)
 		case m := <-e.HubRoom.Messages:
+			m = m.Copy()
 			if err := m.Unseal(e.sealkey()); err != nil {
 				e.config.Logger.Warn(err.Error())
 			}
