@@ -70,17 +70,17 @@ This is also the ID used to refer when receiving it.`,
 			if err != nil {
 				return err
 			}
-			o, _ := cliToOpts(c)
+			o, _, ll := cliToOpts(c)
 			e := node.New(o...)
 
-			displayStart(e)
+			displayStart(ll)
 
 			ledger, err := e.Ledger()
 			if err != nil {
 				return err
 			}
 
-			services.SendFile(context.Background(), ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
+			services.ShareFile(context.Background(), ledger, e, ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
 
 			// Start the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {
@@ -115,10 +115,10 @@ func FileReceive() cli.Command {
 			if err != nil {
 				return err
 			}
-			o, _ := cliToOpts(c)
+			o, _, ll := cliToOpts(c)
 			e := node.New(o...)
 
-			displayStart(e)
+			displayStart(ll)
 
 			// Start the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {
@@ -127,7 +127,7 @@ func FileReceive() cli.Command {
 
 			ledger, _ := e.Ledger()
 
-			return services.ReceiveFile(context.Background(), ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
+			return services.ReceiveFile(context.Background(), ledger, e, ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
 		},
 	}
 }

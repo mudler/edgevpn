@@ -160,13 +160,13 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "EDGEVPNTOKEN",
 	}}
 
-func displayStart(e *node.Node) {
-	e.Logger().Info(Copyright)
+func displayStart(ll *logger.Logger) {
+	ll.Info(Copyright)
 
-	e.Logger().Infof("Version: %s commit: %s", internal.Version, internal.Commit)
+	ll.Infof("Version: %s commit: %s", internal.Version, internal.Commit)
 }
 
-func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option) {
+func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 	config := c.String("config")
 	address := c.String("address")
 	router := c.String("router")
@@ -269,5 +269,5 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option) {
 
 	}
 
-	return opts, vpnOpts
+	return opts, vpnOpts, llger
 }

@@ -29,7 +29,7 @@ import (
 	. "github.com/mudler/edgevpn/pkg/node"
 )
 
-var _ = Describe("EdgeVPN", func() {
+var _ = Describe("Node", func() {
 	token := GenerateNewConnectionData().Base64()
 
 	l := Logger(logger.New(log.LevelFatal))

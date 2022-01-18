@@ -1,4 +1,4 @@
-// Copyright © 2021 Ettore Di Giacinto <mudler@mocaccino.org>
+// Copyright © 2021-2022 Ettore Di Giacinto <mudler@mocaccino.org>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,7 +41,6 @@ type Room struct {
 
 	roomName string
 	self     peer.ID
-	nick     string
 }
 
 // JoinRoom tries to subscribe to the PubSub topic for the room name, returning

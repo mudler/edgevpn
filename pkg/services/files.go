@@ -31,7 +31,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func SendFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID, filepath string) error {
+func ShareFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID, filepath string) error {
+	_, err := os.Stat(filepath)
+	if err != nil {
+		return err
+	}
 
 	l.Infof("Serving '%s' as '%s'", filepath, fileID)
 
@@ -52,10 +56,6 @@ func SendFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node, l
 			}
 		},
 	)
-	_, err := os.Stat(filepath)
-	if err != nil {
-		return err
-	}
 
 	// 2) Set a stream handler
 	//    which connect to the given address/Port and Send what we receive from the Stream.

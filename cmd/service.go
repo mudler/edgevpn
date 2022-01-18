@@ -69,17 +69,17 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 			if err != nil {
 				return err
 			}
-			o, _ := cliToOpts(c)
+			o, _, ll := cliToOpts(c)
 			e := node.New(o...)
 
-			displayStart(e)
+			displayStart(ll)
 
 			ledger, err := e.Ledger()
 			if err != nil {
 				return err
 			}
 
-			services.ExposeService(context.Background(), ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)
+			services.ExposeService(context.Background(), ledger, e, ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)
 
 			// Join the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {
@@ -117,10 +117,10 @@ to the service over the network`,
 			if err != nil {
 				return err
 			}
-			o, _ := cliToOpts(c)
+			o, _, ll := cliToOpts(c)
 			e := node.New(o...)
 
-			displayStart(e)
+			displayStart(ll)
 
 			// Join the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {
@@ -128,7 +128,7 @@ to the service over the network`,
 			}
 
 			ledger, _ := e.Ledger()
-			return services.ConnectToService(context.Background(), ledger, e, e.Logger(), time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)
+			return services.ConnectToService(context.Background(), ledger, e, ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)
 		},
 	}
 }

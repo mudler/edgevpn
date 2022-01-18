@@ -31,15 +31,17 @@ Useful for setting up relays or hop nodes to improve the network connectivity.`,
 		UsageText: "edgevpn Start",
 		Flags:     CommonFlags,
 		Action: func(c *cli.Context) error {
-			o, _ := cliToOpts(c)
+			o, _, ll := cliToOpts(c)
 			e := node.New(o...)
 
-			displayStart(e)
+			displayStart(ll)
 
 			// Start the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {
 				return err
 			}
+
+			ll.Info("Joining p2p network")
 
 			for {
 			}

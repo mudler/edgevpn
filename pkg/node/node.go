@@ -69,16 +69,20 @@ func New(p ...Option) *Node {
 	}
 }
 
+// AddStreamHandler adds a stream handler for the given protocol.
+// Note: must be called before Start().
 func (e *Node) AddStreamHandler(id protocol.Protocol, s types.StreamHandler) {
 	e.config.StreamHandlers[id.ID()] = s
 }
 
-// Ledger return the ledger associated to the node
+// Ledger return the ledger which uses the node
+// connection to broadcast messages
 func (e *Node) Ledger() (*blockchain.Ledger, error) {
 	if e.ledger != nil {
 		return e.ledger, nil
 	}
-	mw, err := e.MessageWriter()
+
+	mw, err := e.messageWriter()
 	if err != nil {
 		return nil, err
 	}
@@ -118,22 +122,17 @@ func (e *Node) Start(ctx context.Context) error {
 	return nil
 }
 
-// MessageWriter returns a new MessageWriter bound to the edgevpn instance
+// messageWriter returns a new MessageWriter bound to the edgevpn instance
 // with the given options
-func (e *Node) MessageWriter(opts ...hub.MessageOption) (*MessageWriter, error) {
+func (e *Node) messageWriter(opts ...hub.MessageOption) (*messageWriter, error) {
 	mess := &hub.Message{}
 	mess.Apply(opts...)
 
-	return &MessageWriter{
+	return &messageWriter{
 		c:     e.config,
 		input: e.inputCh,
 		mess:  mess,
 	}, nil
-}
-
-// Logger returns the node logger
-func (e *Node) Logger() log.StandardLogger {
-	return e.config.Logger
 }
 
 func (e *Node) startNetwork(ctx context.Context) error {
@@ -175,6 +174,6 @@ func (e *Node) startNetwork(ctx context.Context) error {
 
 	go e.handleEvents(ctx)
 
-	e.Logger().Debug("Network started")
+	e.config.Logger.Debug("Network started")
 	return nil
 }

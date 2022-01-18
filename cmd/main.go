@@ -84,11 +84,11 @@ func Main() func(c *cli.Context) error {
 
 			os.Exit(0)
 		}
-		o, vpnOpts := cliToOpts(c)
+		o, vpnOpts, ll := cliToOpts(c)
 
 		e := edgevpn.New(o...)
 
-		displayStart(e)
+		displayStart(ll)
 
 		ledger, err := e.Ledger()
 		if err != nil {
@@ -100,7 +100,7 @@ func Main() func(c *cli.Context) error {
 		}
 
 		if err := vpn.Start(context.Background(), ledger, e, vpnOpts...); err != nil {
-			e.Logger().Fatal(err.Error())
+			ll.Fatal(err.Error())
 		}
 
 		return nil

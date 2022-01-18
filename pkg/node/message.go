@@ -1,4 +1,4 @@
-// Copyright © 2021 Ettore Di Giacinto <mudler@mocaccino.org>
+// Copyright © 2021-2022 Ettore Di Giacinto <mudler@mocaccino.org>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,28 +19,28 @@ import (
 	hub "github.com/mudler/edgevpn/pkg/hub"
 )
 
-// MessageWriter is a struct returned by the node that satisfies the io.Writer interface
+// messageWriter is a struct returned by the node that satisfies the io.Writer interface
 // on the underlying hub.
 // Everything Write into the message writer is enqueued to a message channel
 // which is sealed and processed by the node
-type MessageWriter struct {
+type messageWriter struct {
 	input chan<- *hub.Message
 	c     Config
 	mess  *hub.Message
 }
 
 // Write writes a slice of bytes to the message channel
-func (mw *MessageWriter) Write(p []byte) (n int, err error) {
+func (mw *messageWriter) Write(p []byte) (n int, err error) {
 	return mw.Send(mw.mess.WithMessage(string(p)))
 }
 
 // WriteString writes a string to the message channel
-func (mw *MessageWriter) WriteString(p string) (n int, err error) {
+func (mw *messageWriter) WriteString(p string) (n int, err error) {
 	return mw.Send(mw.mess.WithMessage(p))
 }
 
 // Send sends a message to the channel
-func (mw *MessageWriter) Send(copy *hub.Message) (n int, err error) {
+func (mw *messageWriter) Send(copy *hub.Message) (n int, err error) {
 	mw.input <- copy
 	return len(copy.Message), nil
 }
