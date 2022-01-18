@@ -32,6 +32,7 @@ import (
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/logger"
+	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/protocol"
 	"github.com/mudler/edgevpn/pkg/types"
 	"github.com/pkg/errors"
@@ -42,7 +43,7 @@ import (
 
 // Start the node and the vpn. Returns an error in case of failure
 // When starting the vpn, there is no need to start the node
-func Start(ctx context.Context, ledger *blockchain.Ledger, n types.Node, p ...Option) error {
+func Start(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, p ...Option) error {
 	c := &Config{
 		Concurrency:        1,
 		LedgerAnnounceTime: 5 * time.Second,
@@ -118,7 +119,7 @@ func streamHandler(l *blockchain.Ledger, ifce *water.Interface) func(stream netw
 	}
 }
 
-func newBlockChainData(n types.Node, address string) types.Machine {
+func newBlockChainData(n *node.Node, address string) types.Machine {
 	hostname, _ := os.Hostname()
 
 	return types.Machine{
@@ -144,7 +145,7 @@ func getFrame(ifce *water.Interface, c *Config) (ethernet.Frame, error) {
 	return frame, nil
 }
 
-func handleFrame(frame ethernet.Frame, c *Config, n types.Node, ip net.IP, ledger *blockchain.Ledger, ifce *water.Interface) error {
+func handleFrame(frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce *water.Interface) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
 	defer cancel()
 
@@ -186,7 +187,7 @@ func handleFrame(frame ethernet.Frame, c *Config, n types.Node, ip net.IP, ledge
 func connectionWorker(
 	p chan ethernet.Frame,
 	c *Config,
-	n types.Node,
+	n *node.Node,
 	ip net.IP,
 	wg *sync.WaitGroup,
 	ledger *blockchain.Ledger,
@@ -200,7 +201,7 @@ func connectionWorker(
 }
 
 // redirects packets from the interface to the node using the routing table in the blockchain
-func readPackets(ctx context.Context, c *Config, n types.Node, ledger *blockchain.Ledger, ifce *water.Interface) error {
+func readPackets(ctx context.Context, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce *water.Interface) error {
 	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
 		return err

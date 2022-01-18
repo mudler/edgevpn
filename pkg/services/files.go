@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
+	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/protocol"
 
 	"github.com/libp2p/go-libp2p-core/network"
@@ -31,7 +32,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ShareFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID, filepath string) error {
+// ShareFile shares a file to the p2p network.
+// meant to be called before a node is started with Start()
+func ShareFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l log.StandardLogger, announcetime time.Duration, fileID, filepath string) error {
 	_, err := os.Stat(filepath)
 	if err != nil {
 		return err
@@ -39,27 +42,30 @@ func ShareFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node, 
 
 	l.Infof("Serving '%s' as '%s'", filepath, fileID)
 
-	// By announcing periodically our service to the blockchain
-	ledger.Announce(
-		ctx,
-		announcetime,
-		func() {
-			// Retrieve current ID for ip in the blockchain
-			existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
-			service := &types.Service{}
-			existingValue.Unmarshal(service)
-			// If mismatch, update the blockchain
-			if !found || service.PeerID != node.Host().ID().String() {
-				updatedMap := map[string]interface{}{}
-				updatedMap[fileID] = types.File{PeerID: node.Host().ID().String(), Name: fileID}
-				ledger.Add(protocol.FilesLedgerKey, updatedMap)
-			}
-		},
-	)
+	n.AddNetworkService(func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+		// By announcing periodically our service to the blockchain
+		ledger.Announce(
+			ctx,
+			announcetime,
+			func() {
+				// Retrieve current ID for ip in the blockchain
+				existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
+				service := &types.Service{}
+				existingValue.Unmarshal(service)
+				// If mismatch, update the blockchain
+				if !found || service.PeerID != n.Host().ID().String() {
+					updatedMap := map[string]interface{}{}
+					updatedMap[fileID] = types.File{PeerID: n.Host().ID().String(), Name: fileID}
+					ledger.Add(protocol.FilesLedgerKey, updatedMap)
+				}
+			},
+		)
+		return nil
+	})
 
 	// 2) Set a stream handler
 	//    which connect to the given address/Port and Send what we receive from the Stream.
-	node.AddStreamHandler(protocol.FileProtocol, func(stream network.Stream) {
+	n.AddStreamHandler(protocol.FileProtocol, func(stream network.Stream) {
 		go func() {
 			l.Infof("(file %s) Received connection from %s", fileID, stream.Conn().RemotePeer().String())
 
@@ -88,19 +94,20 @@ func ShareFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node, 
 	return nil
 }
 
-func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, fileID string, path string) error {
+func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l log.StandardLogger, announcetime time.Duration, fileID string, path string) error {
 	// Announce ourselves so nodes accepts our connection
+
 	ledger.Announce(
 		ctx,
 		announcetime,
 		func() {
 			// Retrieve current ID for ip in the blockchain
-			_, found := ledger.GetKey(protocol.UsersLedgerKey, node.Host().ID().String())
+			_, found := ledger.GetKey(protocol.UsersLedgerKey, n.Host().ID().String())
 			// If mismatch, update the blockchain
 			if !found {
 				updatedMap := map[string]interface{}{}
-				updatedMap[node.Host().ID().String()] = &types.User{
-					PeerID:    node.Host().ID().String(),
+				updatedMap[n.Host().ID().String()] = &types.User{
+					PeerID:    n.Host().ID().String(),
 					Timestamp: time.Now().String(),
 				}
 				ledger.Add(protocol.UsersLedgerKey, updatedMap)
@@ -117,7 +124,7 @@ func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node
 
 			l.Debug("Attempting to find file in the blockchain")
 
-			_, found := ledger.GetKey(protocol.UsersLedgerKey, node.Host().ID().String())
+			_, found := ledger.GetKey(protocol.UsersLedgerKey, n.Host().ID().String())
 			if !found {
 				continue
 			}
@@ -146,7 +153,7 @@ func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, node types.Node
 				}
 
 				// Open a stream
-				stream, err := node.Host().NewStream(context.Background(), d, protocol.FileProtocol.ID())
+				stream, err := n.Host().NewStream(context.Background(), d, protocol.FileProtocol.ID())
 				if err != nil {
 					l.Debugf("failed to dial %s, retrying in 5 seconds", d)
 					continue

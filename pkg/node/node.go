@@ -75,6 +75,12 @@ func (e *Node) AddStreamHandler(id protocol.Protocol, s types.StreamHandler) {
 	e.config.StreamHandlers[id.ID()] = s
 }
 
+// AddNetworkService register a network service to the node.
+// Note: must be called before Start().
+func (e *Node) AddNetworkService(n NetworkService) {
+	e.config.NetworkServices = append(e.config.NetworkServices, n)
+}
+
 // Ledger return the ledger which uses the node
 // connection to broadcast messages
 func (e *Node) Ledger() (*blockchain.Ledger, error) {

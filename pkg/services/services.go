@@ -25,38 +25,44 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/mudler/edgevpn/pkg/blockchain"
+	"github.com/mudler/edgevpn/pkg/node"
 	protocol "github.com/mudler/edgevpn/pkg/protocol"
 	"github.com/pkg/errors"
 
 	"github.com/mudler/edgevpn/pkg/types"
 )
 
-func ExposeService(ctx context.Context, ledger *blockchain.Ledger, node types.Node, l log.StandardLogger, announcetime time.Duration, serviceID, dstaddress string) {
+// ExposeService exposes a service to the p2p network.
+// meant to be called before a node is started with Start()
+func ExposeService(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l log.StandardLogger, announcetime time.Duration, serviceID, dstaddress string) {
 
 	l.Infof("Exposing service '%s' (%s)", serviceID, dstaddress)
 
 	// 1) Register the ServiceID <-> PeerID Association
 	// By announcing periodically our service to the blockchain
-	ledger.Announce(
-		ctx,
-		announcetime,
-		func() {
-			// Retrieve current ID for ip in the blockchain
-			existingValue, found := ledger.GetKey(protocol.ServicesLedgerKey, serviceID)
-			service := &types.Service{}
-			existingValue.Unmarshal(service)
-			// If mismatch, update the blockchain
-			if !found || service.PeerID != node.Host().ID().String() {
-				updatedMap := map[string]interface{}{}
-				updatedMap[serviceID] = types.Service{PeerID: node.Host().ID().String(), Name: serviceID}
-				ledger.Add(protocol.ServicesLedgerKey, updatedMap)
-			}
-		},
-	)
+	n.AddNetworkService(func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+		ledger.Announce(
+			ctx,
+			announcetime,
+			func() {
+				// Retrieve current ID for ip in the blockchain
+				existingValue, found := ledger.GetKey(protocol.ServicesLedgerKey, serviceID)
+				service := &types.Service{}
+				existingValue.Unmarshal(service)
+				// If mismatch, update the blockchain
+				if !found || service.PeerID != n.Host().ID().String() {
+					updatedMap := map[string]interface{}{}
+					updatedMap[serviceID] = types.Service{PeerID: n.Host().ID().String(), Name: serviceID}
+					ledger.Add(protocol.ServicesLedgerKey, updatedMap)
+				}
+			},
+		)
+		return nil
+	})
 
 	// 2) Set a stream handler
 	//    which connect to the given address/Port and Send what we receive from the Stream.
-	node.AddStreamHandler(protocol.ServiceProtocol, func(stream network.Stream) {
+	n.AddStreamHandler(protocol.ServiceProtocol, func(stream network.Stream) {
 		go func() {
 			l.Infof("(service %s) Received connection from %s", serviceID, stream.Conn().RemotePeer().String())
 
@@ -89,7 +95,7 @@ func ExposeService(ctx context.Context, ledger *blockchain.Ledger, node types.No
 	})
 }
 
-func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node types.Node, ll log.StandardLogger, announcetime time.Duration, serviceID string, srcaddr string) error {
+func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node *node.Node, ll log.StandardLogger, announcetime time.Duration, serviceID string, srcaddr string) error {
 
 	// Open local port for listening
 	l, err := net.Listen("tcp", srcaddr)
@@ -116,6 +122,7 @@ func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node types
 			}
 		},
 	)
+
 	defer l.Close()
 	for {
 		select {
