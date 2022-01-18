@@ -146,5 +146,6 @@ func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Le
 		return c.JSON(http.StatusOK, announcing)
 	})
 
+	ec.HideBanner = true
 	return ec.Start(l)
 }
