@@ -278,7 +278,8 @@ import (
     node "github.com/mudler/edgevpn/pkg/node"
 )
 
-e := node.New(edgevpn.Logger(l),
+e := node.New(
+    node.Logger(l),
     node.LogLevel(log.LevelInfo),
     node.MaxMessageSize(2 << 20),
     node.FromBase64( mDNSEnabled, DHTEnabled, token ),
@@ -298,7 +299,8 @@ import (
     node "github.com/mudler/edgevpn/pkg/node"
 )
 
-e := node.New(edgevpn.Logger(l),
+e := node.New(
+    node.Logger(l),
     node.LogLevel(log.LevelInfo),
     node.MaxMessageSize(2 << 20),
     node.FromBase64( mDNSEnabled, DHTEnabled, token ),
@@ -307,8 +309,9 @@ e := node.New(edgevpn.Logger(l),
 
 ledger := e.Ledger()
 
-vpn.Start(ctx, ledger, e, opts..)
+vpn.Register(ctx, ledger, e, opts..)
 
+e.Start()
 ```
 
 # 🐜 Contribution

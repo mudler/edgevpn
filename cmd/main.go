@@ -99,10 +99,11 @@ func Main() func(c *cli.Context) error {
 			go api.API(c.String("api-listen"), 5*time.Second, 20*time.Second, ledger)
 		}
 
-		if err := vpn.Start(context.Background(), ledger, e, vpnOpts...); err != nil {
-			ll.Fatal(err.Error())
+		err = vpn.Register(ledger, e, vpnOpts...)
+		if err != nil {
+			return err
 		}
 
-		return nil
+		return e.Start(context.Background())
 	}
 }
