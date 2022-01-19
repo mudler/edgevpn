@@ -71,16 +71,16 @@ This is also the ID used to refer when receiving it.`,
 				return err
 			}
 			o, _, ll := cliToOpts(c)
-			e := node.New(o...)
 
-			displayStart(ll)
-
-			ledger, err := e.Ledger()
+			opts, err := services.ShareFile(ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
 			if err != nil {
 				return err
 			}
+			o = append(o, opts...)
 
-			services.ShareFile(context.Background(), ledger, e, ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
+			e := node.New(o...)
+
+			displayStart(ll)
 
 			// Start the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {

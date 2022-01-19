@@ -70,16 +70,12 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 				return err
 			}
 			o, _, ll := cliToOpts(c)
+
+			o = append(o, services.RegisterService(ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)...)
+
 			e := node.New(o...)
 
 			displayStart(ll)
-
-			ledger, err := e.Ledger()
-			if err != nil {
-				return err
-			}
-
-			services.ExposeService(context.Background(), ledger, e, ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)
 
 			// Join the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {

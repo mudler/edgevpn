@@ -86,6 +86,12 @@ func Main() func(c *cli.Context) error {
 		}
 		o, vpnOpts, ll := cliToOpts(c)
 
+		opts, err := vpn.Register(vpnOpts...)
+		if err != nil {
+			return err
+		}
+		o = append(o, opts...)
+
 		e := edgevpn.New(o...)
 
 		displayStart(ll)
@@ -97,11 +103,6 @@ func Main() func(c *cli.Context) error {
 
 		if c.Bool("api") {
 			go api.API(c.String("api-listen"), 5*time.Second, 20*time.Second, ledger)
-		}
-
-		err = vpn.Register(ledger, e, vpnOpts...)
-		if err != nil {
-			return err
 		}
 
 		return e.Start(context.Background())

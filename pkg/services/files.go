@@ -34,64 +34,64 @@ import (
 
 // ShareFile shares a file to the p2p network.
 // meant to be called before a node is started with Start()
-func ShareFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l log.StandardLogger, announcetime time.Duration, fileID, filepath string) error {
+func ShareFile(ll log.StandardLogger, announcetime time.Duration, fileID, filepath string) ([]node.Option, error) {
 	_, err := os.Stat(filepath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	l.Infof("Serving '%s' as '%s'", filepath, fileID)
-
-	n.AddNetworkService(func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
-		// By announcing periodically our service to the blockchain
-		ledger.Announce(
-			ctx,
-			announcetime,
-			func() {
-				// Retrieve current ID for ip in the blockchain
-				existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
-				service := &types.Service{}
-				existingValue.Unmarshal(service)
-				// If mismatch, update the blockchain
-				if !found || service.PeerID != n.Host().ID().String() {
-					updatedMap := map[string]interface{}{}
-					updatedMap[fileID] = types.File{PeerID: n.Host().ID().String(), Name: fileID}
-					ledger.Add(protocol.FilesLedgerKey, updatedMap)
-				}
+	ll.Infof("Serving '%s' as '%s'", filepath, fileID)
+	return []node.Option{
+		node.WithNetworkService(
+			func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+				// By announcing periodically our service to the blockchain
+				b.Announce(
+					ctx,
+					announcetime,
+					func() {
+						// Retrieve current ID for ip in the blockchain
+						existingValue, found := b.GetKey(protocol.FilesLedgerKey, fileID)
+						service := &types.Service{}
+						existingValue.Unmarshal(service)
+						// If mismatch, update the blockchain
+						if !found || service.PeerID != n.Host().ID().String() {
+							updatedMap := map[string]interface{}{}
+							updatedMap[fileID] = types.File{PeerID: n.Host().ID().String(), Name: fileID}
+							b.Add(protocol.FilesLedgerKey, updatedMap)
+						}
+					},
+				)
+				return nil
 			},
-		)
-		return nil
-	})
+		),
+		node.WithStreamHandler(protocol.FileProtocol,
+			func(n *node.Node, l *blockchain.Ledger) func(stream network.Stream) {
+				return func(stream network.Stream) {
+					go func() {
+						ll.Infof("(file %s) Received connection from %s", fileID, stream.Conn().RemotePeer().String())
 
-	// 2) Set a stream handler
-	//    which connect to the given address/Port and Send what we receive from the Stream.
-	n.AddStreamHandler(protocol.FileProtocol, func(stream network.Stream) {
-		go func() {
-			l.Infof("(file %s) Received connection from %s", fileID, stream.Conn().RemotePeer().String())
+						// Retrieve current ID for ip in the blockchain
+						_, found := l.GetKey(protocol.UsersLedgerKey, stream.Conn().RemotePeer().String())
+						// If mismatch, update the blockchain
+						if !found {
+							ll.Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
+							stream.Reset()
+							return
+						}
+						f, err := os.Open(filepath)
+						if err != nil {
+							return
+						}
+						io.Copy(stream, f)
+						f.Close()
 
-			// Retrieve current ID for ip in the blockchain
-			_, found := ledger.GetKey(protocol.UsersLedgerKey, stream.Conn().RemotePeer().String())
-			// If mismatch, update the blockchain
-			if !found {
-				l.Info("Reset", stream.Conn().RemotePeer().String(), "Not found in the ledger")
-				stream.Reset()
-				return
-			}
-			f, err := os.Open(filepath)
-			if err != nil {
-				return
-			}
-			io.Copy(stream, f)
-			f.Close()
+						stream.Close()
 
-			stream.Close()
+						ll.Infof("(file %s) Done handling %s", fileID, stream.Conn().RemotePeer().String())
+					}()
+				}
+			})}, nil
 
-			l.Infof("(file %s) Done handling %s", fileID, stream.Conn().RemotePeer().String())
-
-		}()
-	})
-
-	return nil
 }
 
 func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l log.StandardLogger, announcetime time.Duration, fileID string, path string) error {

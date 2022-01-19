@@ -43,7 +43,7 @@ import (
 
 // Start the node and the vpn. Returns an error in case of failure
 // When starting the vpn, there is no need to start the node
-func Register(ledger *blockchain.Ledger, n *node.Node, p ...Option) error {
+func Register(p ...Option) ([]node.Option, error) {
 	c := &Config{
 		Concurrency:        1,
 		LedgerAnnounceTime: 5 * time.Second,
@@ -54,46 +54,52 @@ func Register(ledger *blockchain.Ledger, n *node.Node, p ...Option) error {
 
 	ifce, err := createInterface(c)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	n.AddStreamHandler(protocol.EdgeVPN, streamHandler(ledger, ifce))
-	n.AddNetworkService(func(ctx context.Context, nc node.Config, n *node.Node, b *blockchain.Ledger) error {
-		defer ifce.Close()
-		// Announce our IP
-		ip, _, err := net.ParseCIDR(c.InterfaceAddress)
-		if err != nil {
-			return err
-		}
-
-		ledger.Announce(
-			ctx,
-			c.LedgerAnnounceTime,
-			func() {
-				machine := &types.Machine{}
-				// Retrieve current ID for ip in the blockchain
-				existingValue, found := ledger.GetKey(protocol.MachinesLedgerKey, ip.String())
-				existingValue.Unmarshal(machine)
-
-				// If mismatch, update the blockchain
-				if !found || machine.PeerID != n.Host().ID().String() {
-					updatedMap := map[string]interface{}{}
-					updatedMap[ip.String()] = newBlockChainData(n, ip.String())
-					ledger.Add(protocol.MachinesLedgerKey, updatedMap)
-				}
+	return []node.Option{
+		node.WithStreamHandler(protocol.EdgeVPN,
+			func(n *node.Node, l *blockchain.Ledger) func(stream network.Stream) {
+				return streamHandler(l, ifce)
 			},
-		)
-
-		if c.NetLinkBootstrap {
-			if err := prepareInterface(c); err != nil {
+		),
+		node.WithNetworkService(func(ctx context.Context, nc node.Config, n *node.Node, b *blockchain.Ledger) error {
+			defer ifce.Close()
+			// Announce our IP
+			ip, _, err := net.ParseCIDR(c.InterfaceAddress)
+			if err != nil {
 				return err
 			}
-		}
 
-		// read packets from the interface
-		return readPackets(ctx, c, n, ledger, ifce)
-	})
-	return nil
+			b.Announce(
+				ctx,
+				c.LedgerAnnounceTime,
+				func() {
+					machine := &types.Machine{}
+					// Retrieve current ID for ip in the blockchain
+					existingValue, found := b.GetKey(protocol.MachinesLedgerKey, ip.String())
+					existingValue.Unmarshal(machine)
+
+					// If mismatch, update the blockchain
+					if !found || machine.PeerID != n.Host().ID().String() {
+						updatedMap := map[string]interface{}{}
+						updatedMap[ip.String()] = newBlockChainData(n, ip.String())
+						b.Add(protocol.MachinesLedgerKey, updatedMap)
+					}
+				},
+			)
+
+			if c.NetLinkBootstrap {
+				if err := prepareInterface(c); err != nil {
+					return err
+				}
+			}
+
+			// read packets from the interface
+			return readPackets(ctx, c, n, b, ifce)
+		}),
+	}, nil
+
 }
 
 func streamHandler(l *blockchain.Ledger, ifce *water.Interface) func(stream network.Stream) {

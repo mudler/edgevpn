@@ -22,12 +22,12 @@ import (
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
 
-	p2pprotocol "github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
 	hub "github.com/mudler/edgevpn/pkg/hub"
-	"github.com/mudler/edgevpn/pkg/types"
+	protocol "github.com/mudler/edgevpn/pkg/protocol"
 )
 
 // Config is the node configuration
@@ -61,7 +61,7 @@ type Config struct {
 
 	// Handle is a handle consumed by HumanInterfaces to handle received messages
 	Handle                     func(bool, *hub.Message)
-	StreamHandlers             map[p2pprotocol.ID]types.StreamHandler
+	StreamHandlers             map[protocol.Protocol]StreamHandler
 	AdditionalOptions, Options []libp2p.Option
 
 	DiscoveryInterval, LedgerSyncronizationTime, LedgerAnnounceTime time.Duration
@@ -70,6 +70,8 @@ type Config struct {
 
 // NetworkService is a service running over the network. It takes a context, a node and a ledger
 type NetworkService func(context.Context, Config, *Node, *blockchain.Ledger) error
+
+type StreamHandler func(*Node, *blockchain.Ledger) func(stream network.Stream)
 
 type Handler func(*hub.Message) error
 

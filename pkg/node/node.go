@@ -23,7 +23,6 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
-	p2pprotocol "github.com/libp2p/go-libp2p-core/protocol"
 
 	protocol "github.com/mudler/edgevpn/pkg/protocol"
 
@@ -31,7 +30,6 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	"github.com/mudler/edgevpn/pkg/logger"
-	"github.com/mudler/edgevpn/pkg/types"
 )
 
 type Node struct {
@@ -53,7 +51,7 @@ var defaultLibp2pOptions = []libp2p.Option{
 func New(p ...Option) *Node {
 	c := Config{
 		DiscoveryInterval:        120 * time.Second,
-		StreamHandlers:           make(map[p2pprotocol.ID]types.StreamHandler),
+		StreamHandlers:           make(map[protocol.Protocol]StreamHandler),
 		LedgerAnnounceTime:       5 * time.Second,
 		LedgerSyncronizationTime: 5 * time.Second,
 		SealKeyLength:            12,
@@ -67,18 +65,6 @@ func New(p ...Option) *Node {
 		inputCh: make(chan *hub.Message, 3000),
 		seed:    0,
 	}
-}
-
-// AddStreamHandler adds a stream handler for the given protocol.
-// Note: must be called before Start().
-func (e *Node) AddStreamHandler(id protocol.Protocol, s types.StreamHandler) {
-	e.config.StreamHandlers[id.ID()] = s
-}
-
-// AddNetworkService register a network service to the node.
-// Note: must be called before Start().
-func (e *Node) AddNetworkService(n NetworkService) {
-	e.config.NetworkServices = append(e.config.NetworkServices, n)
 }
 
 // Ledger return the ledger which uses the node
@@ -151,8 +137,13 @@ func (e *Node) startNetwork(ctx context.Context) error {
 	}
 	e.host = host
 
+	ledger, err := e.Ledger()
+	if err != nil {
+		return err
+	}
+
 	for pid, strh := range e.config.StreamHandlers {
-		host.SetStreamHandler(pid, network.StreamHandler(strh))
+		host.SetStreamHandler(pid.ID(), network.StreamHandler(strh(e, ledger)))
 	}
 
 	e.config.Logger.Info("Node ID:", host.ID())

@@ -37,7 +37,6 @@ var _ = Describe("File services", func() {
 	logg := logger.New(log.LevelError)
 	l := node.Logger(logg)
 
-	e := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
 	e2 := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
 
 	Context("File sharing", func() {
@@ -47,8 +46,6 @@ var _ = Describe("File services", func() {
 
 			fileUUID := "test"
 
-			le, _ := e.Ledger()
-
 			f, err := ioutil.TempFile("", "test")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -57,8 +54,11 @@ var _ = Describe("File services", func() {
 			ioutil.WriteFile(f.Name(), []byte("testfile"), os.ModePerm)
 
 			// First node expose a file
-			err = ShareFile(ctx, le, e, logg, 1*time.Second, fileUUID, f.Name())
+			opts, err := ShareFile(logg, 1*time.Second, fileUUID, f.Name())
 			Expect(err).ToNot(HaveOccurred())
+
+			opts = append(opts, node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+			e := node.New(opts...)
 
 			e.Start(ctx)
 			e2.Start(ctx)

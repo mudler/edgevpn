@@ -34,69 +34,67 @@ import (
 
 // ExposeService exposes a service to the p2p network.
 // meant to be called before a node is started with Start()
-func ExposeService(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l log.StandardLogger, announcetime time.Duration, serviceID, dstaddress string) {
+func RegisterService(ll log.StandardLogger, announcetime time.Duration, serviceID, dstaddress string) []node.Option {
+	ll.Infof("Exposing service '%s' (%s)", serviceID, dstaddress)
+	return []node.Option{
+		node.WithStreamHandler(protocol.ServiceProtocol, func(n *node.Node, l *blockchain.Ledger) func(stream network.Stream) {
+			return func(stream network.Stream) {
+				go func() {
+					ll.Infof("(service %s) Received connection from %s", serviceID, stream.Conn().RemotePeer().String())
 
-	l.Infof("Exposing service '%s' (%s)", serviceID, dstaddress)
+					// Retrieve current ID for ip in the blockchain
+					_, found := l.GetKey(protocol.UsersLedgerKey, stream.Conn().RemotePeer().String())
+					// If mismatch, update the blockchain
+					if !found {
+						ll.Debugf("Reset '%s': not found in the ledger", stream.Conn().RemotePeer().String())
+						stream.Reset()
+						return
+					}
 
-	// 1) Register the ServiceID <-> PeerID Association
-	// By announcing periodically our service to the blockchain
-	n.AddNetworkService(func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
-		ledger.Announce(
-			ctx,
-			announcetime,
-			func() {
-				// Retrieve current ID for ip in the blockchain
-				existingValue, found := ledger.GetKey(protocol.ServicesLedgerKey, serviceID)
-				service := &types.Service{}
-				existingValue.Unmarshal(service)
-				// If mismatch, update the blockchain
-				if !found || service.PeerID != n.Host().ID().String() {
-					updatedMap := map[string]interface{}{}
-					updatedMap[serviceID] = types.Service{PeerID: n.Host().ID().String(), Name: serviceID}
-					ledger.Add(protocol.ServicesLedgerKey, updatedMap)
-				}
+					ll.Infof("Connecting to '%s'", dstaddress)
+					c, err := net.Dial("tcp", dstaddress)
+					if err != nil {
+						ll.Debugf("Reset %s: %s", stream.Conn().RemotePeer().String(), err.Error())
+						stream.Reset()
+						return
+					}
+					closer := make(chan struct{}, 2)
+					go copyStream(closer, stream, c)
+					go copyStream(closer, c, stream)
+					<-closer
+
+					stream.Close()
+					c.Close()
+
+					ll.Infof("(service %s) Handled correctly '%s'", serviceID, stream.Conn().RemotePeer().String())
+				}()
+			}
+		}),
+
+		node.WithNetworkService(
+			func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+				b.Announce(
+					ctx,
+					announcetime,
+					func() {
+						// Retrieve current ID for ip in the blockchain
+						existingValue, found := b.GetKey(protocol.ServicesLedgerKey, serviceID)
+						service := &types.Service{}
+						existingValue.Unmarshal(service)
+						// If mismatch, update the blockchain
+						if !found || service.PeerID != n.Host().ID().String() {
+							updatedMap := map[string]interface{}{}
+							updatedMap[serviceID] = types.Service{PeerID: n.Host().ID().String(), Name: serviceID}
+							b.Add(protocol.ServicesLedgerKey, updatedMap)
+						}
+					},
+				)
+				return nil
 			},
-		)
-		return nil
-	})
-
-	// 2) Set a stream handler
-	//    which connect to the given address/Port and Send what we receive from the Stream.
-	n.AddStreamHandler(protocol.ServiceProtocol, func(stream network.Stream) {
-		go func() {
-			l.Infof("(service %s) Received connection from %s", serviceID, stream.Conn().RemotePeer().String())
-
-			// Retrieve current ID for ip in the blockchain
-			_, found := ledger.GetKey(protocol.UsersLedgerKey, stream.Conn().RemotePeer().String())
-			// If mismatch, update the blockchain
-			if !found {
-				l.Debugf("Reset '%s': not found in the ledger", stream.Conn().RemotePeer().String())
-				stream.Reset()
-				return
-			}
-
-			l.Infof("Connecting to '%s'", dstaddress)
-			c, err := net.Dial("tcp", dstaddress)
-			if err != nil {
-				l.Debugf("Reset %s: %s", stream.Conn().RemotePeer().String(), err.Error())
-				stream.Reset()
-				return
-			}
-			closer := make(chan struct{}, 2)
-			go copyStream(closer, stream, c)
-			go copyStream(closer, c, stream)
-			<-closer
-
-			stream.Close()
-			c.Close()
-
-			l.Infof("(service %s) Handled correctly '%s'", serviceID, stream.Conn().RemotePeer().String())
-		}()
-	})
+		)}
 }
 
 func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node *node.Node, ll log.StandardLogger, announcetime time.Duration, serviceID string, srcaddr string) error {
-
 	// Open local port for listening
 	l, err := net.Listen("tcp", srcaddr)
 	if err != nil {
