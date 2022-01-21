@@ -244,10 +244,9 @@ func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config) {
 	cfg.MaxMessageSize = y.MaxMessageSize
 }
 
-const defaultKeyLength = 24
+const defaultKeyLength = 32
 
 func GenerateNewConnectionData() *YAMLConnectionConfig {
-
 	return &YAMLConnectionConfig{
 		MaxMessageSize: 20 << 20, // 20MB
 		RoomName:       utils.RandStringRunes(defaultKeyLength),
