@@ -13,28 +13,29 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package protocol
+package utils
 
 import (
-	p2pprotocol "github.com/libp2p/go-libp2p-core/protocol"
+	"net"
+	"sort"
+
+	"github.com/c-robinson/iplib"
 )
 
-const (
-	EdgeVPN         Protocol = "/edgevpn/0.1"
-	ServiceProtocol Protocol = "/edgevpn/service/0.1"
-	FileProtocol    Protocol = "/edgevpn/file/0.1"
-)
+func NextIP(defaultIP string, ips []string) string {
+	if len(ips) == 0 {
+		return defaultIP
+	}
 
-const (
-	FilesLedgerKey    = "files"
-	MachinesLedgerKey = "machines"
-	ServicesLedgerKey = "services"
-	UsersLedgerKey    = "users"
-	HealthCheckKey    = "healthcheck"
-)
+	r := []net.IP{}
+	for _, i := range ips {
+		ip := net.ParseIP(i)
+		r = append(r, ip)
+	}
 
-type Protocol string
+	sort.Sort(iplib.ByIP(r))
 
-func (p Protocol) ID() p2pprotocol.ID {
-	return p2pprotocol.ID(string(p))
+	last := r[len(r)-1]
+
+	return iplib.NextIP(last).String()
 }

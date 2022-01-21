@@ -13,28 +13,22 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package protocol
+package utils_test
 
 import (
-	p2pprotocol "github.com/libp2p/go-libp2p-core/protocol"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "github.com/mudler/edgevpn/pkg/utils"
 )
 
-const (
-	EdgeVPN         Protocol = "/edgevpn/0.1"
-	ServiceProtocol Protocol = "/edgevpn/service/0.1"
-	FileProtocol    Protocol = "/edgevpn/file/0.1"
-)
-
-const (
-	FilesLedgerKey    = "files"
-	MachinesLedgerKey = "machines"
-	ServicesLedgerKey = "services"
-	UsersLedgerKey    = "users"
-	HealthCheckKey    = "healthcheck"
-)
-
-type Protocol string
-
-func (p Protocol) ID() p2pprotocol.ID {
-	return p2pprotocol.ID(string(p))
-}
+var _ = Describe("IP", func() {
+	Context("NextIP", func() {
+		It("gives a new IP", func() {
+			Expect(NextIP("10.1.1.0", []string{"1.1.0.1"})).To(Equal("1.1.0.2"))
+		})
+		It("return default", func() {
+			Expect(NextIP("10.1.1.0", []string{})).To(Equal("10.1.1.0"))
+		})
+	})
+})
