@@ -239,7 +239,8 @@ func (l *Ledger) Exists(b string, f func(Data) bool) (exists bool) {
 func (l *Ledger) CurrentData() map[string]map[string]Data {
 	l.Lock()
 	defer l.Unlock()
-	return l.blockchain.Last().Storage
+
+	return buckets(l.blockchain.Last().Storage).copy()
 }
 
 // LastBlock returns the last block in the blockchain
@@ -249,10 +250,31 @@ func (l *Ledger) LastBlock() Block {
 	return l.blockchain.Last()
 }
 
+type bucket map[string]Data
+
+func (b bucket) copy() map[string]Data {
+	copy := map[string]Data{}
+	for k, v := range b {
+		copy[k] = v
+	}
+	return copy
+}
+
+type buckets map[string]map[string]Data
+
+func (b buckets) copy() map[string]map[string]Data {
+	copy := map[string]map[string]Data{}
+	for k, v := range b {
+		copy[k] = bucket(v).copy()
+	}
+	return copy
+}
+
 // Add data to the blockchain
 func (l *Ledger) Add(b string, s map[string]interface{}) {
 	l.Lock()
-	current := l.blockchain.Last().Storage
+	current := buckets(l.blockchain.Last().Storage).copy()
+
 	for s, k := range s {
 		if _, exists := current[b]; !exists {
 			current[b] = make(map[string]Data)

@@ -36,12 +36,11 @@ var _ = Describe("Alive service", func() {
 	l := node.Logger(logg)
 
 	opts := append(
-		Alive(1*time.Second),
+		Alive(5*time.Second),
 		node.FromBase64(true, true, token),
-		node.WithStore(&blockchain.MemoryStore{}),
 		l)
-	e2 := node.New(opts...)
-	e1 := node.New(opts...)
+	e2 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
+	e1 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
 
 	Context("Aliveness check", func() {
 		It("detect both nodes alive after a while", func() {
@@ -51,8 +50,15 @@ var _ = Describe("Alive service", func() {
 			e1.Start(ctx)
 			e2.Start(ctx)
 
+			ll, _ := e1.Ledger()
+
+			ll.Persist(ctx, 1*time.Second, 100*time.Second, "t", "t", "test")
+
 			Eventually(func() []string {
-				ll, _ := e1.Ledger()
+				ll, err := e1.Ledger()
+				if err != nil {
+					return []string{}
+				}
 				return AvailableNodes(ll)
 			}, 100*time.Second, 1*time.Second).Should(ContainElement(e2.Host().ID().String()))
 		})
