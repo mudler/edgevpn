@@ -44,27 +44,26 @@ import (
 // Start the node and the vpn. Returns an error in case of failure
 // When starting the vpn, there is no need to start the node
 func Register(p ...Option) ([]node.Option, error) {
-	c := &Config{
-		Concurrency:        1,
-		LedgerAnnounceTime: 5 * time.Second,
-		Timeout:            15 * time.Second,
-		Logger:             logger.New(log.LevelDebug),
-	}
-	c.Apply(p...)
-
-	ifce, err := createInterface(c)
-	if err != nil {
-		return nil, err
-	}
 
 	return []node.Option{
-		node.WithStreamHandler(protocol.EdgeVPN,
-			func(n *node.Node, l *blockchain.Ledger) func(stream network.Stream) {
-				return streamHandler(l, ifce)
-			},
-		),
 		node.WithNetworkService(func(ctx context.Context, nc node.Config, n *node.Node, b *blockchain.Ledger) error {
+			c := &Config{
+				Concurrency:        1,
+				LedgerAnnounceTime: 5 * time.Second,
+				Timeout:            15 * time.Second,
+				Logger:             logger.New(log.LevelDebug),
+			}
+			c.Apply(p...)
+
+			ifce, err := createInterface(c)
+			if err != nil {
+				return err
+			}
 			defer ifce.Close()
+
+			// Set stream handler during runtime
+			n.Host().SetStreamHandler(protocol.EdgeVPN.ID(), streamHandler(b, ifce))
+
 			// Announce our IP
 			ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 			if err != nil {

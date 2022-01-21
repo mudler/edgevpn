@@ -21,6 +21,7 @@ import (
 
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/protocol"
+	"github.com/mudler/edgevpn/pkg/utils"
 
 	"github.com/mudler/edgevpn/pkg/blockchain"
 )
@@ -29,14 +30,26 @@ func Alive(announcetime time.Duration) []node.Option {
 	return []node.Option{
 		node.WithNetworkService(
 			func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+				t := time.Now()
 				// By announcing periodically our service to the blockchain
 				b.Announce(
 					ctx,
 					announcetime,
 					func() {
+						// Keep-alive
 						b.Add(protocol.HealthCheckKey, map[string]interface{}{
 							n.Host().ID().String(): time.Now().Format(time.RFC3339),
 						})
+
+						// Keep-alive scrub
+						nodes := AvailableNodes(b)
+						lead := utils.Leader(nodes)
+						if lead == n.Host().ID().String() && !t.Add(2*time.Minute).After(time.Now()) {
+							// We scrub after some time passed
+							t = time.Now()
+							// Automatically scrub
+							b.DeleteBucket(protocol.HealthCheckKey)
+						}
 					},
 				)
 				return nil
@@ -50,7 +63,7 @@ func AvailableNodes(b *blockchain.Ledger) (active []string) {
 		var s string
 		t.Unmarshal(&s)
 		parsed, _ := time.Parse(time.RFC3339, s)
-		if parsed.Add(2 * time.Minute).After(time.Now()) {
+		if parsed.Add(15 * time.Minute).After(time.Now()) {
 			active = append(active, u)
 		}
 	}

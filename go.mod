@@ -3,7 +3,7 @@ module github.com/mudler/edgevpn
 go 1.16
 
 require (
-	github.com/c-robinson/iplib v1.0.3 // indirect
+	github.com/c-robinson/iplib v1.0.3
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
@@ -13,6 +13,7 @@ require (
 	github.com/ipfs/go-cid v0.1.0 // indirect
 	github.com/ipfs/go-datastore v0.5.1 // indirect
 	github.com/ipfs/go-log v1.0.5
+	github.com/ipfs/go-log/v2 v2.4.0
 	github.com/ipld/go-ipld-prime v0.14.3 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/labstack/echo/v4 v4.6.1

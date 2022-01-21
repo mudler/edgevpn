@@ -23,6 +23,7 @@ import (
 
 	"github.com/mudler/edgevpn/api"
 	edgevpn "github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/mudler/edgevpn/pkg/vpn"
 	"github.com/urfave/cli"
 )
@@ -58,9 +59,8 @@ func MainFlags() []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:   "address",
-			Usage:  "VPN virtual address",
+			Usage:  "VPN virtual address, e.g. 10.1.0.1/24. No address specified enables p2p ip negotiation (experimental)",
 			EnvVar: "ADDRESS",
-			Value:  "10.1.0.1/24",
 		},
 		&cli.StringFlag{
 			Name:   "router",
@@ -90,13 +90,24 @@ func Main() func(c *cli.Context) error {
 		}
 		o, vpnOpts, ll := cliToOpts(c)
 
+		if c.String("address") == "" {
+			nodeOpts, vO := vpn.DHCP(ll, 10*time.Second)
+			o = append(
+				append(
+					o,
+					services.Alive(30*time.Second)...,
+				),
+				nodeOpts...,
+			)
+			vpnOpts = append(vpnOpts, vO...)
+		}
+
 		opts, err := vpn.Register(vpnOpts...)
 		if err != nil {
 			return err
 		}
-		o = append(o, opts...)
 
-		e := edgevpn.New(o...)
+		e := edgevpn.New(append(o, opts...)...)
 
 		displayStart(ll)
 
