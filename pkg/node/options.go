@@ -244,22 +244,25 @@ func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config) {
 	cfg.MaxMessageSize = y.MaxMessageSize
 }
 
+const defaultKeyLength = 24
+
 func GenerateNewConnectionData() *YAMLConnectionConfig {
+
 	return &YAMLConnectionConfig{
 		MaxMessageSize: 20 << 20, // 20MB
-		RoomName:       utils.RandStringRunes(23),
-		Rendezvous:     utils.RandStringRunes(23),
-		MDNS:           utils.RandStringRunes(23),
+		RoomName:       utils.RandStringRunes(defaultKeyLength),
+		Rendezvous:     utils.RandStringRunes(defaultKeyLength),
+		MDNS:           utils.RandStringRunes(defaultKeyLength),
 		OTP: OTP{
 			DHT: OTPConfig{
-				Key:      gotp.RandomSecret(16),
+				Key:      gotp.RandomSecret(defaultKeyLength),
 				Interval: 9000,
-				Length:   12,
+				Length:   defaultKeyLength,
 			},
 			Crypto: OTPConfig{
-				Key:      gotp.RandomSecret(16),
+				Key:      gotp.RandomSecret(defaultKeyLength),
 				Interval: 9000,
-				Length:   12,
+				Length:   defaultKeyLength,
 			},
 		},
 	}
