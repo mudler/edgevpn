@@ -25,6 +25,17 @@
 </p>
 
 
+EdgeVPN uses libp2p to build private decentralized networks that can be accessed via shared secrets.
+
+It can:
+
+- **Create a VPN** :  Secure VPN between p2p peers
+
+- **Act as a reverse Proxy** : Share a tcp service like you would do with `ngrok`. EdgeVPN let expose TCP services to the p2p network nodes without establishing a VPN connection: creates reverse proxy and tunnels traffic into the p2p network.
+
+- **Send files via p2p** : Send files over p2p between nodes without establishing a VPN connection.
+
+- **Be used as a library**: Plug a distributed p2p ledger easily in your golang code!
 
 
 # :camera: Screenshots
@@ -42,18 +53,6 @@ Users            |  Blockchain index
 ![Screenshot 2021-10-31 at 23-04-12 EdgeVPN - Users connected](https://user-images.githubusercontent.com/2420543/139602708-d102ae09-12f2-4c4c-bcc2-d8f4366355e0.png) | ![Screenshot 2021-10-31 at 23-04-20 EdgeVPN - Blockchain index](https://user-images.githubusercontent.com/2420543/139602709-244960bb-ea1d-413b-8c3e-8959133427ae.png)
 
 
-EdgeVPN uses libp2p to build an immutable trusted blockchain addressable p2p network.
-
-**VPN** :  Creates a vpn between p2p peers
-
-**Reverse Proxy** : Share a tcp service like you would do with `ngrok`. EdgeVPN let expose TCP services to the p2p network nodes without establishing a VPN connection: creates reverse proxy and tunnels traffic into the p2p network.
-
-**Send files via p2p** : Send files over p2p between nodes without establishing a VPN connection.
-
-At implementation detail, EdgeVPN uses a blockchain to store *Services UUID*, *Files UUID*, *VPN Data* into the shared ledger: It connect and creates a small blockchain between nodes. 
-
-**The blockchain is ephemeral and on-memory**. Each node keeps broadcasting it's state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.  
-
 # :new: GUI
 
 A Desktop GUI application (alpha) for Linux is available [here](https://github.com/mudler/edgevpn-gui)
@@ -64,21 +63,13 @@ Dashboard            |  Connections index
 ![edgevpn-gui](https://user-images.githubusercontent.com/2420543/147854907-1e4a4715-3181-4dc2-8bc0-d052b3bf46d3.png) | 
 
 
-# :question: Why? 
-
-First of all it's my first experiment with libp2p. Second, I always wanted a more "open" `ngrok` alternative, but I always prefer to have "less infra" as possible to maintain. That's why building something like this on top of `libp2p` makes sense.
-
-# :warning: Warning!
-
-I'm not a security expert, and this software didn't went through a full security audit, so don't use and rely it for sensible traffic and not even for production environment! I did this mostly for fun while I was experimenting with libp2p. 
-
 # :running: Installation
 
 Download the precompiled static release in the [releases page](https://github.com/mudler/edgevpn/releases). You can either install it in your system or just run it.
 
 # :computer: Usage
 
-EdgeVPN needs only a config, or a token to connect machines to a network.
+EdgeVPN needs only a config or a token to connect nodes to a p2p network.
 
 To generate a config run:
 
@@ -93,7 +84,13 @@ OR to generate a portable token:
 $ EDGEVPNTOKEN=$(edgevpn -g -b)
 ```
 
-The commands below emplies that you either specify a `EDGEVPNTOKEN` (or `--token` as parameter) or a `EDGEVPNCONFIG`. The configuration file is the network definition and allows you to connect over to your peers securely.
+Note, tokens are config merely encoded in base64, so this is equivalent:
+
+```bash
+$ EDGEVPNTOKEN=$(edgevpn -g | tee config.yaml | base64 -w0)
+```
+
+All edgevpn commands emplies that you either specify a `EDGEVPNTOKEN` (or `--token` as parameter) or a `EDGEVPNCONFIG`. The configuration file is the network definition and allows you to connect over to your peers securely.
 
 **Warning** Exposing this file or passing-it by is equivalent to give full control to the network.
 
@@ -115,7 +112,10 @@ $ EDGEVPNTOKEN=.. edgevpn --address 10.1.0.13/24
 
 ... and that's it! the `--address` is a _virtual_ unique IP for each node, and it is actually the ip where the node will be reachable to from the vpn. You can assign IPs freely to the nodes of the network, while you can override the default `edgevpn0` interface with `IFACE` (or `--interface`)
 
+*Note*: `--address` can be omitted. If no IP is specfied, since version `0.8.1` automatic IP negotiation between p2p nodes is attempted.
+
 *Note*: It might take up time to build the connection between nodes. Wait at least 5 mins, it depends on the network behind the hosts.
+
 
 ## :loop: Forwarding a local connection
 
@@ -224,6 +224,10 @@ Deletes the `:bucket` from the ledger
 
 # Architecture
 
+At implementation detail, EdgeVPN uses a blockchain to store *Services UUID*, *Files UUID*, *VPN Data* into the shared ledger: It connect and creates a small blockchain between nodes. 
+
+**The blockchain is ephemeral and on-memory**. Each node keeps broadcasting it's state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.  
+
 - Simple (KISS) interface to display network data from the blockchain
 - p2p encryption between peers with libp2p
 - randezvous points dynamically generated from OTP keys
@@ -245,6 +249,14 @@ The decentralized approach has few cons:
 Keep that in mind before using it for your prod networks!
 
 But it has a strong pro: it just works everywhere libp2p works!
+
+# :question: Why? 
+
+First of all it's my first experiment with libp2p. Second, I always wanted a more "open" `ngrok` alternative, but I always prefer to have "less infra" as possible to maintain. That's why building something like this on top of `libp2p` makes sense.
+
+# :warning: Warning!
+
+I'm not a security expert, and this software didn't went through a full security audit, so don't use and rely it for sensible traffic and not even for production environment! I did this mostly for fun while I was experimenting with libp2p. 
 
 ## Example use case: network-decentralized [k3s](https://github.com/k3s-io/k3s) test cluster
 
@@ -299,19 +311,14 @@ import (
     node "github.com/mudler/edgevpn/pkg/node"
 )
 
-e := node.New(
-    node.Logger(l),
-    node.LogLevel(log.LevelInfo),
-    node.MaxMessageSize(2 << 20),
-    node.FromBase64( mDNSEnabled, DHTEnabled, token ),
-    // ....
-  )
+opts, err := vpn.Register(vpnOpts...)
+if err != nil {
+	return err
+}
 
-ledger := e.Ledger()
+e := edgevpn.New(append(o, opts...)...)
 
-vpn.Register(ctx, ledger, e, opts..)
-
-e.Start()
+e.Start(ctx)
 ```
 
 # 🐜 Contribution
