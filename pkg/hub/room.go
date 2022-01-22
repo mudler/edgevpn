@@ -47,7 +47,7 @@ type Room struct {
 // a Room on success.
 func JoinRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName string) (*Room, error) {
 	// join the pubsub topic
-	topic, err := ps.Join(topicName(roomName))
+	topic, err := ps.Join(roomName)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +117,4 @@ func (cr *Room) readLoop() {
 		// send valid messages onto the Messages channel
 		cr.Messages <- cm
 	}
-}
-
-func topicName(roomName string) string {
-	return "chat-room:" + roomName
 }
