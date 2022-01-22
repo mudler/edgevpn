@@ -1,4 +1,4 @@
-// Copyright © 2021 Ettore Di Giacinto <mudler@mocaccino.org>
+// Copyright © 2021-2022 Ettore Di Giacinto <mudler@mocaccino.org>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ package utils
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -75,4 +76,9 @@ func AESDecrypt(text string, key *[32]byte) (plaintext string, err error) {
 	}
 
 	return string(decodedtext), err
+}
+
+func MD5(text string) string {
+	hash := md5.Sum([]byte(text))
+	return hex.EncodeToString(hash[:])
 }

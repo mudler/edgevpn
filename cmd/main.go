@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/mudler/edgevpn/api"
@@ -34,6 +35,11 @@ This is free software, and you are welcome to redistribute it
 under certain conditions.`
 
 func MainFlags() []cli.Flag {
+	basedir, _ := os.UserHomeDir()
+	if basedir == "" {
+		basedir = os.TempDir()
+	}
+
 	return append([]cli.Flag{
 		&cli.IntFlag{
 			Name:  "key-otp-interval",
@@ -56,6 +62,11 @@ func MainFlags() []cli.Flag {
 			Name:  "api-listen",
 			Value: ":8080",
 			Usage: "API listening port",
+		},
+		&cli.StringFlag{
+			Name:  "lease-dir",
+			Value: filepath.Join(basedir, ".edgevpn", "leases"),
+			Usage: "DHCP leases directory",
 		},
 		&cli.StringFlag{
 			Name:   "address",
@@ -91,7 +102,7 @@ func Main() func(c *cli.Context) error {
 		o, vpnOpts, ll := cliToOpts(c)
 
 		if c.String("address") == "" {
-			nodeOpts, vO := vpn.DHCP(ll, 10*time.Second)
+			nodeOpts, vO := vpn.DHCP(ll, 10*time.Second, c.String("lease-dir"))
 			o = append(
 				append(
 					o,

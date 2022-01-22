@@ -18,6 +18,9 @@ package vpn
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/ipfs/go-log/v2"
@@ -30,16 +33,41 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 )
 
-func DHCP(l log.StandardLogger, announcetime time.Duration) ([]node.Option, []Option) {
+func checkDHCPLease(c node.Config, leasedir string) string {
+	// retrieve lease if present
+
+	leaseFileName := utils.MD5(fmt.Sprintf("%s-ek", c.ExchangeKey))
+	leaseFile := filepath.Join(leasedir, leaseFileName)
+	if _, err := os.Stat(leaseFile); err == nil {
+		b, _ := ioutil.ReadFile(leaseFile)
+		return string(b)
+	}
+	return ""
+}
+
+func DHCP(l log.StandardLogger, announcetime time.Duration, leasedir string) ([]node.Option, []Option) {
 	ip := make(chan string, 1)
 	return []node.Option{
+			func(cfg *node.Config) error {
+				// retrieve lease if present. consumed by conngater when starting the node
+				lease := checkDHCPLease(*cfg, leasedir)
+				if lease != "" {
+					cfg.InterfaceAddress = fmt.Sprintf("%s/24", lease)
+				}
+				return nil
+			},
 			node.WithNetworkService(
 				func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
-					//  whoever wants an IP:
+
+					os.MkdirAll(leasedir, 0600)
+
+					// retrieve lease if present
+					var wantedIP = checkDHCPLease(c, leasedir)
+
+					//  whoever wants a new IP:
 					//  1. Get available nodes. Filter from Machine those that do not have an IP.
 					//  2. Get the leader among them. If we are not, we wait
 					//  3. If we are the leader, pick an IP and start the VPN with that IP
-					var wantedIP string
 					for wantedIP == "" {
 						time.Sleep(5 * time.Second)
 
@@ -85,12 +113,22 @@ func DHCP(l log.StandardLogger, announcetime time.Duration) ([]node.Option, []Op
 						wantedIP = utils.NextIP("10.1.0.1", ips)
 					}
 
+					// Save lease to disk
+					leaseFileName := utils.MD5(fmt.Sprintf("%s-ek", c.ExchangeKey))
+					leaseFile := filepath.Join(leasedir, leaseFileName)
+					l.Debugf("Writing lease to '%s'", leaseFile)
+					if err := ioutil.WriteFile(leaseFile, []byte(wantedIP), 0600); err != nil {
+						l.Warn(err)
+					}
+
+					// propagate ip to channel that is read while starting vpn
 					ip <- wantedIP
 					return nil
 				},
 			),
 		}, []Option{
 			func(cfg *Config) error {
+				// read back IP when starting vpn
 				cfg.InterfaceAddress = fmt.Sprintf("%s/24", <-ip)
 				close(ip)
 				l.Debug("IP Received", cfg.InterfaceAddress)
