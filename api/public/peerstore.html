@@ -13,9 +13,8 @@
   <script src="/js/dt.js"></script> 
   <script src="/js/common.js"></script> 
   <link rel="stylesheet" type="text/css" href="/css/style.css">
-  <script src="/js/clipboard.min.js"></script>
 
-<title>EdgeVPN - Files index</title>
+<title>EdgeVPN - p2p node store</title>
 </head>
 
 <body>
@@ -82,69 +81,39 @@
       <div class="hero-body">
         <div class="container">
           <h1 class="title">
-            <i class="fas fa-file-upload"></i> Served files
+            <i class="fas fa-database"></i> P2p peer store list
           </h1>
           <h2 class="subtitle">
-            Accessible via api at <a href="/api/files" target=_blank><code> /api/files </code></a><br>
+            Accessible via api at <a href="/api/peerstore" target=_blank><code> /api/peerstore </code></a>
           </h2>
-
-          <div class="notification is-info is-light">
-            <h1>Send files</h1>
-            <div class="field has-addons">
-              <div class="control has-icons-left">
-                <input id="sendfile" type="text" class="input is-info is-small" size=40 value='edgevpn file-send --name "file_name" --path /src/file'>
-                <span class="icon is-small is-left">
-                  <i class="fas fa-terminal"></i>
-                </span>
-              </div>
-              <div class="control">
-                <button class="btn button is-dark is-small" data-clipboard-target="#sendfile"> Copy to clipboard</button>
-              </div>
-            </div>
-            <hr>
-            <h1>Receive files</h1>
-            <div class="field has-addons">
-              <div class="control has-icons-left">
-                <input id="receivefile" type="text" class="input is-info is-small" size=40 value='edgevpn file-receive --name "file_name" --path /dst/file'>
-                <span class="icon is-small is-left">
-                  <i class="fas fa-terminal"></i>
-                </span>
-              </div>
-              <div class="control">
-                <button class="btn button is-dark is-small" data-clipboard-target="#receivefile"> Copy to clipboard</button>
-              </div>
-            </div>
         </div>
       </div>
     </section>
     <section class="section">
-      
-        <div class="container">
-      
-          <table  data-toggle="table"
+    <div class="container">
+        <table  data-toggle="table"
           data-search="true"
           data-show-columns="true"
           id="table"  >
           <thead>
         
           <tr>
-              <th ><abbr title="ip">Name</abbr></th>
-              <th ><abbr title="peer">PeerID</abbr></th>
+              <th ><abbr title="ID">PeerID</abbr></th>
 
             </tr>
           </thead>
         </table> 
 
-        </div>
+      </div>
     </section>
+
       
         <script type="text/javascript">
             $(document).ready(function() {
-                var btn = new ClipboardJS('.btn');
                 var table = $('#table').DataTable( {
                     "processing": true,
                     "ajax": {
-                        "url": "/api/files",
+                        "url": "/api/peerstore",
                         "type": "GET",
                         "dataSrc": '',
                     },
@@ -153,8 +122,7 @@
                       "processing": ""
                     },
                     "columns": [
-                        { "data": "Name" },
-                        { "data": "PeerID" },
+                        { "data": "ID" },
                     ],
                 } );
 

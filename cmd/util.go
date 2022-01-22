@@ -51,6 +51,12 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Value:  1200,
 	},
 	&cli.IntFlag{
+		Name:   "packet-mtu",
+		Usage:  "Specify a mtu",
+		EnvVar: "EDGEVPNPACKETMTU",
+		Value:  1420,
+	},
+	&cli.IntFlag{
 		Name:   "channel-buffer-size",
 		Usage:  "Specify a channel buffer size",
 		EnvVar: "EDGEVPNCHANNELBUFFERSIZE",
@@ -226,7 +232,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		vpn.NetLinkBootstrap(true),
 		vpn.WithChannelBufferSize(c.Int("channel-buffer-size")),
 		vpn.WithInterfaceMTU(c.Int("mtu")),
-		vpn.WithPacketMTU(1420),
+		vpn.WithPacketMTU(c.Int("packet-mtu")),
 		vpn.WithRouterAddress(router),
 		vpn.WithInterfaceName(iface),
 	}

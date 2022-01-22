@@ -34,7 +34,11 @@ under certain conditions.`
 
 func MainFlags() []cli.Flag {
 	return append([]cli.Flag{
-
+		&cli.IntFlag{
+			Name:  "key-otp-interval",
+			Usage: "Tweaks default otp interval (in seconds) when generating new tokens",
+			Value: 9000,
+		},
 		&cli.BoolFlag{
 			Name:  "g",
 			Usage: "Generates a new configuration and prints it on screen",
@@ -75,7 +79,7 @@ func Main() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		if c.Bool("g") {
 			// Generates a new config and exit
-			newData := edgevpn.GenerateNewConnectionData()
+			newData := edgevpn.GenerateNewConnectionData(c.Int("key-otp-interval"))
 			if c.Bool("b") {
 				fmt.Print(newData.Base64())
 			} else {
@@ -96,15 +100,11 @@ func Main() func(c *cli.Context) error {
 
 		displayStart(ll)
 
-		ledger, err := e.Ledger()
-		if err != nil {
-			return err
-		}
-
+		ctx := context.Background()
 		if c.Bool("api") {
-			go api.API(c.String("api-listen"), 5*time.Second, 20*time.Second, ledger)
+			go api.API(ctx, c.String("api-listen"), 5*time.Second, 20*time.Second, e)
 		}
 
-		return e.Start(context.Background())
+		return e.Start(ctx)
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Ettore Di Giacinto <mudler@mocaccino.org>
+// Copyright © 2021-2022 Ettore Di Giacinto <mudler@mocaccino.org>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,8 +22,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	apiTypes "github.com/mudler/edgevpn/api/types"
+
 	"github.com/labstack/echo/v4"
-	"github.com/mudler/edgevpn/pkg/blockchain"
+	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/protocol"
 	"github.com/mudler/edgevpn/pkg/types"
 )
@@ -40,7 +44,10 @@ func getFileSystem() http.FileSystem {
 	return http.FS(fsys)
 }
 
-func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Ledger) error {
+func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, e *node.Node) error {
+
+	ledger, _ := e.Ledger()
+
 	ec := echo.New()
 	assetHandler := http.FileServer(getFileSystem())
 
@@ -60,20 +67,53 @@ func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Le
 		machines := len(ledger.CurrentData()[protocol.MachinesLedgerKey])
 		users := len(ledger.CurrentData()[protocol.UsersLedgerKey])
 		services := len(ledger.CurrentData()[protocol.ServicesLedgerKey])
+		onChainNodes := len(e.HubRoom.Topic.ListPeers())
+		p2pPeers := len(e.Host().Network().Peerstore().Peers())
+
 		blockchain := ledger.Index()
 
 		return c.JSON(http.StatusOK, struct {
-			Files, Machines, Users, Services, BlockChain int
-		}{files, machines, users, services, blockchain})
+			Files, Machines, Users, Services, BlockChain, OnChainNodes, Peers int
+		}{files, machines, users, services, blockchain, onChainNodes, p2pPeers})
 	})
 
 	ec.GET("/api/machines", func(c echo.Context) error {
-		list := []*types.Machine{}
+		list := []*apiTypes.Machine{}
 		for _, v := range ledger.CurrentData()[protocol.MachinesLedgerKey] {
 			machine := &types.Machine{}
 			v.Unmarshal(machine)
-			list = append(list, machine)
+			m := &apiTypes.Machine{Machine: *machine}
+			if e.Host().Network().Connectedness(peer.ID(machine.PeerID)) == network.Connected {
+				m.Connected = true
+			}
+			for _, p := range e.HubRoom.Topic.ListPeers() {
+				if p.String() == machine.PeerID {
+					m.OnChain = true
+				}
+			}
+			list = append(list, m)
+
 		}
+
+		return c.JSON(http.StatusOK, list)
+	})
+
+	ec.GET("/api/nodes", func(c echo.Context) error {
+		list := []apiTypes.Peer{}
+		for _, v := range e.HubRoom.Topic.ListPeers() {
+			list = append(list, apiTypes.Peer{ID: v.String()})
+		}
+
+		return c.JSON(http.StatusOK, list)
+	})
+
+	ec.GET("/api/peerstore", func(c echo.Context) error {
+		list := []apiTypes.Peer{}
+		for _, v := range e.Host().Network().Peerstore().Peers() {
+			list = append(list, apiTypes.Peer{ID: v.String()})
+		}
+		e.HubRoom.Topic.ListPeers()
+
 		return c.JSON(http.StatusOK, list)
 	})
 
@@ -147,5 +187,16 @@ func API(l string, defaultInterval, timeout time.Duration, ledger *blockchain.Le
 	})
 
 	ec.HideBanner = true
-	return ec.Start(l)
+
+	if err := ec.Start(l); err != nil && err != http.ErrServerClosed {
+		return err
+	}
+
+	go func() {
+		<-ctx.Done()
+		ec.Shutdown(ctx)
+
+	}()
+
+	return nil
 }

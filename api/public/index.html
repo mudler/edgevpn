@@ -54,6 +54,14 @@
           <i class="fas fa-dice-d20"></i>&nbsp;
           Blockchain
         </a>
+        <a class="navbar-item" href="/peerstore.html">
+          <i class="fas fa-database"></i>&nbsp;
+          Peerstore
+        </a>
+        <a class="navbar-item" href="/nodes.html">
+          <i class="fas fa-ethernet"></i>&nbsp;
+          Nodes
+        </a>
       </div>
       <div class="navbar-end">
         <div class="navbar-item">
@@ -83,36 +91,66 @@
     </section>
     <section class="section">
         <div class="container">
-          <div class="tile is-ancestor has-text-centered">
-            <div class="tile is-parent">
-                <article class="tile is-child box">
-                    <p class="title" id="machines"></p>
-                    <p class="subtitle"><i class="fas fa-server"></i> Machines</p>
-                </article>
+            <div class="tile is-ancestor has-text-centered row">
+              <div class="tile is-parent">
+                  <article class="tile is-child box">
+                    <a href="/machines.html">
+                      <p class="title" id="machines"></p>
+                      <p class="subtitle"><i class="fas fa-server"></i> Machines</p>
+                    </a>
+                  </article>
+              </div>
+              <div class="tile is-parent">
+                  <article class="tile is-child box">
+                    <a href="/services.html">
+                      <p class="title" id="services"></p>
+                      <p class="subtitle"><i class="fas fa-project-diagram"></i> Services</p>
+                    </a>
+                  </article>
+              </div>
+              <div class="tile is-parent">
+                  <article class="tile is-child box">
+                    <a href="/files.html">
+                      <p class="title" id="files"></p>
+                      <p class="subtitle"><i class="fas fa-file-upload"></i> Files</p>
+                    </a>
+                  </article>
+              </div>
             </div>
-            <div class="tile is-parent">
+          <div class="tile is-ancestor has-text-centered row">
+
+              <div class="tile is-parent">
+                  <article class="tile is-child box">
+                    <a href="/users.html">
+                      <p class="title" id="users"></p>
+                      <p class="subtitle"><i class="fas fa-user-clock"></i> Users</p>
+                    </a>
+                  </article>
+              </div>
+              <div class="tile is-parent">
                 <article class="tile is-child box">
-                    <p class="title" id="services"></p>
-                    <p class="subtitle"><i class="fas fa-project-diagram"></i> Services</p>
+                  <a href="/blockchain.html">
+                    <p class="title" id="blockchain"></p>
+                    <p class="subtitle"><i class="fas fa-dice-d20"></i> Blockchain index</p>
+                  </a>
                 </article>
-            </div>
-            <div class="tile is-parent">
+              </div>
+              <div class="tile is-parent">
                 <article class="tile is-child box">
-                    <p class="title" id="files"></p>
-                    <p class="subtitle"><i class="fas fa-file-upload"></i> Files</p>
+                  <a href="/nodes.html">
+                    <p class="title" id="nodes"></p>
+                    <p class="subtitle"><i class="fas fa-ethernet"></i> On chain nodes</p>
+                  </a>
                 </article>
-            </div>
-            <div class="tile is-parent">
+              </div>
+              <div class="tile is-parent">
                 <article class="tile is-child box">
-                    <p class="title" id="users"></p>
-                    <p class="subtitle"><i class="fas fa-user-clock"></i> Users</p>
+                  <a href="/peerstore.html">
+                    <p class="title" id="peers"></p>
+                    <p class="subtitle"><i class="fas fa-database"></i> p2p known peers</p>
+                  </a>
                 </article>
-            </div>
-            <div class="tile is-parent">
-              <article class="tile is-child box">
-                  <p class="title" id="blockchain"></p>
-                  <p class="subtitle"><i class="fas fa-dice-d20"></i> Blockchain index</p>
-              </article>
+              </div>
           </div>
         </div>
         </div>
@@ -135,7 +173,8 @@
                         $('#files').html(response.Files);
                         $('#machines').html(response.Machines);
                         $('#blockchain').html(response.BlockChain);
-
+                        $('#nodes').html(response.OnChainNodes);
+                        $('#peers').html(response.Peers);
                     }
                 });
               }

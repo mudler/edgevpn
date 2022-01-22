@@ -44,13 +44,13 @@ A simple UI interface is available to display network data.`,
 
 			displayStart(ll)
 
+			ctx := context.Background()
 			// Start the node to the network, using our ledger
-			if err := e.Start(context.Background()); err != nil {
+			if err := e.Start(ctx); err != nil {
 				return err
 			}
 
-			ledger, _ := e.Ledger()
-			return api.API(c.String("listen"), 5*time.Second, 20*time.Second, ledger)
+			return api.API(ctx, c.String("listen"), 5*time.Second, 20*time.Second, e)
 		},
 	}
 }

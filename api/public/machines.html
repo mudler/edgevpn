@@ -53,6 +53,14 @@
           <i class="fas fa-dice-d20"></i>&nbsp;
           Blockchain
         </a>
+        <a class="navbar-item" href="/peerstore.html">
+          <i class="fas fa-database"></i>&nbsp;
+          Peerstore
+        </a>
+        <a class="navbar-item" href="/nodes.html">
+          <i class="fas fa-ethernet"></i>&nbsp;
+          Nodes
+        </a>
       </div>
       <div class="navbar-end">
         <div class="navbar-item">
@@ -96,6 +104,8 @@
               <th ><abbr title="OS">OS</abbr></th>
               <th><abbr title="Arch">Architecture</abbr></th>
               <th><abbr title="Version">Version</abbr></th>
+              <th><abbr title="Connected">Connected</abbr></th>
+              <th><abbr title="OnChain">OnChain</abbr></th>
 
             </tr>
           </thead>
@@ -125,7 +135,14 @@
                         { "data": "OS" },
                         { "data": "Arch" },
                         { "data": "Version" },
+                        { "data": "Connected" },
+                        { "data": "OnChain" },
                     ],
+                    "columnDefs": [ {
+                      "targets": -1,
+                      "data": null,
+                      "defaultContent": "<button>Click!</button>"
+                  } ],
                 } );
 
                 setInterval( function () {

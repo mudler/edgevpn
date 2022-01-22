@@ -36,7 +36,7 @@ type Room struct {
 
 	ctx   context.Context
 	ps    *pubsub.PubSub
-	topic *pubsub.Topic
+	Topic *pubsub.Topic
 	sub   *pubsub.Subscription
 
 	roomName string
@@ -61,7 +61,7 @@ func JoinRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName s
 	cr := &Room{
 		ctx:      ctx,
 		ps:       ps,
-		topic:    topic,
+		Topic:    topic,
 		sub:      sub,
 		self:     selfID,
 		roomName: roomName,
@@ -94,7 +94,7 @@ func (cr *Room) PublishMessage(m *Message) error {
 	if err != nil {
 		return err
 	}
-	return cr.topic.Publish(cr.ctx, msgBytes)
+	return cr.Topic.Publish(cr.ctx, msgBytes)
 }
 
 // readLoop pulls messages from the pubsub topic and pushes them onto the Messages channel.
