@@ -107,19 +107,14 @@ func Main() func(c *cli.Context) error {
 		}
 		o, vpnOpts, ll := cliToOpts(c)
 
+		o = append(o, services.Alive(30*time.Second)...)
 		if c.Bool("dhcp") {
 			address, _, err := net.ParseCIDR(c.String("address"));
 			if err != nil {
 				return err
 			}
 			nodeOpts, vO := vpn.DHCP(ll, 10*time.Second, c.String("lease-dir"), address.String())
-			o = append(
-				append(
-					o,
-					services.Alive(30*time.Second)...,
-				),
-				nodeOpts...,
-			)
+			o = append(o, nodeOpts...,)
 			vpnOpts = append(vpnOpts, vO...)
 		}
 
