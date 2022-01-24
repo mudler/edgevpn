@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"net"
 
 	"github.com/mudler/edgevpn/api"
 	edgevpn "github.com/mudler/edgevpn/pkg/node"
@@ -63,6 +64,10 @@ func MainFlags() []cli.Flag {
 			Value: ":8080",
 			Usage: "API listening port",
 		},
+		&cli.BoolFlag{
+			Name:   "dhcp",
+			Usage:  "Enables p2p ip negotiation (experimental)",
+		},
 		&cli.StringFlag{
 			Name:  "lease-dir",
 			Value: filepath.Join(basedir, ".edgevpn", "leases"),
@@ -70,8 +75,9 @@ func MainFlags() []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:   "address",
-			Usage:  "VPN virtual address, e.g. 10.1.0.1/24. No address specified enables p2p ip negotiation (experimental)",
+			Usage:  "VPN virtual address",
 			EnvVar: "ADDRESS",
+			Value:  "10.1.0.1/24",
 		},
 		&cli.StringFlag{
 			Name:   "router",
@@ -101,8 +107,12 @@ func Main() func(c *cli.Context) error {
 		}
 		o, vpnOpts, ll := cliToOpts(c)
 
-		if c.String("address") == "" {
-			nodeOpts, vO := vpn.DHCP(ll, 10*time.Second, c.String("lease-dir"))
+		if c.Bool("dhcp") {
+			address, _, err := net.ParseCIDR(c.String("address"));
+			if err != nil {
+				return err
+			}
+			nodeOpts, vO := vpn.DHCP(ll, 10*time.Second, c.String("lease-dir"), address.String())
 			o = append(
 				append(
 					o,

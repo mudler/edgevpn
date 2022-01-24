@@ -45,7 +45,7 @@ func checkDHCPLease(c node.Config, leasedir string) string {
 	return ""
 }
 
-func DHCP(l log.StandardLogger, announcetime time.Duration, leasedir string) ([]node.Option, []Option) {
+func DHCP(l log.StandardLogger, announcetime time.Duration, leasedir string, address string) ([]node.Option, []Option) {
 	ip := make(chan string, 1)
 	return []node.Option{
 			func(cfg *node.Config) error {
@@ -110,7 +110,7 @@ func DHCP(l log.StandardLogger, announcetime time.Duration, leasedir string) ([]
 						// We are lead
 						l.Debug("picking up between", ips)
 
-						wantedIP = utils.NextIP("10.1.0.1", ips)
+						wantedIP = utils.NextIP(address, ips)
 					}
 
 					// Save lease to disk
