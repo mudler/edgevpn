@@ -18,10 +18,10 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"time"
-	"net"
 
 	"github.com/mudler/edgevpn/api"
 	edgevpn "github.com/mudler/edgevpn/pkg/node"
@@ -65,8 +65,8 @@ func MainFlags() []cli.Flag {
 			Usage: "API listening port",
 		},
 		&cli.BoolFlag{
-			Name:   "dhcp",
-			Usage:  "Enables p2p ip negotiation (experimental)",
+			Name:  "dhcp",
+			Usage: "Enables p2p ip negotiation (experimental)",
 		},
 		&cli.StringFlag{
 			Name:  "lease-dir",
@@ -107,14 +107,14 @@ func Main() func(c *cli.Context) error {
 		}
 		o, vpnOpts, ll := cliToOpts(c)
 
-		o = append(o, services.Alive(30*time.Second)...)
+		o = append(o, services.Alive(30*time.Second, 10*time.Minute)...)
 		if c.Bool("dhcp") {
-			address, _, err := net.ParseCIDR(c.String("address"));
+			address, _, err := net.ParseCIDR(c.String("address"))
 			if err != nil {
 				return err
 			}
 			nodeOpts, vO := vpn.DHCP(ll, 10*time.Second, c.String("lease-dir"), address.String())
-			o = append(o, nodeOpts...,)
+			o = append(o, nodeOpts...)
 			vpnOpts = append(vpnOpts, vO...)
 		}
 

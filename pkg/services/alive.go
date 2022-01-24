@@ -26,7 +26,7 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 )
 
-func Alive(announcetime time.Duration) []node.Option {
+func Alive(announcetime, scrubTime time.Duration) []node.Option {
 	return []node.Option{
 		node.WithNetworkService(
 			func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
@@ -44,10 +44,11 @@ func Alive(announcetime time.Duration) []node.Option {
 						// Keep-alive scrub
 						nodes := AvailableNodes(b)
 						lead := utils.Leader(nodes)
-						if !t.Add(2 * time.Minute).After(time.Now()) {
+						if !t.Add(scrubTime).After(time.Now()) {
 							// Update timer so not-leader do not attempt to delete bucket afterwards
 							// prevent cycles
 							t = time.Now()
+
 							if lead == n.Host().ID().String() {
 								// Automatically scrub after some time passed
 								b.DeleteBucket(protocol.HealthCheckKey)

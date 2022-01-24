@@ -36,16 +36,16 @@ var _ = Describe("Alive service", func() {
 	l := node.Logger(logg)
 
 	opts := append(
-		Alive(5*time.Second),
+		Alive(5*time.Second, 100*time.Second),
 		node.FromBase64(true, true, token),
 		l)
-	e2 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
-	e1 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
 
 	Context("Aliveness check", func() {
 		It("detect both nodes alive after a while", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
+			e2 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
+			e1 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
 
 			e1.Start(ctx)
 			e2.Start(ctx)
@@ -54,13 +54,78 @@ var _ = Describe("Alive service", func() {
 
 			ll.Persist(ctx, 1*time.Second, 100*time.Second, "t", "t", "test")
 
+			matches := And(ContainElement(e2.Host().ID().String()),
+				ContainElement(e1.Host().ID().String()))
+
+			index := ll.LastBlock().Index
 			Eventually(func() []string {
 				ll, err := e1.Ledger()
 				if err != nil {
 					return []string{}
 				}
 				return AvailableNodes(ll)
-			}, 100*time.Second, 1*time.Second).Should(ContainElement(e2.Host().ID().String()))
+			}, 100*time.Second, 1*time.Second).Should(matches)
+
+			Expect(ll.LastBlock().Index).ToNot(Equal(index))
+		})
+	})
+
+	Context("Aliveness Scrub", func() {
+		BeforeEach(func() {
+			opts = append(
+				Alive(2*time.Second, 4*time.Second),
+				node.FromBase64(true, true, token),
+				l)
+		})
+
+		It("cleans up after a while", func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			e2 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
+			e1 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
+
+			e1.Start(ctx)
+			e2.Start(ctx)
+
+			ll, _ := e1.Ledger()
+
+			ll.Persist(ctx, 1*time.Second, 100*time.Second, "t", "t", "test")
+
+			matches := And(ContainElement(e2.Host().ID().String()),
+				ContainElement(e1.Host().ID().String()))
+
+			index := ll.LastBlock().Index
+			Eventually(func() []string {
+				ll, err := e1.Ledger()
+				if err != nil {
+					return []string{}
+				}
+				return AvailableNodes(ll)
+			}, 100*time.Second, 1*time.Second).Should(matches)
+
+			Expect(ll.LastBlock().Index).ToNot(Equal(index))
+			index = ll.LastBlock().Index
+
+			Eventually(func() []string {
+				ll, err := e1.Ledger()
+				if err != nil {
+					return []string{}
+				}
+				return AvailableNodes(ll)
+			}, 30*time.Second, 1*time.Second).Should(BeEmpty())
+
+			Expect(ll.LastBlock().Index).ToNot(Equal(index))
+			index = ll.LastBlock().Index
+
+			Eventually(func() []string {
+				ll, err := e1.Ledger()
+				if err != nil {
+					return []string{}
+				}
+				return AvailableNodes(ll)
+			}, 10*time.Second, 1*time.Second).Should(matches)
+			Expect(ll.LastBlock().Index).ToNot(Equal(index))
+
 		})
 	})
 })
