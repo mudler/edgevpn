@@ -24,7 +24,7 @@ require (
 	github.com/libp2p/go-libp2p-kad-dht v0.15.0
 	github.com/libp2p/go-libp2p-pubsub v0.6.0
 	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/miekg/dns v1.1.45 // indirect
+	github.com/miekg/dns v1.1.45
 	github.com/mudler/go-isterminal v0.0.0-20211031135732-5e4e06fc5a58
 	github.com/mudler/go-processmanager v0.0.0-20211226182900-899fbb0b97f6
 	github.com/multiformats/go-base32 v0.0.4 // indirect

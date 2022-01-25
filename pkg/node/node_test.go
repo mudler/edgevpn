@@ -50,6 +50,32 @@ var _ = Describe("Node", func() {
 			}, 100*time.Second, 1*time.Second).Should(ContainElement(e2.Host().ID()))
 		})
 
+		It("nodes can write to the ledger", func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			e := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			e2 := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+
+			e.Start(ctx)
+			e2.Start(ctx)
+
+			l, err := e.Ledger()
+			Expect(err).ToNot(HaveOccurred())
+			l2, err := e2.Ledger()
+			Expect(err).ToNot(HaveOccurred())
+
+			l.Announce(ctx, 1*time.Second, func() { l.Add("foo", map[string]interface{}{"bar": "baz"}) })
+
+			Eventually(func() string {
+				var s string
+				v, exists := l2.GetKey("foo", "bar")
+				if exists {
+					v.Unmarshal(&s)
+				}
+				return s
+			}, 100*time.Second, 1*time.Second).Should(Equal("baz"))
+		})
 	})
 
 	Context("connection gater", func() {

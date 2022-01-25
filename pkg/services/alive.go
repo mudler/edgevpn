@@ -43,6 +43,9 @@ func Alive(announcetime, scrubTime time.Duration) []node.Option {
 
 						// Keep-alive scrub
 						nodes := AvailableNodes(b)
+						if len(nodes) == 0 {
+							return
+						}
 						lead := utils.Leader(nodes)
 						if !t.Add(scrubTime).After(time.Now()) {
 							// Update timer so not-leader do not attempt to delete bucket afterwards

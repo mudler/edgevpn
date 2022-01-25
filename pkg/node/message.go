@@ -34,11 +34,6 @@ func (mw *messageWriter) Write(p []byte) (n int, err error) {
 	return mw.Send(mw.mess.WithMessage(string(p)))
 }
 
-// WriteString writes a string to the message channel
-func (mw *messageWriter) WriteString(p string) (n int, err error) {
-	return mw.Send(mw.mess.WithMessage(p))
-}
-
 // Send sends a message to the channel
 func (mw *messageWriter) Send(copy *hub.Message) (n int, err error) {
 	mw.input <- copy
