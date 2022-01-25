@@ -160,6 +160,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "List of discovery peers to use",
 		EnvVar: "EDGEVPNBOOTSTRAPPEERS",
 	},
+	&cli.StringSliceFlag{
+		Name:   "blacklist",
+		Usage:  "List of peers/cidr to gate",
+		EnvVar: "EDGEVPNBLACKLIST",
+	},
 	&cli.StringFlag{
 		Name:   "token",
 		Usage:  "Specify an edgevpn token in place of a config file",
@@ -216,6 +221,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		node.WithLedgerInterval(time.Duration(c.Int("ledger-syncronization-interval")) * time.Second),
 		node.Logger(llger),
 		node.WithDiscoveryBootstrapPeers(addrsList),
+		node.WithBlacklist(c.StringSlice("blacklist")...),
 		node.LibP2PLogLevel(libp2plvl),
 		node.WithInterfaceAddress(address),
 		node.FromBase64(mDNS, dht, token),

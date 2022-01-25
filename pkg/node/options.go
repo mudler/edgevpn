@@ -60,6 +60,13 @@ func WithInterfaceAddress(i string) func(cfg *Config) error {
 	}
 }
 
+func WithBlacklist(i ...string) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.Blacklist = i
+		return nil
+	}
+}
+
 func Logger(l log.StandardLogger) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.Logger = l

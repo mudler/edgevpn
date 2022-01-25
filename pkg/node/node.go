@@ -23,6 +23,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p/p2p/net/conngater"
 
 	protocol "github.com/mudler/edgevpn/pkg/protocol"
 
@@ -38,8 +39,8 @@ type Node struct {
 	inputCh chan *hub.Message
 	seed    int64
 	host    host.Host
-
-	ledger *blockchain.Ledger
+	cg      *conngater.BasicConnectionGater
+	ledger  *blockchain.Ledger
 }
 
 var defaultLibp2pOptions = []libp2p.Option{

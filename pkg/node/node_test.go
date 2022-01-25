@@ -34,19 +34,48 @@ var _ = Describe("Node", func() {
 
 	l := Logger(logger.New(log.LevelFatal))
 
-	e := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
-	e2 := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
-
 	Context("Connection", func() {
 		It("see each other node ID", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
+
+			e := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			e2 := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+
 			e.Start(ctx)
 			e2.Start(ctx)
 
 			Eventually(func() []peer.ID {
 				return e.Host().Network().Peers()
 			}, 100*time.Second, 1*time.Second).Should(ContainElement(e2.Host().ID()))
+		})
+
+	})
+
+	Context("connection gater", func() {
+		It("blacklists", func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			e := New(
+				WithBlacklist("1.1.1.1/32", "1.1.1.0/24"),
+				FromBase64(true, true, token),
+				WithStore(&blockchain.MemoryStore{}),
+				l,
+			)
+
+			e.Start(ctx)
+			addrs := e.ConnectionGater().ListBlockedAddrs()
+			peers := e.ConnectionGater().ListBlockedPeers()
+			subs := e.ConnectionGater().ListBlockedSubnets()
+			Expect(len(addrs)).To(Equal(0))
+			Expect(len(peers)).To(Equal(0))
+			Expect(len(subs)).To(Equal(2))
+
+			ips := []string{}
+			for _, s := range subs {
+				ips = append(ips, s.String())
+			}
+			Expect(ips).To(ContainElements("1.1.1.1/32", "1.1.1.0/24"))
 		})
 	})
 })

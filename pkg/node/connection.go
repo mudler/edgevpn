@@ -25,6 +25,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
 	conngater "github.com/libp2p/go-libp2p/p2p/net/conngater"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	multiaddr "github.com/multiformats/go-multiaddr"
@@ -34,6 +35,11 @@ import (
 // Host returns the libp2p peer host
 func (e *Node) Host() host.Host {
 	return e.host
+}
+
+// ConnectionGater returns the underlying libp2p conngater
+func (e *Node) ConnectionGater() *conngater.BasicConnectionGater {
+	return e.cg
 }
 
 func (e *Node) genHost(ctx context.Context) (host.Host, error) {
@@ -51,23 +57,37 @@ func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 
 	opts := e.config.Options
 
+	cg, err := conngater.NewBasicConnectionGater(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	e.cg = cg
+
 	if e.config.InterfaceAddress != "" {
 		// Avoid to loopback traffic by trying to connect to nodes in via VPN
 		_, vpnNetwork, err := net.ParseCIDR(e.config.InterfaceAddress)
 		if err != nil {
 			return nil, err
 		}
-		cg, err := conngater.NewBasicConnectionGater(nil)
-		if err != nil {
-			return nil, err
-		}
+
 		if err := cg.BlockSubnet(vpnNetwork); err != nil {
 			return nil, err
 		}
-		opts = append(opts, libp2p.ConnectionGater(cg))
 	}
 
-	opts = append(opts, libp2p.Identity(prvKey))
+	for _, b := range e.config.Blacklist {
+		_, net, err := net.ParseCIDR(b)
+		if err != nil {
+			// Assume it's a peerID
+			cg.BlockPeer(peer.ID(b))
+		}
+		if net != nil {
+			cg.BlockSubnet(net)
+		}
+	}
+
+	opts = append(opts, libp2p.ConnectionGater(cg), libp2p.Identity(prvKey))
 
 	addrs := []multiaddr.Multiaddr{}
 	for _, l := range e.config.ListenAddresses {
