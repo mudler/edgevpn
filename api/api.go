@@ -69,12 +69,14 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		services := len(ledger.CurrentData()[protocol.ServicesLedgerKey])
 		onChainNodes := len(e.HubRoom.Topic.ListPeers())
 		p2pPeers := len(e.Host().Network().Peerstore().Peers())
+		nodeID := e.Host().ID().String()
 
 		blockchain := ledger.Index()
 
 		return c.JSON(http.StatusOK, struct {
 			Files, Machines, Users, Services, BlockChain, OnChainNodes, Peers int
-		}{files, machines, users, services, blockchain, onChainNodes, p2pPeers})
+			NodeID                                                            string
+		}{files, machines, users, services, blockchain, onChainNodes, p2pPeers, nodeID})
 	})
 
 	ec.GET("/api/machines", func(c echo.Context) error {
