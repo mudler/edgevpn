@@ -46,7 +46,7 @@ var _ = Describe("DNS service", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			opts := DNS("127.0.0.1:19192", true, []string{"8.8.8.8:53"})
+			opts := DNS("127.0.0.1:19192", true, []string{"8.8.8.8:53"}, 10)
 			opts = append(opts, node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
 			e := node.New(opts...)
 
@@ -57,43 +57,31 @@ var _ = Describe("DNS service", func() {
 
 			AnnounceDomain(ctx, ll, 15*time.Second, 10*time.Second, "test.foo", "2.2.2.2")
 
-			Eventually(func() string {
-				var s string
-				dnsMessage := new(dns.Msg)
-				dnsMessage.SetQuestion("google.com.", dns.TypeA)
+			searchDomain := func(d string) func() string {
+				return func() string {
+					var s string
+					dnsMessage := new(dns.Msg)
+					dnsMessage.SetQuestion(fmt.Sprintf("%s.", d), dns.TypeA)
 
-				r, err := QueryDNS(ctx, dnsMessage, "127.0.0.1:19192")
-				if r != nil {
-					answers := r.Answer
-					for _, a := range answers {
+					r, err := QueryDNS(ctx, dnsMessage, "127.0.0.1:19192")
+					if r != nil {
+						answers := r.Answer
+						for _, a := range answers {
 
-						s = a.String() + s
+							s = a.String() + s
+						}
 					}
-				}
-				if err != nil {
-					fmt.Println(err)
-				}
-				return s
-			}, 230*time.Second, 1*time.Second).Should(ContainSubstring("A"))
-
-			Eventually(func() string {
-				var s string
-				dnsMessage := new(dns.Msg)
-				dnsMessage.SetQuestion("test.foo.", dns.TypeA)
-
-				r, err := QueryDNS(ctx, dnsMessage, "127.0.0.1:19192")
-				if r != nil {
-					answers := r.Answer
-					for _, a := range answers {
-						s = a.String() + s
+					if err != nil {
+						fmt.Println(err)
 					}
+					return s
 				}
-				if err != nil {
-					fmt.Println(err)
-				}
-				//	r.Answer
-				return s
-			}, 230*time.Second, 1*time.Second).Should(ContainSubstring("2.2.2.2"))
+			}
+
+			Eventually(searchDomain("google.com"), 230*time.Second, 1*time.Second).Should(ContainSubstring("A"))
+			// We hit the same record again, this time it's faster as there is a cache
+			Eventually(searchDomain("google.com"), 1*time.Second, 1*time.Second).Should(ContainSubstring("A"))
+			Eventually(searchDomain("test.foo"), 230*time.Second, 1*time.Second).Should(ContainSubstring("2.2.2.2"))
 		})
 	})
 })
