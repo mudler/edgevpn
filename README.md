@@ -30,6 +30,8 @@ EdgeVPN uses libp2p to build private decentralized networks that can be accessed
 It can:
 
 - **Create a VPN** :  Secure VPN between p2p peers
+  - Automatically assign IPs to nodes
+  - Embedded tiny DNS server to resolve internal/external IPs
 
 - **Act as a reverse Proxy** : Share a tcp service like you would do with `ngrok`. EdgeVPN let expose TCP services to the p2p network nodes without establishing a VPN connection: creates reverse proxy and tunnels traffic into the p2p network.
 
@@ -69,7 +71,9 @@ Download the precompiled static release in the [releases page](https://github.co
 
 # :computer: Usage
 
-EdgeVPN needs only a config or a token to connect nodes to a p2p network.
+EdgeVPN works by generating tokens (or a configuration file) that can be shared between different machines, hosts or peers to access to a decentralized secured network between them.
+
+Every token is unique and identifies the network,  no central server setup, or specifying hosts ip is required.
 
 To generate a config run:
 
@@ -90,7 +94,9 @@ Note, tokens are config merely encoded in base64, so this is equivalent:
 $ EDGEVPNTOKEN=$(edgevpn -g | tee config.yaml | base64 -w0)
 ```
 
-All edgevpn commands emplies that you either specify a `EDGEVPNTOKEN` (or `--token` as parameter) or a `EDGEVPNCONFIG`. The configuration file is the network definition and allows you to connect over to your peers securely.
+All edgevpn commands emplies that you either specify a `EDGEVPNTOKEN` (or `--token` as parameter) or a `EDGEVPNCONFIG` as this is the way for `edgevpn` to establish a network between the nodes. 
+
+The configuration file is the network definition and allows you to connect over to your peers securely.
 
 **Warning** Exposing this file or passing-it by is equivalent to give full control to the network.
 
@@ -112,10 +118,55 @@ $ EDGEVPNTOKEN=.. edgevpn --address 10.1.0.13/24
 
 ... and that's it! the `--address` is a _virtual_ unique IP for each node, and it is actually the ip where the node will be reachable to from the vpn. You can assign IPs freely to the nodes of the network, while you can override the default `edgevpn0` interface with `IFACE` (or `--interface`)
 
-*Note*: `--address` can be omitted. If no IP is specfied, since version `0.8.1` automatic IP negotiation between p2p nodes is attempted.
-
 *Note*: It might take up time to build the connection between nodes. Wait at least 5 mins, it depends on the network behind the hosts.
 
+The VPN takes several options, below you will find a reference for the most important features:
+
+### API
+
+While starting in VPN mode, it is possible _also_ to start in API mode by specifying `--api`.
+
+### DHCP
+
+Note: Experimental feature!
+
+Automatic IP negotiation is available since version `0.8.1`.
+
+DHCP can be enabled with `--dhcp` and `--address` can be omitted. If an IP is specfied with `--address` it will be the default IP.
+
+### :globe_with_meridians: DNS Server
+
+Note: Experimental feature!
+
+A DNS Server is available but disabled by default. It can be enabled by specifying a listening address with `--dns`. For example, to bind to default `53` port locally, use `--dns "127.0.0.1:53"`.
+
+```
+   --dns value                             DNS listening address. Empty to disable dns server [$DNSADDRESS]
+   --dns-forwarder                         Enables dns forwarding [$DNSFORWARD]                 
+   --dns-cache-size value                  DNS LRU cache size (default: 200) [$DNSCACHESIZE]                  
+   --dns-forward-server value              List of DNS forward server (default: "8.8.8.8:53", "1.1.1.1:53") [$DNSFORWARDSERVER]
+```
+
+The DNS server will resolve DNS queries from the blockchain by default and will forward unknown requests by default. To turn off dns forwarding, specify `--dns-forwarder=false`. Optionally a list of DNS servers can be specified multiple times with `--dns-forward-server`.
+
+Nodes of the VPN can start a local DNS server which will resolve the routes stored in the chain. To add DNS records, use the API:
+
+```bash
+$ curl -X POST http://localhost:8080/api/dns --header "Content-Type: application/json" -d '{ "Regex": "foo.bar", "Records": { "A": "2.2.2.2" } }'
+```
+
+The `/api/dns` routes accepts `POST` requests as `JSON` of the following form:
+
+```json
+{ "Regex": "<regex>", 
+  "Records": { 
+     "A": "2.2.2.2",
+     "AAAA": "...",
+  },
+}
+```
+
+Note, `Regex` accepts regexes which will match the DNS requests received and resolved to the specified entries.
 
 ## :loop: Forwarding a local connection
 
@@ -185,6 +236,10 @@ Returns the users connected to services in the blockchain
 
 Returns the services running in the blockchain
 
+#### `/api/dns`
+
+Returns the domains registered in the blockchain
+
 #### `/api/machines`
 
 Returns the machines connected to the VPN
@@ -210,6 +265,31 @@ Returns the current data in the ledger inside the `:bucket` at given `:key`
 #### `/api/ledger/:bucket/:key/:value`
 
 Puts `:value` in the ledger inside the `:bucket` at given `:key`
+
+### POST
+
+#### `/api/dns`
+
+The endpoint accept a JSON payload of the following form:
+
+```json
+{ "Regex": "<regex>", 
+  "Records": { 
+     "A": "2.2.2.2",
+     "AAAA": "...",
+  },
+}
+```
+
+Takes a regex and a set of records and registers then to the blockchain.
+
+The DNS table in the ledger will be used by the embedded DNS server to handle requests locally.
+
+To create a new entry, for example:
+
+```bash
+$ curl -X POST http://localhost:8080/api/dns --header "Content-Type: application/json" -d '{ "Regex": "foo.bar", "Records": { "A": "2.2.2.2" } }'
+```
 
 ### DELETE
 
