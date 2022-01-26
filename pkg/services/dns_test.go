@@ -29,6 +29,7 @@ import (
 	"github.com/mudler/edgevpn/pkg/logger"
 	node "github.com/mudler/edgevpn/pkg/node"
 	. "github.com/mudler/edgevpn/pkg/services"
+	"github.com/mudler/edgevpn/pkg/types"
 )
 
 var _ = Describe("DNS service", func() {
@@ -55,7 +56,9 @@ var _ = Describe("DNS service", func() {
 
 			ll, _ := e2.Ledger()
 
-			AnnounceDomain(ctx, ll, 15*time.Second, 10*time.Second, "test.foo", "2.2.2.2")
+			AnnounceDNSRecord(ctx, ll, 15*time.Second, `test.foo.`, types.DNS{
+				dns.Type(dns.TypeA): "2.2.2.2",
+			})
 
 			searchDomain := func(d string) func() string {
 				return func() string {

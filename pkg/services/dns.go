@@ -19,17 +19,16 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"regexp"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/miekg/dns"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/protocol"
+	"github.com/mudler/edgevpn/pkg/types"
 	"github.com/pkg/errors"
-)
-
-const (
-	DNSKey string = "dns"
 )
 
 // DNS returns a network service binding a dns blockchain resolver on listenAddr.
@@ -60,10 +59,17 @@ func DNS(listenAddr string, forwarder bool, forward []string, cacheSize int) []n
 	}
 }
 
-func AnnounceDomain(ctx context.Context, b *blockchain.Ledger, announcetime, timeout time.Duration, record, ip string) {
-	b.Announce(ctx, announcetime, func() {
-		b.Add(DNSKey, map[string]interface{}{fmt.Sprintf("%s.", record): ip})
-	})
+// PersistDNSRecord is syntatic sugar around the ledger
+// It persists a DNS record to the blockchain until it sees it reconciled.
+// It automatically stop announcing and it is not *guaranteed* to persist data.
+func PersistDNSRecord(ctx context.Context, b *blockchain.Ledger, announcetime, timeout time.Duration, regex string, record types.DNS) {
+	b.Persist(ctx, announcetime, timeout, protocol.DNSKey, regex, record)
+}
+
+// AnnounceDNSRecord is syntatic sugar around the ledger
+// Announces a DNS record binding to the blockchain, and keeps announcing for the ctx lifecycle
+func AnnounceDNSRecord(ctx context.Context, b *blockchain.Ledger, announcetime time.Duration, regex string, record types.DNS) {
+	b.AnnounceUpdate(ctx, announcetime, protocol.DNSKey, regex, record)
 }
 
 type dnsHandler struct {
@@ -75,23 +81,26 @@ type dnsHandler struct {
 }
 
 func (d dnsHandler) parseQuery(m *dns.Msg) {
-	for _, q := range m.Question {
+	if len(m.Question) > 0 {
+		q := m.Question[0]
 		// Resolve the entry to an IP from the blockchain data
-		switch q.Qtype {
-		case dns.TypeA, dns.TypeAAAA:
-			if v, exists := d.b.GetKey(DNSKey, q.Name); exists {
-				var res string
+		for k, v := range d.b.CurrentData()[protocol.DNSKey] {
+			r, err := regexp.Compile(k)
+			if err == nil && r.MatchString(q.Name) {
+				var res types.DNS
 				v.Unmarshal(&res)
-				rr, err := dns.NewRR(fmt.Sprintf("%s %s %s", q.Name, dns.TypeToString[q.Qtype], res))
-				if err == nil {
-					m.Answer = append(m.Answer, rr)
-				}
-			} else if d.forwarder {
-				r, err := d.forwardQuery(m)
-				if err == nil {
-					m.Answer = r.Answer
+				if val, exists := res[dns.Type(q.Qtype)]; exists {
+					rr, err := dns.NewRR(fmt.Sprintf("%s %s %s", q.Name, dns.TypeToString[q.Qtype], val))
+					if err == nil {
+						m.Answer = append(m.Answer, rr)
+						return
+					}
 				}
 			}
+		}
+		r, err := d.forwardQuery(m)
+		if err == nil {
+			m.Answer = r.Answer
 		}
 	}
 }
@@ -134,7 +143,8 @@ func (d dnsHandler) forwardQuery(dnsMessage *dns.Msg) (*dns.Msg, error) {
 	return nil, errors.New("not available")
 }
 
-// Queries a dns server with a dns message
+// QueryDNS queries a dns server with a dns message and return the answer
+// it is blocking.
 func QueryDNS(ctx context.Context, msg *dns.Msg, dnsServer string) (*dns.Msg, error) {
 	c := new(dns.Conn)
 	cc, _ := (&net.Dialer{Timeout: 35 * time.Second}).DialContext(ctx, "udp", dnsServer)

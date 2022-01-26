@@ -1,4 +1,4 @@
-// Copyright © 2022 Ettore Di Giacinto <mudler@mocaccino.org>
+// Copyright © 2021 Ettore Di Giacinto <mudler@mocaccino.org>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,29 +13,8 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package protocol
+package types
 
-import (
-	p2pprotocol "github.com/libp2p/go-libp2p-core/protocol"
-)
+import "github.com/miekg/dns"
 
-const (
-	EdgeVPN         Protocol = "/edgevpn/0.1"
-	ServiceProtocol Protocol = "/edgevpn/service/0.1"
-	FileProtocol    Protocol = "/edgevpn/file/0.1"
-)
-
-const (
-	FilesLedgerKey    = "files"
-	MachinesLedgerKey = "machines"
-	ServicesLedgerKey = "services"
-	UsersLedgerKey    = "users"
-	HealthCheckKey    = "healthcheck"
-	DNSKey            = "dns"
-)
-
-type Protocol string
-
-func (p Protocol) ID() p2pprotocol.ID {
-	return p2pprotocol.ID(string(p))
-}
+type DNS map[dns.Type]string

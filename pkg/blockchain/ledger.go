@@ -185,6 +185,18 @@ func (l *Ledger) AnnounceDeleteBucketKey(ctx context.Context, interval, timeout 
 	})
 }
 
+// AnnounceUpdate Keeps announcing something into the blockchain if state is differing
+func (l *Ledger) AnnounceUpdate(ctx context.Context, interval time.Duration, bucket, key string, value interface{}) {
+	l.Announce(ctx, interval, func() {
+		v, exists := l.CurrentData()[bucket][key]
+		realv, _ := json.Marshal(value)
+		switch {
+		case !exists || string(v) != string(realv):
+			l.Add(bucket, map[string]interface{}{key: value})
+		}
+	})
+}
+
 // Persist Keeps announcing something into the blockchain until it is reconciled
 func (l *Ledger) Persist(ctx context.Context, interval, timeout time.Duration, bucket, key string, value interface{}) {
 	put, cancel := context.WithTimeout(ctx, timeout)
