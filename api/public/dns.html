@@ -14,7 +14,7 @@
   <script src="/js/common.js"></script> 
   <link rel="stylesheet" type="text/css" href="/css/style.css">
 
-<title>EdgeVPN - Nodes index</title>
+<title>EdgeVPN - DNS index</title>
 </head>
 
 <body>
@@ -85,11 +85,19 @@
       <div class="hero-body">
         <div class="container">
           <h1 class="title">
-            <i class="fas fa-database"></i> Nodes connected via p2p
+            <i class="fas fa-globe"></i> DNS registered
           </h1>
           <h2 class="subtitle">
-            Accessible via api at <a href="/api/nodes" target=_blank><code> /api/nodes </code></a>
+            Accessible via api at <a href="/api/dns" target=_blank><code> /api/dns </code></a><br>
           </h2>
+          <div class="notification is-info is-light">
+            <h1>Add a DNS record</h1>
+
+          You can add a new record with curl: <br>
+          <code>
+            curl -X POST /api/dns --header "Content-Type: application/json" -d '{ "Regex": "foo.bar", "Records": { "A": "2.2.2.2" } }'
+          </code>
+          </div>
         </div>
       </div>
     </section>
@@ -102,8 +110,8 @@
           <thead>
         
           <tr>
-              <th ><abbr title="ID">PeerID</abbr></th>
-
+              <th ><abbr title="regex">Regex</abbr></th>
+              <th ><abbr title="records">Records</abbr></th>
             </tr>
           </thead>
         </table> 
@@ -117,7 +125,7 @@
                 var table = $('#table').DataTable( {
                     "processing": true,
                     "ajax": {
-                        "url": "/api/nodes",
+                        "url": "/api/dns",
                         "type": "GET",
                         "dataSrc": '',
                     },
@@ -126,7 +134,14 @@
                       "processing": ""
                     },
                     "columns": [
-                        { "data": "ID" },
+                        { "data": "Regex" },
+                        { 
+                          "data": "Records", 
+                        "render": function ( data, type, row, meta ) {
+                          return '<code>'+JSON.stringify(data)+'</code>';
+                         },
+                         
+                        },
                     ],
                 } );
 

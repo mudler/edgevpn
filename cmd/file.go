@@ -88,6 +88,7 @@ This is also the ID used to refer when receiving it.`,
 			}
 
 			for {
+				time.Sleep(2 * time.Second)
 			}
 		},
 	}

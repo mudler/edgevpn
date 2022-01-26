@@ -24,11 +24,13 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/miekg/dns"
 	apiTypes "github.com/mudler/edgevpn/api/types"
 
 	"github.com/labstack/echo/v4"
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/protocol"
+	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/mudler/edgevpn/pkg/types"
 )
 
@@ -169,6 +171,41 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		value := c.Param("value")
 
 		ledger.Persist(context.Background(), defaultInterval, timeout, bucket, key, value)
+		return c.JSON(http.StatusOK, announcing)
+	})
+
+	ec.GET("/api/dns", func(c echo.Context) error {
+		res := []apiTypes.DNS{}
+		for r, e := range ledger.CurrentData()[protocol.DNSKey] {
+			var t types.DNS
+			e.Unmarshal(&t)
+			d := map[string]string{}
+
+			for k, v := range t {
+				d[dns.TypeToString[uint16(k)]] = v
+			}
+
+			res = append(res,
+				apiTypes.DNS{
+					Regex:   r,
+					Records: d,
+				})
+		}
+		return c.JSON(http.StatusOK, res)
+	})
+
+	// Announce dns
+	ec.POST("/api/dns", func(c echo.Context) error {
+		d := new(apiTypes.DNS)
+		if err := c.Bind(d); err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
+		entry := make(types.DNS)
+		for r, e := range d.Records {
+			entry[dns.Type(dns.StringToType[r])] = e
+		}
+		services.PersistDNSRecord(context.Background(), ledger, defaultInterval, timeout, d.Regex, entry)
 		return c.JSON(http.StatusOK, announcing)
 	})
 

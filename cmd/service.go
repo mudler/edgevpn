@@ -83,6 +83,7 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 			}
 
 			for {
+				time.Sleep(2 * time.Second)
 			}
 		},
 	}

@@ -80,6 +80,29 @@ func MainFlags() []cli.Flag {
 			Value:  "10.1.0.1/24",
 		},
 		&cli.StringFlag{
+			Name:   "dns",
+			Usage:  "DNS listening address. Empty to disable dns server",
+			EnvVar: "DNSADDRESS",
+			Value:  "",
+		},
+		&cli.BoolTFlag{
+			Name:   "dns-forwarder",
+			Usage:  "Enables dns forwarding",
+			EnvVar: "DNSFORWARD",
+		},
+		&cli.IntFlag{
+			Name:   "dns-cache-size",
+			Usage:  "DNS LRU cache size",
+			EnvVar: "DNSCACHESIZE",
+			Value:  200,
+		},
+		&cli.StringSliceFlag{
+			Name:   "dns-forward-server",
+			Usage:  "List of DNS forward server, e.g. 8.8.8.8:53, 192.168.1.1:53 ...",
+			EnvVar: "DNSFORWARDSERVER",
+			Value:  &cli.StringSlice{"8.8.8.8:53", "1.1.1.1:53"},
+		},
+		&cli.StringFlag{
 			Name:   "router",
 			Usage:  "Sends all packets to this node",
 			EnvVar: "ROUTER",
@@ -109,6 +132,7 @@ func Main() func(c *cli.Context) error {
 
 		o = append(o, services.Alive(30*time.Second, 10*time.Minute)...)
 		if c.Bool("dhcp") {
+			// Adds DHCP server
 			address, _, err := net.ParseCIDR(c.String("address"))
 			if err != nil {
 				return err
@@ -116,6 +140,17 @@ func Main() func(c *cli.Context) error {
 			nodeOpts, vO := vpn.DHCP(ll, 10*time.Second, c.String("lease-dir"), address.String())
 			o = append(o, nodeOpts...)
 			vpnOpts = append(vpnOpts, vO...)
+		}
+
+		dns := c.String("dns")
+		if dns != "" {
+			// Adds DNS Server
+			o = append(o,
+				services.DNS(dns,
+					c.Bool("dns-forwarder"),
+					c.StringSlice("dns-forward-server"),
+					c.Int("dns-cache-size"),
+				)...)
 		}
 
 		opts, err := vpn.Register(vpnOpts...)
