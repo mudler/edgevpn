@@ -123,7 +123,9 @@ func DHCP(l log.StandardLogger, announcetime time.Duration, leasedir string, add
 
 					// propagate ip to channel that is read while starting vpn
 					ip <- wantedIP
-					return nil
+
+					// Gate connections from VPN
+					return n.BlockSubnet(fmt.Sprintf("%s/24", wantedIP))
 				},
 			),
 		}, []Option{

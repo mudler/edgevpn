@@ -42,6 +42,17 @@ func (e *Node) ConnectionGater() *conngater.BasicConnectionGater {
 	return e.cg
 }
 
+// BlockSubnet blocks the CIDR subnet from connections
+func (e *Node) BlockSubnet(cidr string) error {
+	// Avoid to loopback traffic by trying to connect to nodes in via VPN
+	_, n, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return err
+	}
+
+	return e.ConnectionGater().BlockSubnet(n)
+}
+
 func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 	var r io.Reader
 	if e.seed == 0 {
@@ -65,15 +76,7 @@ func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 	e.cg = cg
 
 	if e.config.InterfaceAddress != "" {
-		// Avoid to loopback traffic by trying to connect to nodes in via VPN
-		_, vpnNetwork, err := net.ParseCIDR(e.config.InterfaceAddress)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := cg.BlockSubnet(vpnNetwork); err != nil {
-			return nil, err
-		}
+		e.BlockSubnet(e.config.InterfaceAddress)
 	}
 
 	for _, b := range e.config.Blacklist {
