@@ -21,6 +21,8 @@ import (
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
+	connmanager "github.com/libp2p/go-libp2p-connmgr"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/discovery"
@@ -143,6 +145,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Enable DHT for peer discovery",
 		EnvVar: "EDGEVPNDHT",
 	},
+	&cli.BoolTFlag{
+		Name:   "low-profile",
+		Usage:  "Enable low profile. Lowers connections usage",
+		EnvVar: "EDGEVPNLOWPROFILE",
+	},
 	&cli.StringFlag{
 		Name:   "log-level",
 		Usage:  "Specify loglevel",
@@ -184,7 +191,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 	iface := c.String("interface")
 	logLevel := c.String("log-level")
 	libp2plogLevel := c.String("libp2p-log-level")
-	dht, mDNS := c.Bool("dht"), c.Bool("mdns")
+	dhtE, mDNS := c.Bool("dht"), c.Bool("mdns")
 
 	ledgerState := c.String("ledger-state")
 
@@ -215,6 +222,12 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		}
 	}
 
+	dhtOpts := []dht.Option{}
+
+	if c.Bool("low-profile") {
+		dhtOpts = append(dhtOpts, dht.BucketSize(20))
+	}
+
 	opts := []node.Option{
 		node.WithDiscoveryInterval(time.Duration(c.Int("discovery-interval")) * time.Second),
 		node.WithLedgerAnnounceTime(time.Duration(c.Int("ledger-announce-interval")) * time.Second),
@@ -224,8 +237,8 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		node.WithBlacklist(c.StringSlice("blacklist")...),
 		node.LibP2PLogLevel(libp2plvl),
 		node.WithInterfaceAddress(address),
-		node.FromBase64(mDNS, dht, token),
-		node.FromYaml(mDNS, dht, config),
+		node.FromBase64(mDNS, dhtE, token, dhtOpts...),
+		node.FromYaml(mDNS, dhtE, config, dhtOpts...),
 	}
 
 	vpnOpts := []vpn.Option{
@@ -255,6 +268,11 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			c.Int("nat-ratelimit-peer"),
 			time.Duration(c.Int("nat-ratelimit-interval"))*time.Second,
 		))
+	}
+
+	if c.Bool("low-profile") {
+		cm := connmanager.NewConnManager(20, 100, 80*time.Second)
+		libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
 	}
 
 	if c.Bool("holepunch") {

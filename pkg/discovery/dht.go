@@ -41,6 +41,11 @@ type DHT struct {
 	console              log.StandardLogger
 	RefreshDiscoveryTime time.Duration
 	dht                  *dht.IpfsDHT
+	dhtOptions           []dht.Option
+}
+
+func NewDHT(d ...dht.Option) *DHT {
+	return &DHT{dhtOptions: d}
 }
 
 func (d *DHT) Option(ctx context.Context) func(c *libp2p.Config) error {
@@ -67,7 +72,7 @@ func (d *DHT) startDHT(ctx context.Context, h host.Host) (*dht.IpfsDHT, error) {
 		// client because we want each peer to maintain its own local copy of the
 		// DHT, so that the bootstrapping node of the DHT can go down without
 		// inhibiting future peer discovery.
-		kad, err := dht.New(ctx, h)
+		kad, err := dht.New(ctx, h, d.dhtOptions...)
 		if err != nil {
 			return d.dht, err
 		}

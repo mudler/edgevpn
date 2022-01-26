@@ -10,7 +10,7 @@ require (
 	github.com/google/btree v1.0.1 // indirect
 	github.com/gookit/color v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/ipfs/go-cid v0.1.0 // indirect
 	github.com/ipfs/go-datastore v0.5.1 // indirect
 	github.com/ipfs/go-log v1.0.5
@@ -20,6 +20,7 @@ require (
 	github.com/labstack/echo/v4 v4.6.1
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/libp2p/go-libp2p v0.17.0
+	github.com/libp2p/go-libp2p-connmgr v0.2.4
 	github.com/libp2p/go-libp2p-core v0.13.0
 	github.com/libp2p/go-libp2p-discovery v0.6.0
 	github.com/libp2p/go-libp2p-kad-dht v0.15.0
