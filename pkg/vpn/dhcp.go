@@ -46,7 +46,10 @@ func checkDHCPLease(c node.Config, leasedir string) string {
 	return ""
 }
 
-func DHCP(l log.StandardLogger, announcetime time.Duration, leasedir string, address string) ([]node.Option, []Option) {
+// DHCP returns a DHCP network service. It requires the Alive Service in order to determine available nodes.
+// Nodes available are used to determine which needs an IP and when maxTime expires nodes are marked as offline and
+// not considered.
+func DHCP(l log.StandardLogger, maxTime time.Duration, leasedir string, address string) ([]node.Option, []Option) {
 	ip := make(chan string, 1)
 	return []node.Option{
 			func(cfg *node.Config) error {
@@ -73,7 +76,7 @@ func DHCP(l log.StandardLogger, announcetime time.Duration, leasedir string, add
 						time.Sleep(5 * time.Second)
 
 						// This network service is blocking and calls in before VPN, hence it needs to registered before VPN
-						nodes := services.AvailableNodes(b)
+						nodes := services.AvailableNodes(b, maxTime)
 
 						currentIPs := map[string]string{}
 						ips := []string{}
@@ -104,7 +107,7 @@ func DHCP(l log.StandardLogger, announcetime time.Duration, leasedir string, add
 
 						if n.Host().ID().String() != lead {
 							l.Debug("Not leader, sleeping")
-							time.Sleep(announcetime)
+							time.Sleep(5 * time.Second)
 							continue
 						}
 

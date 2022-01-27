@@ -36,7 +36,7 @@ var _ = Describe("Alive service", func() {
 	l := node.Logger(logg)
 
 	opts := append(
-		Alive(5*time.Second, 100*time.Second),
+		Alive(5*time.Second, 100*time.Second, 15*time.Minute),
 		node.FromBase64(true, true, token),
 		l)
 
@@ -63,7 +63,7 @@ var _ = Describe("Alive service", func() {
 				if err != nil {
 					return []string{}
 				}
-				return AvailableNodes(ll)
+				return AvailableNodes(ll, 15*time.Minute)
 			}, 100*time.Second, 1*time.Second).Should(matches)
 
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
@@ -73,7 +73,7 @@ var _ = Describe("Alive service", func() {
 	Context("Aliveness Scrub", func() {
 		BeforeEach(func() {
 			opts = append(
-				Alive(2*time.Second, 4*time.Second),
+				Alive(2*time.Second, 4*time.Second, 15*time.Minute),
 				node.FromBase64(true, true, token),
 				l)
 		})
@@ -100,7 +100,7 @@ var _ = Describe("Alive service", func() {
 				if err != nil {
 					return []string{}
 				}
-				return AvailableNodes(ll)
+				return AvailableNodes(ll, 15*time.Minute)
 			}, 100*time.Second, 1*time.Second).Should(matches)
 
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
@@ -111,7 +111,7 @@ var _ = Describe("Alive service", func() {
 				if err != nil {
 					return []string{}
 				}
-				return AvailableNodes(ll)
+				return AvailableNodes(ll, 15*time.Minute)
 			}, 30*time.Second, 1*time.Second).Should(BeEmpty())
 
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
@@ -122,7 +122,7 @@ var _ = Describe("Alive service", func() {
 				if err != nil {
 					return []string{}
 				}
-				return AvailableNodes(ll)
+				return AvailableNodes(ll, 15*time.Minute)
 			}, 10*time.Second, 1*time.Second).Should(matches)
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
 

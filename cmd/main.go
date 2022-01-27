@@ -96,6 +96,24 @@ func MainFlags() []cli.Flag {
 			EnvVar: "DNSCACHESIZE",
 			Value:  200,
 		},
+		&cli.IntFlag{
+			Name:   "aliveness-healthcheck-interval",
+			Usage:  "Healthcheck interval",
+			EnvVar: "HEALTHCHECKINTERVAL",
+			Value:  120,
+		},
+		&cli.IntFlag{
+			Name:   "aliveness-healthcheck-scrub-interval",
+			Usage:  "Healthcheck scrub interval",
+			EnvVar: "HEALTHCHECKSCRUBINTERVAL",
+			Value:  600,
+		},
+		&cli.IntFlag{
+			Name:   "aliveness-healthcheck-max-interval",
+			Usage:  "Healthcheck max interval. Threshold after a node is determined offline",
+			EnvVar: "HEALTHCHECKMAXINTERVAL",
+			Value:  900,
+		},
 		&cli.StringSliceFlag{
 			Name:   "dns-forward-server",
 			Usage:  "List of DNS forward server, e.g. 8.8.8.8:53, 192.168.1.1:53 ...",
@@ -130,14 +148,18 @@ func Main() func(c *cli.Context) error {
 		}
 		o, vpnOpts, ll := cliToOpts(c)
 
-		o = append(o, services.Alive(30*time.Second, 10*time.Minute)...)
+		o = append(o,
+			services.Alive(
+				time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second,
+				time.Duration(c.Int("aliveness-healthcheck-scrub-interval"))*time.Second,
+				time.Duration(c.Int("aliveness-healthcheck-max-interval"))*time.Second)...)
 		if c.Bool("dhcp") {
 			// Adds DHCP server
 			address, _, err := net.ParseCIDR(c.String("address"))
 			if err != nil {
 				return err
 			}
-			nodeOpts, vO := vpn.DHCP(ll, 10*time.Second, c.String("lease-dir"), address.String())
+			nodeOpts, vO := vpn.DHCP(ll, 15*time.Minute, c.String("lease-dir"), address.String())
 			o = append(o, nodeOpts...)
 			vpnOpts = append(vpnOpts, vO...)
 		}

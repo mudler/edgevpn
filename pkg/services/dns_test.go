@@ -39,7 +39,7 @@ var _ = Describe("DNS service", func() {
 	l := node.Logger(logg)
 
 	e2 := node.New(
-		append(Alive(15*time.Second, 90*time.Minute),
+		append(Alive(15*time.Second, 90*time.Minute, 15*time.Minute),
 			node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)...)
 
 	Context("DNS service", func() {

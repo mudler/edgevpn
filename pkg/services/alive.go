@@ -26,7 +26,9 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 )
 
-func Alive(announcetime, scrubTime time.Duration) []node.Option {
+// Alive announce the node every announce time, with a periodic scrub time for healthchecks
+// the maxtime is the time used to determine when a node is unreachable (after maxtime, its unreachable)
+func Alive(announcetime, scrubTime, maxtime time.Duration) []node.Option {
 	return []node.Option{
 		node.WithNetworkService(
 			func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
@@ -42,7 +44,7 @@ func Alive(announcetime, scrubTime time.Duration) []node.Option {
 						})
 
 						// Keep-alive scrub
-						nodes := AvailableNodes(b)
+						nodes := AvailableNodes(b, maxtime)
 						if len(nodes) == 0 {
 							return
 						}
@@ -65,12 +67,13 @@ func Alive(announcetime, scrubTime time.Duration) []node.Option {
 	}
 }
 
-func AvailableNodes(b *blockchain.Ledger) (active []string) {
+// AvailableNodes returns the available nodes which sent a healthcheck in the last maxTime
+func AvailableNodes(b *blockchain.Ledger, maxTime time.Duration) (active []string) {
 	for u, t := range b.LastBlock().Storage[protocol.HealthCheckKey] {
 		var s string
 		t.Unmarshal(&s)
 		parsed, _ := time.Parse(time.RFC3339, s)
-		if parsed.Add(15 * time.Minute).After(time.Now()) {
+		if parsed.Add(maxTime).After(time.Now()) {
 			active = append(active, u)
 		}
 	}
