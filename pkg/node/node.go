@@ -25,6 +25,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p/p2p/net/conngater"
 
+	"github.com/mudler/edgevpn/pkg/crypto"
 	protocol "github.com/mudler/edgevpn/pkg/protocol"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -58,6 +59,7 @@ func New(p ...Option) *Node {
 		SealKeyLength:            12,
 		Options:                  defaultLibp2pOptions,
 		Logger:                   logger.New(log.LevelDebug),
+		Sealer:                   &crypto.AESSealer{},
 	}
 	c.Apply(p...)
 

@@ -25,6 +25,7 @@ import (
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
+	"github.com/mudler/edgevpn/pkg/crypto"
 	"github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/logger"
 	node "github.com/mudler/edgevpn/pkg/node"
@@ -237,6 +238,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		node.WithBlacklist(c.StringSlice("blacklist")...),
 		node.LibP2PLogLevel(libp2plvl),
 		node.WithInterfaceAddress(address),
+		node.WithSealer(&crypto.AESSealer{}),
 		node.FromBase64(mDNS, dhtE, token, dhtOpts...),
 		node.FromYaml(mDNS, dhtE, config, dhtOpts...),
 	}

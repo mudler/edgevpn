@@ -68,6 +68,13 @@ type Config struct {
 	DiscoveryBootstrapPeers                                         discovery.AddrList
 
 	Whitelist, Blacklist []string
+
+	Sealer Sealer
+}
+
+type Sealer interface {
+	Seal(string, string) (string, error)
+	Unseal(string, string) (string, error)
 }
 
 // NetworkService is a service running over the network. It takes a context, a node and a ledger

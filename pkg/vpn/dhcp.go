@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log/v2"
+	"github.com/mudler/edgevpn/pkg/crypto"
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/protocol"
 	"github.com/mudler/edgevpn/pkg/services"
@@ -36,7 +37,7 @@ import (
 func checkDHCPLease(c node.Config, leasedir string) string {
 	// retrieve lease if present
 
-	leaseFileName := utils.MD5(fmt.Sprintf("%s-ek", c.ExchangeKey))
+	leaseFileName := crypto.MD5(fmt.Sprintf("%s-ek", c.ExchangeKey))
 	leaseFile := filepath.Join(leasedir, leaseFileName)
 	if _, err := os.Stat(leaseFile); err == nil {
 		b, _ := ioutil.ReadFile(leaseFile)
@@ -114,7 +115,7 @@ func DHCP(l log.StandardLogger, announcetime time.Duration, leasedir string, add
 					}
 
 					// Save lease to disk
-					leaseFileName := utils.MD5(fmt.Sprintf("%s-ek", c.ExchangeKey))
+					leaseFileName := crypto.MD5(fmt.Sprintf("%s-ek", c.ExchangeKey))
 					leaseFile := filepath.Join(leasedir, leaseFileName)
 					l.Debugf("Writing lease to '%s'", leaseFile)
 					if err := ioutil.WriteFile(leaseFile, []byte(wantedIP), 0600); err != nil {

@@ -13,12 +13,11 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package crypto
 
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -76,9 +75,4 @@ func AESDecrypt(text string, key *[32]byte) (plaintext string, err error) {
 	}
 
 	return string(decodedtext), err
-}
-
-func MD5(text string) string {
-	hash := md5.Sum([]byte(text))
-	return hex.EncodeToString(hash[:])
 }

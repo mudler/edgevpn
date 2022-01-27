@@ -126,18 +126,22 @@ func (e *Node) handleEvents(ctx context.Context) {
 				continue
 			}
 			c := m.Copy()
-			if err := c.Seal(e.sealkey()); err != nil {
+			str, err := e.config.Sealer.Seal(c.Message, e.sealkey())
+			if err != nil {
 				e.config.Logger.Warn(err.Error())
 			}
+			c.Message = str
 			e.handleOutgoingMessage(c)
 		case m := <-e.HubRoom.Messages:
 			if m == nil {
 				continue
 			}
 			c := m.Copy()
-			if err := c.Unseal(e.sealkey()); err != nil {
+			str, err := e.config.Sealer.Unseal(c.Message, e.sealkey())
+			if err != nil {
 				e.config.Logger.Warn(err.Error())
 			}
+			c.Message = str
 			e.handleReceivedMessage(c)
 		case <-ctx.Done():
 			return

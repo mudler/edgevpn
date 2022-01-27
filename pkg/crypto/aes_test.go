@@ -13,13 +13,14 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package utils_test
+package crypto_test
 
 import (
+	. "github.com/mudler/edgevpn/pkg/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/mudler/edgevpn/pkg/utils"
+	. "github.com/mudler/edgevpn/pkg/crypto"
 )
 
 var _ = Describe("Crypto utilities", func() {

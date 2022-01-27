@@ -40,6 +40,13 @@ func WithLibp2pOptions(i ...libp2p.Option) func(cfg *Config) error {
 	}
 }
 
+func WithSealer(i Sealer) Option {
+	return func(cfg *Config) error {
+		cfg.Sealer = i
+		return nil
+	}
+}
+
 func WithLibp2pAdditionalOptions(i ...libp2p.Option) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.AdditionalOptions = append(cfg.Options, i...)
