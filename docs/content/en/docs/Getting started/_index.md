@@ -1,0 +1,48 @@
+---
+title: "Getting Started"
+linkTitle: "Getting Started"
+weight: 1
+description: >
+  First steps with EdgeVPN
+---
+
+## Get EdgeVPN  
+
+Prerequisites: No dependencies. EdgeVPN releases are statically compiled.
+
+### From release
+
+Just grab a release from [the release page on GitHub](https://github.com/mudler/edgevpn/releases). The binaries are statically compiled.
+
+
+### Building EdgeVPN from source
+
+Requirements:
+
+- [Golang](https://golang.org/) installed in your system.
+- make
+
+```bash
+$> git clone https://github.com/mudler/edgevpn
+$> cd edgevpn
+$> go build
+```
+
+### First VPN
+
+Let's create our first vpn now and start it:
+
+```bash
+$> EDGEVPNTOKEN=$(edgevpn -b -g)
+$> edgevpn --dhcp --api
+```
+
+That's it!
+
+You can now access the web interface on [http://localhost:8080](http://localhost:8080).
+
+To join new nodes in the network, simply copy the `EDGEVPNTOKEN` and use it to start edgevpn in other nodes:
+
+```bash
+$> EDGEVPNTOKEN=<token_generated_before> edgevpn --dhcp
+```

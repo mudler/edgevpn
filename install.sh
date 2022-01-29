@@ -2,8 +2,17 @@
 set -e
 set -o noglob
 
+github_version() {
+    set +e
+    curl -s https://api.github.com/repos/mudler/edgevpn/releases/latest | \
+    grep tag_name | \
+    awk '{ print $2 }' | \
+    sed -e 's/\"//g' -e 's/,//g' || echo "v0.8.5"
+    set -e
+}
+
 DOWNLOADER=${DOWNLOADER:-curl}
-VERSION=${VERSION:-v0.8.5}
+VERSION=${VERSION:-$(github_version)}
 
 info()
 {

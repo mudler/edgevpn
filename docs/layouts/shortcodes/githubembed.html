@@ -1,0 +1,9 @@
+{{/* https://github.com/haideralipunjabi/hugo-shortcodes/tree/master/github */}}
+
+{{ $dataJ := getJSON "https://api.github.com/repos/"  (.Get "repo")  "/contents/"  (.Get "file")  }}
+{{ $con := base64Decode $dataJ.content }}
+
+{{ highlight $con (.Get "lang") (.Get "options") }}
+
+<small> <i class='fab fa-github'></i> <i>Complete source code:  <a target=_blank href="{{ print "https://github.com/" ( .Get "repo" ) "/blob/master/" (.Get "file" )  }}">{{ print "https://github.com/" ( .Get "repo" ) "/blob/master/" (.Get "file" )  }}</a></i> </small>
+<hr>

@@ -1,0 +1,23 @@
+name: Github Pages
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Build 🔧
+      run: |
+           cd docs && make build
+           mv public ../
+    - name: Deploy 🚀
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      uses: JamesIves/github-pages-deploy-action@releases/v3
+      with:
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        BRANCH: gh-pages
+        FOLDER: public
