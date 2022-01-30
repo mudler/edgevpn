@@ -1,0 +1,141 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>EdgeVPN – Concepts</title>
+    <link>https://mudler.github.io/edgevpn/docs/concepts/</link>
+    <description>Recent content in Concepts on EdgeVPN</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="https://mudler.github.io/edgevpn/docs/concepts/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Overview</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/</guid>
+      <description>
+        
+        
+        &lt;p&gt;EdgeVPN have a simplified model of a blockchain embedded. The model is actually simplified on purpose as the blockchain is used to store merely network and services metadata and not transaction, or content addressable network.&lt;/p&gt;
+&lt;p&gt;The only data stored in the blockchain is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Network Peer IDs, Service IDs, File IDs&lt;/li&gt;
+&lt;li&gt;Healthchecks, DNS records and IP allocation&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;However, the ledger is freely accessible via API, allowing for external coordination to use the blockchain mechanism as a shared memory access (which can be optionally persisted on disk).&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Architecture</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/architecture/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/architecture/</guid>
+      <description>
+        
+        
+        &lt;h2 id=&#34;introduction&#34;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;EdgeVPN uses &lt;a href=&#34;https://github.com/libp2p/go-libp2p&#34;&gt;libp2p&lt;/a&gt; to establish a decentralized, asymmetrically encrypted gossip network which propagate a (symmetrically encrypted) blockchain states between nodes.&lt;/p&gt;
+&lt;p&gt;The blockchain is lightweight as:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;There is no PoW mechanism&lt;/li&gt;
+&lt;li&gt;It is in memory only, no DAG, CARv2, or GraphSync protocol - the usage is restricted to hold metadata, and not real addressable content&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;EdgeVPN uses the blockchain to store Services UUID, Files UUID, VPN and other metadata (such as DNS records, IP, etc.) and co-ordinate events between the nodes of the network. Besides, it is used as a mechanism of protection: if nodes are not part of the blockchain, they can&amp;rsquo;t talk to each other.&lt;/p&gt;
+&lt;p&gt;The blockchain is ephemeral and on-memory, optionally can be stored on disk.&lt;/p&gt;
+&lt;p&gt;Each node keeps broadcasting it&amp;rsquo;s state until it is reconciled in the blockchain. If the blockchain would get start from scratch, the hosts would re-announce and try to fill the blockchain with their data.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Simple (KISS) interface to display network data from the blockchain&lt;/li&gt;
+&lt;li&gt;asymmetric p2p encryption between peers with libp2p&lt;/li&gt;
+&lt;li&gt;randezvous points dynamically generated from OTP keys&lt;/li&gt;
+&lt;li&gt;extra AES symmetric encryption on top. In case randezvous point is compromised&lt;/li&gt;
+&lt;li&gt;blockchain is used as a sealed encrypted store for the routing table&lt;/li&gt;
+&lt;li&gt;connections are created host to host and encrypted asymmetrically&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;connection-bootstrap&#34;&gt;Connection bootstrap&lt;/h3&gt;
+&lt;p&gt;Network is bootstrapped with libp2p and is composed of 3 phases:&lt;/p&gt;
+
+
+
+
+
+
+
+&lt;div class=&#34;card rounded p-2 td-post-card mb-4 mt-4&#34; style=&#34;max-width: 954px&#34;&gt;
+	&lt;img class=&#34;card-img-top&#34; src=&#34;https://mudler.github.io/edgevpn/edgevpn/docs/concepts/architecture/edevpn_bootstrap_hu8e61a09dccbf3a67bf1fc604ae4924fd_64246_1200x550_fit_catmullrom_3.png&#34; width=&#34;944&#34; height=&#34;412&#34;&gt;
+	
+	&lt;div class=&#34;card-body px-0 pt-2 pb-0&#34;&gt;
+		&lt;p class=&#34;card-text&#34;&gt;
+&lt;/p&gt;
+	&lt;/div&gt;
+	
+&lt;/div&gt;
+&lt;p&gt;In the first phase, nodes do discover each others via DHT and a randevouz secret which is automatically generated via OTP.&lt;/p&gt;
+&lt;p&gt;Once peers know about each other a gossip network is established, where the nodes exchange a blockchain over an p2p e2e encrypted channel. The blockchain is sealed with a symmetric key which is rotated via OTP that is shared between the nodes.&lt;/p&gt;
+&lt;p&gt;At that point a blockchain and an API is established between the nodes, and optionally start the VPN binding on the tun/tap device.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Token</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/token/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/token/</guid>
+      <description>
+        
+        
+        &lt;p&gt;A network token represent the network which edgevpn attempts to establish a connection among peers.&lt;/p&gt;
+&lt;p&gt;A token is created by encoding in base64 a network configuration.&lt;/p&gt;
+&lt;h2 id=&#34;generating-tokens&#34;&gt;Generating tokens&lt;/h2&gt;
+&lt;p&gt;To generate a network token, run in the console:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;edgevpn -b -g
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This will print out in screen a base64 token which is ready to be shared on nodes that you wish to join on the same network.&lt;/p&gt;
+&lt;h2 id=&#34;generating-configuration-files&#34;&gt;Generating configuration files&lt;/h2&gt;
+&lt;p&gt;EdgeVPN can read both tokens and network configuration files.&lt;/p&gt;
+&lt;p&gt;To generate a configuration file, run in the console:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;edgevpn -g
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To turn out a config to a token, you must encode in base64:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;TOKEN=$(edgevpn -g | base64 -w0)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;which is equivalent to run &lt;code&gt;edgevpn -g -b&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;anatomy-of-a-configuration-file&#34;&gt;Anatomy of a configuration file&lt;/h2&gt;
+&lt;p&gt;A typical configuration file looks like the following:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;otp&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;dht&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;interval&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;9000&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;LHKNKT6YZYQGGY3JANGXMLJTHRH7SW3C&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;length&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;32&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;crypto&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;interval&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;9000&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;SGIB6NYJMSRJF2AJDGUI2NDB5LBVCPLS&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;length&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;32&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;room&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;ubONSBFkdWbzkSBTglFzOhWvczTBQJOR&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;rendezvous&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;exoHOajMYMSPrHhevAEEjnCHLssFfzfT&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;mdns&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;VoZfePlTchbSrdmivaqaOyQyEnTMlugi&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;max_message_size&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;20971520&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The values can be all tweaked to your needs.&lt;/p&gt;
+&lt;p&gt;EdgeVPN uses an otp mechanism to decrypt blockchain messages between the nodes and to discover nodes from DHT, this is in order to prevent bruteforce attacks and avoid bad actors listening on the protocol.
+See &lt;a href=&#34;&#34;&gt;the Architecture section&lt;/a&gt; for more information.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The OTP keys (&lt;code&gt;otp.crypto.key&lt;/code&gt;) rotates the cipher key used to encode/decode the blockchain messages. The interval of rotation can be set for both DHT and the Blockchain messages. The length is the cipher key length (AES-256 by default) used by the sealer to decrypt/encrypt messages.&lt;/li&gt;
+&lt;li&gt;The DHT OTP keys (&lt;code&gt;otp.dht.key&lt;/code&gt;) rotates the discovery key used during DHT node discovery. A key is generated and used with OTP at defined intervals to scramble potential listeners.&lt;/li&gt;
+&lt;li&gt;The &lt;code&gt;room&lt;/code&gt; is a unique ID which all the nodes will subscribe to. It is automatically generated&lt;/li&gt;
+&lt;li&gt;Optionally the OTP mechanism can be disabled by commenting the &lt;code&gt;otp&lt;/code&gt; block. In this case the static DHT rendezvous will be &lt;code&gt;rendezvous&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;The &lt;code&gt;mdns&lt;/code&gt; discovery doesn&amp;rsquo;t have any OTP rotation, so a unique identifier must be provided.&lt;/li&gt;
+&lt;li&gt;Here can be defined the max message size accepted for the blockchain messages with &lt;code&gt;max_message_size&lt;/code&gt; (in bytes)&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

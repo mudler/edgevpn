@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.91.2" />
+<link rel="alternate" type="application/rss&#43;xml" href="https://mudler.github.io/edgevpn/docs/getting-started/index.xml">
+<meta name="robots" content="index, follow">
+
+
+<link rel="shortcut icon" href="/edgevpn/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/edgevpn/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/edgevpn/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/edgevpn/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/edgevpn/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/edgevpn/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/edgevpn/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/edgevpn/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/edgevpn/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/edgevpn/favicons/android-192x192.png" sizes="192x192">
+
+<title>Getting Started | EdgeVPN</title>
+<meta name="description" content="First steps with EdgeVPN
+">
+<meta property="og:title" content="Getting Started" />
+<meta property="og:description" content="First steps with EdgeVPN
+" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://mudler.github.io/edgevpn/docs/getting-started/" /><meta property="og:site_name" content="EdgeVPN" />
+
+<meta itemprop="name" content="Getting Started">
+<meta itemprop="description" content="First steps with EdgeVPN
+"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Getting Started"/>
+<meta name="twitter:description" content="First steps with EdgeVPN
+"/>
+
+
+
+
+<link rel="preload" href="/edgevpn/scss/main.min.c0d231506e43786480ed17a247f23714569232e9ff881eb3d84c715ce7482126.css" as="style">
+<link href="/edgevpn/scss/main.min.c0d231506e43786480ed17a247f23714569232e9ff881eb3d84c715ce7482126.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-00000000-0', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/edgevpn/">
+		<span class="navbar-logo"><svg id="svg2" width="42" height="42" viewBox="0 0 42 42" sodipodi:docname="logo.svg" inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><defs id="defs6"/><sodipodi:namedview id="namedview4" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1" inkscape:pageshadow="2" inkscape:pageopacity="0" inkscape:pagecheckerboard="0" showgrid="false" inkscape:zoom="1.4199219" inkscape:cx="23.240715" inkscape:cy="199.65887" inkscape:window-width="1680" inkscape:window-height="991" inkscape:window-x="1920" inkscape:window-y="25" inkscape:window-maximized="1" inkscape:current-layer="g8"/><g inkscape:groupmode="layer" inkscape:label="Image" id="g8"><image width="37.374432" height="37.374432" preserveAspectRatio="none" xlink:href="data:image/png;base64,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 IBLPMsO0iTeIpzdtg/M+cZgVZZX4nHjMpAsSP3Jd8fiNc8FlgWeGzXRqnjhMLBbaWGljVjQ14ini qKrplC9kPFY5b3HWylXWvCd/YSinryxznWYECSxiCRJEKKiihDJsxGjVSbGQov24j3/I9UvkUshV AiPHAirQILt+8D/43a2Vn5zwkkJxoPPFcT5GgK5doFFznO9jx2mcAMFn4Epv+St1YOaT9FpLix4B fdvAxXVLU/aAyx1g8MmQTdmVgjSFfB54P6NvygL9t0DPmtdbcx+nD0CaukreAAeHwGiBstd93t3d 3tu/Z5r9/QBaDXKdod5vmwAADRppVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBi ZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+Cjx4OnhtcG1ldGEgeG1s bnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDQuNC4wLUV4aXYyIj4KIDxy ZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4 LW5zIyI+CiAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgIHhtbG5zOnhtcE1NPSJo dHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9u cy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgIHhtbG5zOmRjPSJo dHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgIHhtbG5zOkdJTVA9Imh0dHA6Ly93 d3cuZ2ltcC5vcmcveG1wLyIKICAgIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlm Zi8xLjAvIgogICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICB4 bXBNTTpEb2N1bWVudElEPSJnaW1wOmRvY2lkOmdpbXA6OWUyODRkYTEtMDVhZS00NGZhLTg5ODYt ZWJmODA1MWNiZTM4IgogICB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjU1ZDdhNGNhLThlZDMt NGUwMi05YjVmLWNhYjk4OTE5NDI0MyIKICAgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAu ZGlkOjk2YTkwMjk2LTgzZTAtNGI5Zi1iZGIxLWJlODZkOGM3Mjg4OCIKICAgZGM6Rm9ybWF0PSJp bWFnZS9wbmciCiAgIEdJTVA6QVBJPSIyLjAiCiAgIEdJTVA6UGxhdGZvcm09IkxpbnV4IgogICBH SU1QOlRpbWVTdGFtcD0iMTYzODU2NzI4NTU3MDk4OSIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjI4 IgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCI+ CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2 dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0 YW5jZUlEPSJ4bXAuaWlkOjMxZDU4YzU3LTI3ODMtNDBjYi04NzgzLWUzNTU0OWE5YzZjNCIKICAg ICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0Ondo ZW49IjIwMjEtMTItMDNUMjI6MzQ6NDUrMDE6MDAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBN TTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4K ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg IAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg ICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hw YWNrZXQgZW5kPSJ3Ij8+yFTlLgAAAAZiS0dEAOAA+wD83A1epgAAAAlwSFlzAAAOxAAADsQBlSsO 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" id="image10" x="5.0075426" y="2.3861113"/></g></svg></span><span class="font-weight-bold">EdgeVPN</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/edgevpn/docs/" ><span class="active">Documentation</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/edgevpn/community/" ><span>Community</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="https://github.com/mudler/edgevpn/contribute" target="_blank" ><i class='fab fa-github'></i><span>Contribution guidelines</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/edgevpn/offline-search-index.1650c430215368cc15a2b59810f655e0.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+            
+<div id="td-sidebar-menu" class="td-sidebar__inner">
+  <form class="td-sidebar__search d-flex align-items-center">
+    <input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/edgevpn/offline-search-index.1650c430215368cc15a2b59810f655e0.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+
+    <button class="btn btn-link td-sidebar__toggle d-md-none p-0 ml-3 fas fa-bars" type="button" data-toggle="collapse" data-target="#td-section-nav" aria-controls="td-docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    </button>
+  </form>
+  <nav class="collapse td-sidebar-nav" id="td-section-nav">
+    <ul class="td-sidebar-nav__section pr-md-3 ul-0">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-edgevpndocs-li">
+  <a href="/edgevpn/docs/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section tree-root" id="m-edgevpndocs"><span class="">Documentation</span></a>
+  <ul class="ul-1">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-edgevpndocsgetting-started-li">
+  <a href="/edgevpn/docs/getting-started/" class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id="m-edgevpndocsgetting-started"><span class="td-sidebar-nav-active-item">Getting Started</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsgetting-startedcli-li">
+  <a href="/edgevpn/docs/getting-started/cli/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsgetting-startedcli"><span class="">CLI</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsgetting-startedgui-li">
+  <a href="/edgevpn/docs/getting-started/gui/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsgetting-startedgui"><span class="">GUI</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsgetting-startedapi-li">
+  <a href="/edgevpn/docs/getting-started/api/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsgetting-startedapi"><span class="">webUI and API</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-edgevpndocsresources-li">
+  <a href="/edgevpn/docs/resources/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocsresources"><span class="">Resources</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsresourcesdns-li">
+  <a href="/edgevpn/docs/resources/dns/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsresourcesdns"><span class="">DNS</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-edgevpndocsconcepts-li">
+  <a href="/edgevpn/docs/concepts/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocsconcepts"><span class="">Concepts</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-edgevpndocsconceptsoverview-li">
+  <a href="/edgevpn/docs/concepts/overview/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocsconceptsoverview"><span class="">Overview</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsconceptsoverviewnode-li">
+  <a href="/edgevpn/docs/concepts/overview/node/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsconceptsoverviewnode"><span class="">Node</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsconceptsoverviewservices-li">
+  <a href="/edgevpn/docs/concepts/overview/services/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsconceptsoverviewservices"><span class="">Services</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsconceptsoverviewledger-li">
+  <a href="/edgevpn/docs/concepts/overview/ledger/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsconceptsoverviewledger"><span class=""></span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsconceptsarchitecture-li">
+  <a href="/edgevpn/docs/concepts/architecture/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocsconceptsarchitecture"><span class="">Architecture</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsconceptstoken-li">
+  <a href="/edgevpn/docs/concepts/token/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocsconceptstoken"><span class="">Token</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocscontribution-guidelines-li">
+  <a href="/edgevpn/docs/contribution-guidelines/" title="Contributing" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocscontribution-guidelines"><span class="">Contribution guidelines</span></a>
+</li>
+  </ul>
+</li>
+    </ul>
+  </nav>
+</div>
+
+          </aside>
+          <aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
+            
+<div class="td-page-meta ml-2 pb-1 pt-2 mb-0">
+<a href="https://github.com/mudler/edgevpn/tree/master/docs/content/en/docs/Getting%20started/_index.md" class="td-page-meta--view" target="_blank" rel="noopener"><i class="fa fa-file-alt fa-fw"></i> View page source</a>
+  <a href="https://github.com/mudler/edgevpn/edit/master/docs/content/en/docs/Getting%20started/_index.md" class="td-page-meta--edit" target="_blank" rel="noopener"><i class="fa fa-edit fa-fw"></i> Edit this page</a>
+  <a href="https://github.com/mudler/edgevpn/new/master/docs/content/en/docs/Getting%20started/_index.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" class="td-page-meta--child" target="_blank" rel="noopener"><i class="fa fa-edit fa-fw"></i> Create child page</a>
+  <a href="https://github.com/mudler/edgevpn/issues/new?title=Getting%20Started" class="td-page-meta--issue" target="_blank" rel="noopener"><i class="fab fa-github fa-fw"></i> Create documentation issue</a>
+  <a href="https://github.com/mudler/edgevpn/issues/new" class="td-page-meta--project-issue" target="_blank" rel="noopener"><i class="fas fa-tasks fa-fw"></i> Create project issue</a>
+  
+</div>
+
+            
+
+
+<div class="td-toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#get-edgevpn">Get EdgeVPN</a>
+      <ul>
+        <li><a href="#from-release">From release</a></li>
+        <li><a href="#building-edgevpn-from-source">Building EdgeVPN from source</a></li>
+        <li><a href="#first-vpn">First VPN</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+
+
+
+            
+
+	
+		
+
+
+
+  
+  
+
+	
+		
+
+
+
+  
+  
+
+	
+
+          </aside>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+  
+
+            
+            
+<div class="td-content">
+	<h1>Getting Started</h1>
+  <div class="lead">First steps with EdgeVPN</div>
+	<header class="article-meta">
+		
+		
+			
+				
+
+
+			
+				
+
+
+			
+		
+		
+	</header>
+	<h2 id="get-edgevpn">Get EdgeVPN</h2>
+<p>Prerequisites: No dependencies. EdgeVPN releases are statically compiled.</p>
+<h3 id="from-release">From release</h3>
+<p>Just grab a release from <a href="https://github.com/mudler/edgevpn/releases">the release page on GitHub</a>. The binaries are statically compiled.</p>
+<h3 id="building-edgevpn-from-source">Building EdgeVPN from source</h3>
+<p>Requirements:</p>
+<ul>
+<li><a href="https://golang.org/">Golang</a> installed in your system.</li>
+<li>make</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$&gt; git clone https://github.com/mudler/edgevpn
+$&gt; <span style="color:#204a87">cd</span> edgevpn
+$&gt; go build
+</code></pre></div><h3 id="first-vpn">First VPN</h3>
+<p>Let&rsquo;s create our first vpn now and start it:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$&gt; <span style="color:#000">EDGEVPNTOKEN</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87;font-weight:bold">$(</span>edgevpn -b -g<span style="color:#204a87;font-weight:bold">)</span>
+$&gt; edgevpn --dhcp --api
+</code></pre></div><p>That&rsquo;s it!</p>
+<p>You can now access the web interface on <a href="http://localhost:8080">http://localhost:8080</a>.</p>
+<p>To join new nodes in the network, simply copy the <code>EDGEVPNTOKEN</code> and use it to start edgevpn in other nodes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$&gt; <span style="color:#000">EDGEVPNTOKEN</span><span style="color:#ce5c00;font-weight:bold">=</span>&lt;token_generated_before&gt; edgevpn --dhcp
+</code></pre></div>
+        <div class="section-index">
+    
+    
+    
+    
+    
+    
+    
+    
+    <hr class="panel-line">
+        
+            
+            <div class="entry">
+                <h5>
+                    <a href="/edgevpn/docs/getting-started/cli/">CLI</a>
+                </h5>
+                <p>Command line interface</p>
+            </div>
+        
+            
+            <div class="entry">
+                <h5>
+                    <a href="/edgevpn/docs/getting-started/gui/">GUI</a>
+                </h5>
+                <p>GUI app</p>
+            </div>
+        
+            
+            <div class="entry">
+                <h5>
+                    <a href="/edgevpn/docs/getting-started/api/">webUI and API</a>
+                </h5>
+                <p>Query the network status and operate the ledger with the built-in API</p>
+            </div>
+        
+    
+</div>
+
+	
+		<style>
+  .feedback--answer {
+    display: inline-block;
+  }
+  .feedback--answer-no {
+    margin-left: 1em;
+  }
+  .feedback--response {
+    display: none;
+    margin-top: 1em;
+  }
+  .feedback--response__visible {
+    display: block;
+  }
+</style>
+<div class="d-print-none">
+<h2 class="feedback--title">Feedback</h2>
+<p class="feedback--question">Was this page helpful?</p>
+<button class="btn btn-primary mb-4 feedback--answer feedback--answer-yes">Yes</button>
+<button class="btn btn-primary mb-4 feedback--answer feedback--answer-no">No</button>
+<p class="feedback--response feedback--response-yes">
+  Glad to hear it! Please <a href="https://github.com/EdgeVPN-lab/docs/issues/new">tell us how we can improve</a>.
+</p>
+<p class="feedback--response feedback--response-no">
+  Sorry to hear that. Please <a href="https://github.com/EdgeVPN-lab/docs/issues/new">tell us how we can improve</a>.
+</p>
+</div>
+<script>
+  const yesButton = document.querySelector('.feedback--answer-yes');
+  const noButton = document.querySelector('.feedback--answer-no');
+  const yesResponse = document.querySelector('.feedback--response-yes');
+  const noResponse = document.querySelector('.feedback--response-no');
+  const disableButtons = () => {
+    yesButton.disabled = true;
+    noButton.disabled = true;
+  };
+  const sendFeedback = (value) => {
+    if (typeof ga !== 'function') return;
+    const args = {
+      command: 'send',
+      hitType: 'event',
+      category: 'Helpful',
+      action: 'click',
+      label: window.location.pathname,
+      value: value
+    };
+    ga(args.command, args.hitType, args.category, args.action, args.label, args.value);
+  };
+  yesButton.addEventListener('click', () => {
+    yesResponse.classList.add('feedback--response__visible');
+    disableButtons();
+    sendFeedback(1);
+  });
+  noButton.addEventListener('click', () => {
+    noResponse.classList.add('feedback--response__visible');
+    disableButtons();
+    sendFeedback(0);
+  });
+</script>
+
+		<br />
+	
+	
+	<div class="text-muted mt-5 pt-3 border-top">
+  Last modified January 29, 2022: <a href="https://github.com/mudler/edgevpn/commit/3ea6595f0bc08b822980266b0af378e849fcee52">:art: Add docs (3ea6595)</a>
+</div>
+
+</div>
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub Discussions" aria-label="GitHub Discussions">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/mudler/edgevpn/discussions" aria-label="GitHub Discussions">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/mudler/edgevpn" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 Ettore Di Giacinto All Rights Reserved</small>
+        <small class="ml-1"><a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a></small>
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/edgevpn/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/edgevpn/js/main.min.8ab8f81ff7e1454d30024cd6f956d4d341c3a97e2a673f988065f2ee4e147922.js" integrity="sha256-irj4H/fhRU0wAkzW&#43;VbU00HDqX4qZz&#43;YgGXy7k4UeSI=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

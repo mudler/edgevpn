@@ -1,0 +1,66 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>EdgeVPN – Overview</title>
+    <link>https://mudler.github.io/edgevpn/docs/concepts/overview/</link>
+    <description>Recent content in Overview on EdgeVPN</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="https://mudler.github.io/edgevpn/docs/concepts/overview/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Node</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/node/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/node/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Services</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/services/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/services/</guid>
+      <description>
+        
+        
+        &lt;h2 id=&#34;forwarding-a-local-connection&#34;&gt;Forwarding a local connection&lt;/h2&gt;
+&lt;p&gt;EdgeVPN can also be used to expose local(or remote) services without establishing a VPN and allocating a local tun/tap device, similarly to &lt;code&gt;ngrok&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id=&#34;exposing-a-service&#34;&gt;Exposing a service&lt;/h3&gt;
+&lt;p&gt;If you are used to how Local SSH forwarding works (e.g. &lt;code&gt;ssh -L 9090:something:remote &amp;lt;my_node&amp;gt;&lt;/code&gt;), EdgeVPN takes a similar approach.&lt;/p&gt;
+&lt;p&gt;A Service is a generalized TCP service running in a host (also outside the network). For example, let&amp;rsquo;s say that we want to expose a SSH server inside a LAN.&lt;/p&gt;
+&lt;p&gt;To expose a service to your EdgeVPN network then:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn service-add &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;MyCoolService&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;127.0.0.1:22&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To reach the service, EdgeVPN will setup a local port and bind to it, it will tunnel the traffic to the service over the VPN, for e.g. to bind locally to &lt;code&gt;9090&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn service-connect &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;MyCoolService&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;127.0.0.1:9090&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;with the example above, &amp;lsquo;sshing into &lt;code&gt;9090&lt;/code&gt; locally would forward to &lt;code&gt;22&lt;/code&gt;.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: </title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/ledger/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/ledger/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+  </channel>
+</rss>
