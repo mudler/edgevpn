@@ -25,11 +25,11 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://mudler.github.io/edgevpn/index.json" /><meta property="article:section" content="" />
 
-<meta property="article:modified_time" content="2022-01-30T17:06:03+01:00" /><meta property="og:site_name" content="EdgeVPN" />
+<meta property="article:modified_time" content="2022-01-30T17:16:24+01:00" /><meta property="og:site_name" content="EdgeVPN" />
 
 <meta itemprop="name" content="">
 <meta itemprop="description" content="">
-<meta itemprop="dateModified" content="2022-01-30T17:06:03+01:00" />
+<meta itemprop="dateModified" content="2022-01-30T17:16:24+01:00" />
 <meta itemprop="wordCount" content="0">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content=""/>
@@ -118,7 +118,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="/edgevpn/offline-search-index.ddc909ad95da64377121650911d7de84.json"
+  data-offline-search-index-json-src="/edgevpn/offline-search-index.0e11b8d6356ca3523344c91b4251a36e.json"
   data-offline-search-base-href="/"
   data-offline-search-max-results="10"
 >
