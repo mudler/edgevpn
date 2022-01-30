@@ -62,14 +62,7 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
 &lt;p&gt;Note: Experimental feature!&lt;/p&gt;
 &lt;p&gt;Automatic IP negotiation is available since version &lt;code&gt;0.8.1&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;DHCP can be enabled with &lt;code&gt;--dhcp&lt;/code&gt; and &lt;code&gt;--address&lt;/code&gt; can be omitted. If an IP is specfied with &lt;code&gt;--address&lt;/code&gt; it will be the default IP.&lt;/p&gt;
-&lt;h2 id=&#34;mailbox-sending-and-receiving-files&#34;&gt;:mailbox: Sending and receiving files&lt;/h2&gt;
-&lt;p&gt;EdgeVPN can be used to send and receive files between hosts via p2p with the  &lt;code&gt;file-send&lt;/code&gt; and &lt;code&gt;file-receive&lt;/code&gt; subcommand.&lt;/p&gt;
-&lt;p&gt;Sending and receiving files, as services, don&amp;rsquo;t establish a VPN connection.&lt;/p&gt;
-&lt;h3 id=&#34;outbox_tray-sending&#34;&gt;:outbox_tray: Sending&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn file-send &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;unique-id&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;/src/path&amp;#39;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;inbox_tray-receiving&#34;&gt;:inbox_tray: Receiving&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn file-receive &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;unique-id&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;/dst/path&amp;#39;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
       </description>
     </item>
     
@@ -107,20 +100,7 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
     </item>
     
     <item>
-      <title>Docs: Node</title>
-      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/node/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/node/</guid>
-      <description>
-        
-        
-        
-      </description>
-    </item>
-    
-    <item>
-      <title>Docs: Services</title>
+      <title>Docs: Tunnel connections</title>
       <link>https://mudler.github.io/edgevpn/docs/concepts/overview/services/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -245,10 +225,10 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
     
     <item>
       <title>Docs: DNS</title>
-      <link>https://mudler.github.io/edgevpn/docs/resources/dns/</link>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/dns/</link>
       <pubDate>Thu, 05 Jan 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://mudler.github.io/edgevpn/docs/resources/dns/</guid>
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/dns/</guid>
       <description>
         
         
@@ -276,6 +256,26 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
 &lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Note, &lt;code&gt;Regex&lt;/code&gt; accepts regexes which will match the DNS requests received and resolved to the specified entries.&lt;/p&gt;
 
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Sending and receiving files</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/files/</link>
+      <pubDate>Thu, 05 Jan 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/files/</guid>
+      <description>
+        
+        
+        &lt;h2 id=&#34;sending-and-receiving-files&#34;&gt;Sending and receiving files&lt;/h2&gt;
+&lt;p&gt;EdgeVPN can be used to send and receive files between hosts via p2p with the  &lt;code&gt;file-send&lt;/code&gt; and &lt;code&gt;file-receive&lt;/code&gt; subcommand.&lt;/p&gt;
+&lt;p&gt;Sending and receiving files, as services, don&amp;rsquo;t establish a VPN connection.&lt;/p&gt;
+&lt;h3 id=&#34;sending&#34;&gt;Sending&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn file-send &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;unique-id&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;/src/path&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;receiving&#34;&gt;Receiving&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn file-receive &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;unique-id&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;/dst/path&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
       </description>
     </item>
     
@@ -330,19 +330,6 @@ the content.&lt;/li&gt;
 &lt;h3 id=&#34;license&#34;&gt;License&lt;/h3&gt;
 &lt;p&gt;By contributing, you agree that your contributions will be licensed under the project Licenses.&lt;/p&gt;
 
-      </description>
-    </item>
-    
-    <item>
-      <title>Docs: </title>
-      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/ledger/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/ledger/</guid>
-      <description>
-        
-        
-        
       </description>
     </item>
     
