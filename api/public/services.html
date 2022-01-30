@@ -19,7 +19,7 @@
 </head>
 
 <body>
-  <nav class="navbar is-light is-spaced has-shadow" role="navigation" aria-label="main navigation">
+  <nav  class="navbar is-light is-spaced has-shadow" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
       <a class="navbar-item" href="/">
         <img src="/images/logo.png" > &nbsp;
@@ -38,14 +38,7 @@
           <i class="fas fa-server"></i>&nbsp;
           Machines
         </a>
-        <a class="navbar-item" href="/services.html">
-          <i class="fas fa-project-diagram"></i>&nbsp;
-          Services
-        </a>
-        <a class="navbar-item" href="/files.html">
-          <i class="fas fa-file-upload"></i>&nbsp;
-          Files
-        </a>
+       
         <a class="navbar-item" href="/users.html">
           <i class="fas fa-user-clock"></i>&nbsp;
           Users
@@ -54,19 +47,58 @@
           <i class="fas fa-dice-d20"></i>&nbsp;
           Blockchain
         </a>
-        <a class="navbar-item" href="/peerstore.html">
-          <i class="fas fa-database"></i>&nbsp;
-          Peerstore
-        </a>
-        <a class="navbar-item" href="/nodes.html">
-          <i class="fas fa-ethernet"></i>&nbsp;
-          Nodes
-        </a>
-        <a class="navbar-item" href="/dns.html">
-          <i class="fas fa-globe"></i>&nbsp;
-          DNS
-        </a>
+
+        <div class="dropdown">
+          <div class="dropdown-trigger">
+            <button class="button" aria-haspopup="true" aria-controls="services-menu">
+              <span> <i class="fas fa-project-diagram"></i> Services
+              </span>
+              <span class="icon is-small">
+                <i class="fas fa-angle-down" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+          <div class="dropdown-menu" id="services-menu" role="menu">
+            <div class="dropdown-content">
+              <a class="dropdown-item" href="/services.html">
+                <i class="fas fa-project-diagram"></i>&nbsp;
+                TCP tunnels
+              </a>
+              <a class="dropdown-item" href="/files.html">
+                <i class="fas fa-file-upload"></i>&nbsp;
+                Files
+              </a>
+              <a class="dropdown-item" href="/dns.html">
+                <i class="fas fa-globe"></i>&nbsp;
+                DNS
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="dropdown">
+          <div class="dropdown-trigger">
+            <button class="button" aria-haspopup="true" aria-controls="nodes-menu">
+              <span><i class="fas fa-ethernet"></i> Nodes</span>
+              <span class="icon is-small">
+                <i class="fas fa-angle-down" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+          <div class="dropdown-menu" id="nodes-menu" role="menu">
+            <div class="dropdown-content">
+              <a class="dropdown-item" href="/peerstore.html">
+                <i class="fas fa-database"></i>&nbsp;
+                Peerstore
+              </a>
+              <a class="dropdown-item" href="/nodes.html">
+                <i class="fas fa-ethernet"></i>&nbsp;
+                On chain nodes
+              </a>
+            </div>
+          </div>
+        </div> 
       </div>
+
       <div class="navbar-end">
         <div class="navbar-item">
           <div class="buttons">
@@ -76,6 +108,9 @@
             <a class="button is-light" href="https://github.com/mudler/edgevpn/issues/new" target=_blank>
              <i class="fas fa-bug"></i>&nbsp; Report issue
             </a>
+            <a class="button is-light" href="https://mudler.github.io/edgevpn/docs" target=_blank>
+              <i class="fas fa-book"></i>&nbsp; Documentation
+             </a>
           </div>
         </div>
       </div>
