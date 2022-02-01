@@ -32,6 +32,29 @@ import (
 	"github.com/pkg/errors"
 )
 
+func SharefileNetworkService(announcetime time.Duration, fileID string) node.NetworkService {
+	return func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+		// By announcing periodically our service to the blockchain
+		b.Announce(
+			ctx,
+			announcetime,
+			func() {
+				// Retrieve current ID for ip in the blockchain
+				existingValue, found := b.GetKey(protocol.FilesLedgerKey, fileID)
+				service := &types.Service{}
+				existingValue.Unmarshal(service)
+				// If mismatch, update the blockchain
+				if !found || service.PeerID != n.Host().ID().String() {
+					updatedMap := map[string]interface{}{}
+					updatedMap[fileID] = types.File{PeerID: n.Host().ID().String(), Name: fileID}
+					b.Add(protocol.FilesLedgerKey, updatedMap)
+				}
+			},
+		)
+		return nil
+	}
+}
+
 // ShareFile shares a file to the p2p network.
 // meant to be called before a node is started with Start()
 func ShareFile(ll log.StandardLogger, announcetime time.Duration, fileID, filepath string) ([]node.Option, error) {
@@ -43,26 +66,7 @@ func ShareFile(ll log.StandardLogger, announcetime time.Duration, fileID, filepa
 	ll.Infof("Serving '%s' as '%s'", filepath, fileID)
 	return []node.Option{
 		node.WithNetworkService(
-			func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
-				// By announcing periodically our service to the blockchain
-				b.Announce(
-					ctx,
-					announcetime,
-					func() {
-						// Retrieve current ID for ip in the blockchain
-						existingValue, found := b.GetKey(protocol.FilesLedgerKey, fileID)
-						service := &types.Service{}
-						existingValue.Unmarshal(service)
-						// If mismatch, update the blockchain
-						if !found || service.PeerID != n.Host().ID().String() {
-							updatedMap := map[string]interface{}{}
-							updatedMap[fileID] = types.File{PeerID: n.Host().ID().String(), Name: fileID}
-							b.Add(protocol.FilesLedgerKey, updatedMap)
-						}
-					},
-				)
-				return nil
-			},
+			SharefileNetworkService(announcetime, fileID),
 		),
 		node.WithStreamHandler(protocol.FileProtocol,
 			func(n *node.Node, l *blockchain.Ledger) func(stream network.Stream) {

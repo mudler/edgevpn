@@ -32,6 +32,28 @@ import (
 	"github.com/mudler/edgevpn/pkg/types"
 )
 
+func ExposeNetworkService(announcetime time.Duration, serviceID string) node.NetworkService {
+	return func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+		b.Announce(
+			ctx,
+			announcetime,
+			func() {
+				// Retrieve current ID for ip in the blockchain
+				existingValue, found := b.GetKey(protocol.ServicesLedgerKey, serviceID)
+				service := &types.Service{}
+				existingValue.Unmarshal(service)
+				// If mismatch, update the blockchain
+				if !found || service.PeerID != n.Host().ID().String() {
+					updatedMap := map[string]interface{}{}
+					updatedMap[serviceID] = types.Service{PeerID: n.Host().ID().String(), Name: serviceID}
+					b.Add(protocol.ServicesLedgerKey, updatedMap)
+				}
+			},
+		)
+		return nil
+	}
+}
+
 // ExposeService exposes a service to the p2p network.
 // meant to be called before a node is started with Start()
 func RegisterService(ll log.StandardLogger, announcetime time.Duration, serviceID, dstaddress string) []node.Option {
@@ -70,28 +92,7 @@ func RegisterService(ll log.StandardLogger, announcetime time.Duration, serviceI
 				}()
 			}
 		}),
-
-		node.WithNetworkService(
-			func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
-				b.Announce(
-					ctx,
-					announcetime,
-					func() {
-						// Retrieve current ID for ip in the blockchain
-						existingValue, found := b.GetKey(protocol.ServicesLedgerKey, serviceID)
-						service := &types.Service{}
-						existingValue.Unmarshal(service)
-						// If mismatch, update the blockchain
-						if !found || service.PeerID != n.Host().ID().String() {
-							updatedMap := map[string]interface{}{}
-							updatedMap[serviceID] = types.Service{PeerID: n.Host().ID().String(), Name: serviceID}
-							b.Add(protocol.ServicesLedgerKey, updatedMap)
-						}
-					},
-				)
-				return nil
-			},
-		)}
+		node.WithNetworkService(ExposeNetworkService(announcetime, serviceID))}
 }
 
 func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node *node.Node, ll log.StandardLogger, announcetime time.Duration, serviceID string, srcaddr string) error {

@@ -46,6 +46,79 @@ func checkDHCPLease(c node.Config, leasedir string) string {
 	return ""
 }
 
+// DHCPNetworkService returns a DHCP network service
+func DHCPNetworkService(ip chan string, l log.StandardLogger, maxTime time.Duration, leasedir string, address string) node.NetworkService {
+	return func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+		os.MkdirAll(leasedir, 0600)
+
+		// retrieve lease if present
+		var wantedIP = checkDHCPLease(c, leasedir)
+
+		//  whoever wants a new IP:
+		//  1. Get available nodes. Filter from Machine those that do not have an IP.
+		//  2. Get the leader among them. If we are not, we wait
+		//  3. If we are the leader, pick an IP and start the VPN with that IP
+		for wantedIP == "" {
+			time.Sleep(5 * time.Second)
+
+			// This network service is blocking and calls in before VPN, hence it needs to registered before VPN
+			nodes := services.AvailableNodes(b, maxTime)
+
+			currentIPs := map[string]string{}
+			ips := []string{}
+
+			for _, t := range b.LastBlock().Storage[protocol.MachinesLedgerKey] {
+				var m types.Machine
+				t.Unmarshal(&m)
+				currentIPs[m.PeerID] = m.Address
+
+				l.Debugf("%s uses %s", m.PeerID, m.Address)
+				ips = append(ips, m.Address)
+			}
+
+			nodesWithNoIP := []string{}
+			for _, nn := range nodes {
+				if _, exists := currentIPs[nn]; !exists {
+					nodesWithNoIP = append(nodesWithNoIP, nn)
+				}
+			}
+
+			if len(nodes) <= 1 {
+				l.Debug("not enough nodes to determine an IP, sleeping")
+				continue
+			}
+
+			lead := utils.Leader(nodesWithNoIP)
+			l.Debug("Nodes with no ip", nodesWithNoIP)
+
+			if n.Host().ID().String() != lead {
+				l.Debug("Not leader, sleeping")
+				time.Sleep(5 * time.Second)
+				continue
+			}
+
+			// We are lead
+			l.Debug("picking up between", ips)
+
+			wantedIP = utils.NextIP(address, ips)
+		}
+
+		// Save lease to disk
+		leaseFileName := crypto.MD5(fmt.Sprintf("%s-ek", c.ExchangeKey))
+		leaseFile := filepath.Join(leasedir, leaseFileName)
+		l.Debugf("Writing lease to '%s'", leaseFile)
+		if err := ioutil.WriteFile(leaseFile, []byte(wantedIP), 0600); err != nil {
+			l.Warn(err)
+		}
+
+		// propagate ip to channel that is read while starting vpn
+		ip <- wantedIP
+
+		// Gate connections from VPN
+		return n.BlockSubnet(fmt.Sprintf("%s/24", wantedIP))
+	}
+}
+
 // DHCP returns a DHCP network service. It requires the Alive Service in order to determine available nodes.
 // Nodes available are used to determine which needs an IP and when maxTime expires nodes are marked as offline and
 // not considered.
@@ -60,78 +133,7 @@ func DHCP(l log.StandardLogger, maxTime time.Duration, leasedir string, address 
 				}
 				return nil
 			},
-			node.WithNetworkService(
-				func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
-
-					os.MkdirAll(leasedir, 0600)
-
-					// retrieve lease if present
-					var wantedIP = checkDHCPLease(c, leasedir)
-
-					//  whoever wants a new IP:
-					//  1. Get available nodes. Filter from Machine those that do not have an IP.
-					//  2. Get the leader among them. If we are not, we wait
-					//  3. If we are the leader, pick an IP and start the VPN with that IP
-					for wantedIP == "" {
-						time.Sleep(5 * time.Second)
-
-						// This network service is blocking and calls in before VPN, hence it needs to registered before VPN
-						nodes := services.AvailableNodes(b, maxTime)
-
-						currentIPs := map[string]string{}
-						ips := []string{}
-
-						for _, t := range b.LastBlock().Storage[protocol.MachinesLedgerKey] {
-							var m types.Machine
-							t.Unmarshal(&m)
-							currentIPs[m.PeerID] = m.Address
-
-							l.Debugf("%s uses %s", m.PeerID, m.Address)
-							ips = append(ips, m.Address)
-						}
-
-						nodesWithNoIP := []string{}
-						for _, nn := range nodes {
-							if _, exists := currentIPs[nn]; !exists {
-								nodesWithNoIP = append(nodesWithNoIP, nn)
-							}
-						}
-
-						if len(nodes) <= 1 {
-							l.Debug("not enough nodes to determine an IP, sleeping")
-							continue
-						}
-
-						lead := utils.Leader(nodesWithNoIP)
-						l.Debug("Nodes with no ip", nodesWithNoIP)
-
-						if n.Host().ID().String() != lead {
-							l.Debug("Not leader, sleeping")
-							time.Sleep(5 * time.Second)
-							continue
-						}
-
-						// We are lead
-						l.Debug("picking up between", ips)
-
-						wantedIP = utils.NextIP(address, ips)
-					}
-
-					// Save lease to disk
-					leaseFileName := crypto.MD5(fmt.Sprintf("%s-ek", c.ExchangeKey))
-					leaseFile := filepath.Join(leasedir, leaseFileName)
-					l.Debugf("Writing lease to '%s'", leaseFile)
-					if err := ioutil.WriteFile(leaseFile, []byte(wantedIP), 0600); err != nil {
-						l.Warn(err)
-					}
-
-					// propagate ip to channel that is read while starting vpn
-					ip <- wantedIP
-
-					// Gate connections from VPN
-					return n.BlockSubnet(fmt.Sprintf("%s/24", wantedIP))
-				},
-			),
+			node.WithNetworkService(DHCPNetworkService(ip, l, maxTime, leasedir, address)),
 		}, []Option{
 			func(cfg *Config) error {
 				// read back IP when starting vpn

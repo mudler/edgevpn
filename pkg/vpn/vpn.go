@@ -41,64 +41,64 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
+func VPNNetworkService(p ...Option) node.NetworkService {
+	return func(ctx context.Context, nc node.Config, n *node.Node, b *blockchain.Ledger) error {
+		c := &Config{
+			Concurrency:        1,
+			LedgerAnnounceTime: 5 * time.Second,
+			Timeout:            15 * time.Second,
+			Logger:             logger.New(log.LevelDebug),
+		}
+		c.Apply(p...)
+
+		ifce, err := createInterface(c)
+		if err != nil {
+			return err
+		}
+		defer ifce.Close()
+
+		// Set stream handler during runtime
+		n.Host().SetStreamHandler(protocol.EdgeVPN.ID(), streamHandler(b, ifce))
+
+		// Announce our IP
+		ip, _, err := net.ParseCIDR(c.InterfaceAddress)
+		if err != nil {
+			return err
+		}
+
+		b.Announce(
+			ctx,
+			c.LedgerAnnounceTime,
+			func() {
+				machine := &types.Machine{}
+				// Retrieve current ID for ip in the blockchain
+				existingValue, found := b.GetKey(protocol.MachinesLedgerKey, ip.String())
+				existingValue.Unmarshal(machine)
+
+				// If mismatch, update the blockchain
+				if !found || machine.PeerID != n.Host().ID().String() {
+					updatedMap := map[string]interface{}{}
+					updatedMap[ip.String()] = newBlockChainData(n, ip.String())
+					b.Add(protocol.MachinesLedgerKey, updatedMap)
+				}
+			},
+		)
+
+		if c.NetLinkBootstrap {
+			if err := prepareInterface(c); err != nil {
+				return err
+			}
+		}
+
+		// read packets from the interface
+		return readPackets(ctx, c, n, b, ifce)
+	}
+}
+
 // Start the node and the vpn. Returns an error in case of failure
 // When starting the vpn, there is no need to start the node
 func Register(p ...Option) ([]node.Option, error) {
-
-	return []node.Option{
-		node.WithNetworkService(func(ctx context.Context, nc node.Config, n *node.Node, b *blockchain.Ledger) error {
-			c := &Config{
-				Concurrency:        1,
-				LedgerAnnounceTime: 5 * time.Second,
-				Timeout:            15 * time.Second,
-				Logger:             logger.New(log.LevelDebug),
-			}
-			c.Apply(p...)
-
-			ifce, err := createInterface(c)
-			if err != nil {
-				return err
-			}
-			defer ifce.Close()
-
-			// Set stream handler during runtime
-			n.Host().SetStreamHandler(protocol.EdgeVPN.ID(), streamHandler(b, ifce))
-
-			// Announce our IP
-			ip, _, err := net.ParseCIDR(c.InterfaceAddress)
-			if err != nil {
-				return err
-			}
-
-			b.Announce(
-				ctx,
-				c.LedgerAnnounceTime,
-				func() {
-					machine := &types.Machine{}
-					// Retrieve current ID for ip in the blockchain
-					existingValue, found := b.GetKey(protocol.MachinesLedgerKey, ip.String())
-					existingValue.Unmarshal(machine)
-
-					// If mismatch, update the blockchain
-					if !found || machine.PeerID != n.Host().ID().String() {
-						updatedMap := map[string]interface{}{}
-						updatedMap[ip.String()] = newBlockChainData(n, ip.String())
-						b.Add(protocol.MachinesLedgerKey, updatedMap)
-					}
-				},
-			)
-
-			if c.NetLinkBootstrap {
-				if err := prepareInterface(c); err != nil {
-					return err
-				}
-			}
-
-			// read packets from the interface
-			return readPackets(ctx, c, n, b, ifce)
-		}),
-	}, nil
-
+	return []node.Option{node.WithNetworkService(VPNNetworkService(p...))}, nil
 }
 
 func streamHandler(l *blockchain.Ledger, ifce *water.Interface) func(stream network.Stream) {

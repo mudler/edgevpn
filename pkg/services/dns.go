@@ -31,31 +31,32 @@ import (
 	"github.com/pkg/errors"
 )
 
+func DNSNetworkService(listenAddr string, forwarder bool, forward []string, cacheSize int) node.NetworkService {
+	return func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+		server := &dns.Server{Addr: listenAddr, Net: "udp"}
+		cache, err := lru.New(cacheSize)
+		if err != nil {
+			return err
+		}
+		go func() {
+			dns.HandleFunc(".", dnsHandler{ctx, b, forwarder, forward, cache}.handleDNSRequest())
+			fmt.Println(server.ListenAndServe())
+		}()
+
+		go func() {
+			<-ctx.Done()
+			server.Shutdown()
+		}()
+
+		return nil
+	}
+}
+
 // DNS returns a network service binding a dns blockchain resolver on listenAddr.
 // Takes an associated name for the addresses in the blockchain
 func DNS(listenAddr string, forwarder bool, forward []string, cacheSize int) []node.Option {
 	return []node.Option{
-		node.WithNetworkService(
-			func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
-
-				server := &dns.Server{Addr: listenAddr, Net: "udp"}
-				cache, err := lru.New(cacheSize)
-				if err != nil {
-					return err
-				}
-				go func() {
-					dns.HandleFunc(".", dnsHandler{ctx, b, forwarder, forward, cache}.handleDNSRequest())
-					fmt.Println(server.ListenAndServe())
-				}()
-
-				go func() {
-					<-ctx.Done()
-					server.Shutdown()
-				}()
-
-				return nil
-			},
-		),
+		node.WithNetworkService(DNSNetworkService(listenAddr, forwarder, forward, cacheSize)),
 	}
 }
 
