@@ -156,7 +156,7 @@ func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l
 				}
 
 				// Open a stream
-				stream, err := n.Host().NewStream(context.Background(), d, protocol.FileProtocol.ID())
+				stream, err := n.Host().NewStream(ctx, d, protocol.FileProtocol.ID())
 				if err != nil {
 					l.Debugf("failed to dial %s, retrying in 5 seconds", d)
 					continue

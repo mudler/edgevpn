@@ -170,8 +170,8 @@ func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node *node
 				go copyStream(closer, conn, stream)
 				<-closer
 
-				conn.Close()
 				stream.Close()
+				conn.Close()
 				ll.Infof("(service %s) Done handling %s", serviceID, l.Addr().String())
 			}()
 		}
