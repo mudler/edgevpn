@@ -41,15 +41,11 @@ type Config struct {
 
 	Concurrency       int
 	ChannelBufferSize int
+	MaxStreams        int
 	lowProfile        bool
 }
 
 type Option func(cfg *Config) error
-
-var LowProfile Option = func(cfg *Config) error {
-	cfg.lowProfile = true
-	return nil
-}
 
 // Apply applies the given options to the config, returning the first error
 // encountered (if any).
@@ -62,6 +58,19 @@ func (cfg *Config) Apply(opts ...Option) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func WithMaxStreams(i int) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.MaxStreams = i
+		return nil
+	}
+}
+
+var LowProfile Option = func(cfg *Config) error {
+	cfg.lowProfile = true
+
 	return nil
 }
 

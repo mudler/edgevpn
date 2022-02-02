@@ -3,6 +3,7 @@ module github.com/mudler/edgevpn
 go 1.16
 
 require (
+	github.com/benbjohnson/clock v1.1.0
 	github.com/c-robinson/iplib v1.0.3
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect

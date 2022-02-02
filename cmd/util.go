@@ -154,8 +154,14 @@ var CommonFlags []cli.Flag = []cli.Flag{
 	},
 	&cli.BoolFlag{
 		Name:   "low-profile-vpn",
-		Usage:  "Enable low profile on vpn. Doesn't keep open connections",
-		EnvVar: "EDGEVPNVPNLOWPROFILE",
+		Usage:  "Enable low profile on VPN",
+		EnvVar: "EDGEVPNLOWPROFILEVPNN",
+	},
+	&cli.IntFlag{
+		Name:   "max-streams",
+		Usage:  "Number of concurrent streams",
+		Value:  100,
+		EnvVar: "EDGEVPNMAXSTREAMS",
 	},
 	&cli.StringFlag{
 		Name:   "log-level",
@@ -201,13 +207,13 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		Libp2pLogLevel:    c.String("libp2p-log-level"),
 		LogLevel:          c.String("log-level"),
 		LowProfile:        c.Bool("low-profile"),
+		VPNLowProfile:     c.Bool("low-profile-vpn"),
 		Blacklist:         c.StringSlice("blacklist"),
 		Concurrency:       c.Int("concurrency"),
 		FrameTimeout:      c.String("timeout"),
 		ChannelBufferSize: c.Int("channel-buffer-size"),
 		InterfaceMTU:      c.Int("mtu"),
 		PacketMTU:         c.Int("packet-mtu"),
-		LowProfileVPN:     c.Bool("low-profile-vpn"),
 		Ledger: config.Ledger{
 			StateDir:         c.String("ledger-state"),
 			AnnounceInterval: time.Duration(c.Int("ledger-announce-interval")) * time.Second,
@@ -230,6 +236,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		Connection: config.Connection{
 			AutoRelay:      c.Bool("autorelay"),
 			MaxConnections: c.Int("max-connections"),
+			MaxStreams:     c.Int("max-streams"),
 			HolePunch:      c.Bool("holepunch"),
 		},
 	}

@@ -179,6 +179,6 @@ func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node *node
 }
 
 func copyStream(closer chan struct{}, dst io.Writer, src io.Reader) {
-	_, _ = io.Copy(dst, src)
-	closer <- struct{}{} // connection is closed, send signal to stop proxy
+	defer func() { closer <- struct{}{} }() // connection is closed, send signal to stop proxy
+	io.Copy(dst, src)
 }

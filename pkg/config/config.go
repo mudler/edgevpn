@@ -42,12 +42,11 @@ type Config struct {
 	Router                                     string
 	Interface                                  string
 	Libp2pLogLevel, LogLevel                   string
-	LowProfile                                 bool
+	LowProfile, VPNLowProfile                  bool
 	Blacklist                                  []string
 	Concurrency                                int
 	FrameTimeout                               string
 	ChannelBufferSize, InterfaceMTU, PacketMTU int
-	LowProfileVPN                              bool
 	NAT                                        NAT
 	Connection                                 Connection
 	Discovery                                  Discovery
@@ -74,6 +73,7 @@ type Connection struct {
 	HolePunch      bool
 	AutoRelay      bool
 	MaxConnections int
+	MaxStreams     int
 }
 
 // NAT is the structure relative to NAT configuration settings
@@ -169,9 +169,10 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		vpn.WithPacketMTU(c.PacketMTU),
 		vpn.WithRouterAddress(router),
 		vpn.WithInterfaceName(iface),
+		vpn.WithMaxStreams(c.Connection.MaxStreams),
 	}
 
-	if c.LowProfileVPN {
+	if c.VPNLowProfile {
 		vpnOpts = append(vpnOpts, vpn.LowProfile)
 	}
 
