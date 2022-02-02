@@ -36,7 +36,9 @@ type Config struct {
 
 	NetLinkBootstrap bool
 
-	Timeout           time.Duration
+	// Frame timeout
+	Timeout time.Duration
+
 	Concurrency       int
 	ChannelBufferSize int
 	lowProfile        bool

@@ -20,18 +20,13 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
-	"github.com/libp2p/go-libp2p"
-	connmanager "github.com/libp2p/go-libp2p-connmgr"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/mudler/edgevpn/internal"
-	"github.com/mudler/edgevpn/pkg/blockchain"
-	"github.com/mudler/edgevpn/pkg/crypto"
-	"github.com/mudler/edgevpn/pkg/discovery"
+	"github.com/mudler/edgevpn/pkg/config"
+	nodeConfig "github.com/mudler/edgevpn/pkg/config"
+
 	"github.com/mudler/edgevpn/pkg/logger"
 	node "github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/vpn"
-	"github.com/peterbourgon/diskv"
-	"github.com/songgao/water"
 	"github.com/urfave/cli"
 )
 
@@ -197,135 +192,58 @@ func displayStart(ll *logger.Logger) {
 }
 
 func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
-	config := c.String("config")
-	address := c.String("address")
-	router := c.String("router")
-	iface := c.String("interface")
-	logLevel := c.String("log-level")
-	libp2plogLevel := c.String("libp2p-log-level")
-	dhtE, mDNS := c.Bool("dht"), c.Bool("mdns")
+	nc := nodeConfig.Config{
+		NetworkConfig:     c.String("config"),
+		NetworkToken:      c.String("token"),
+		Address:           c.String("address"),
+		Router:            c.String("router"),
+		Interface:         c.String("interface"),
+		Libp2pLogLevel:    c.String("libp2p-log-level"),
+		LogLevel:          c.String("log-level"),
+		LowProfile:        c.Bool("low-profile"),
+		Blacklist:         c.StringSlice("blacklist"),
+		Concurrency:       c.Int("concurrency"),
+		FrameTimeout:      c.String("timeout"),
+		ChannelBufferSize: c.Int("channel-buffer-size"),
+		InterfaceMTU:      c.Int("mtu"),
+		PacketMTU:         c.Int("packet-mtu"),
+		LowProfileVPN:     c.Bool("low-profile-vpn"),
+		Ledger: config.Ledger{
+			StateDir:         c.String("ledger-state"),
+			AnnounceInterval: time.Duration(c.Int("ledger-announce-interval")) * time.Second,
+			SyncInterval:     time.Duration(c.Int("ledger-syncronization-interval")) * time.Second,
+		},
+		NAT: config.NAT{
+			Service:           c.Bool("natservice"),
+			Map:               c.Bool("natmap"),
+			RateLimit:         c.Bool("nat-ratelimit"),
+			RateLimitGlobal:   c.Int("nat-ratelimit-global"),
+			RateLimitPeer:     c.Int("nat-ratelimit-peer"),
+			RateLimitInterval: time.Duration(c.Int("nat-ratelimit-interval")) * time.Second,
+		},
+		Discovery: config.Discovery{
+			BootstrapPeers: c.StringSlice("discovery-bootstrap-peers"),
+			DHT:            c.Bool("dht"),
+			MDNS:           c.Bool("mdns"),
+			Interval:       time.Duration(c.Int("discovery-interval")) * time.Second,
+		},
+		Connection: config.Connection{
+			AutoRelay:      c.Bool("autorelay"),
+			MaxConnections: c.Int("max-connections"),
+			HolePunch:      c.Bool("holepunch"),
+		},
+	}
 
-	ledgerState := c.String("ledger-state")
-
-	addrsList := discovery.AddrList{}
-	peers := c.StringSlice("discovery-bootstrap-peers")
-
-	lvl, err := log.LevelFromString(logLevel)
+	lvl, err := log.LevelFromString(nc.LogLevel)
 	if err != nil {
 		lvl = log.LevelError
 	}
-
 	llger := logger.New(lvl)
 
-	libp2plvl, err := log.LevelFromString(libp2plogLevel)
+	nodeOpts, vpnOpts, err := nc.ToOpts(llger)
 	if err != nil {
-		libp2plvl = log.LevelFatal
+		llger.Fatal(err.Error())
 	}
 
-	token := c.String("token")
-	if config == "" &&
-		token == "" {
-		llger.Fatal("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. At least a config file is required")
-	}
-
-	for _, p := range peers {
-		if err := addrsList.Set(p); err != nil {
-			llger.Fatal("Failed reading bootstrap peer list", err.Error())
-		}
-	}
-
-	dhtOpts := []dht.Option{}
-
-	if c.Bool("low-profile") {
-		dhtOpts = append(dhtOpts, dht.BucketSize(20))
-	}
-
-	opts := []node.Option{
-		node.WithDiscoveryInterval(time.Duration(c.Int("discovery-interval")) * time.Second),
-		node.WithLedgerAnnounceTime(time.Duration(c.Int("ledger-announce-interval")) * time.Second),
-		node.WithLedgerInterval(time.Duration(c.Int("ledger-syncronization-interval")) * time.Second),
-		node.Logger(llger),
-		node.WithDiscoveryBootstrapPeers(addrsList),
-		node.WithBlacklist(c.StringSlice("blacklist")...),
-		node.LibP2PLogLevel(libp2plvl),
-		node.WithInterfaceAddress(address),
-		node.WithSealer(&crypto.AESSealer{}),
-		node.FromBase64(mDNS, dhtE, token, dhtOpts...),
-		node.FromYaml(mDNS, dhtE, config, dhtOpts...),
-	}
-
-	vpnOpts := []vpn.Option{
-		vpn.WithConcurrency(c.Int("concurrency")),
-		vpn.WithInterfaceAddress(address),
-		vpn.WithLedgerAnnounceTime(time.Duration(c.Int("ledger-announce-interval")) * time.Second),
-		vpn.Logger(llger),
-		vpn.WithTimeout(c.String("timeout")),
-		vpn.WithInterfaceType(water.TUN),
-		vpn.NetLinkBootstrap(true),
-		vpn.WithChannelBufferSize(c.Int("channel-buffer-size")),
-		vpn.WithInterfaceMTU(c.Int("mtu")),
-		vpn.WithPacketMTU(c.Int("packet-mtu")),
-		vpn.WithRouterAddress(router),
-		vpn.WithInterfaceName(iface),
-	}
-
-	libp2pOpts := []libp2p.Option{libp2p.UserAgent("edgevpn")}
-
-	if c.Bool("low-profile-vpn") {
-		vpnOpts = append(vpnOpts, vpn.LowProfile)
-	}
-
-	if c.Bool("autorelay") {
-		libp2pOpts = append(libp2pOpts, libp2p.EnableAutoRelay())
-	}
-
-	if c.Bool("nat-ratelimit") {
-		libp2pOpts = append(libp2pOpts, libp2p.AutoNATServiceRateLimit(
-			c.Int("nat-ratelimit-global"),
-			c.Int("nat-ratelimit-peer"),
-			time.Duration(c.Int("nat-ratelimit-interval"))*time.Second,
-		))
-	}
-
-	cm, err := connmanager.NewConnManager(
-		20,
-		c.Int("max-connections"),
-		connmanager.WithGracePeriod(80*time.Second),
-	)
-	if err != nil {
-		llger.Fatal("could not create connection manager")
-	}
-
-	libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
-
-	if c.Bool("low-profile") {
-		cm := connmanager.NewConnManager(20, 100, 80*time.Second)
-		libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
-	}
-
-	if c.Bool("holepunch") {
-		libp2pOpts = append(libp2pOpts, libp2p.EnableHolePunching())
-	}
-
-	if c.Bool("natservice") {
-		libp2pOpts = append(libp2pOpts, libp2p.EnableNATService())
-	}
-
-	if c.Bool("natmap") {
-		libp2pOpts = append(libp2pOpts, libp2p.NATPortMap())
-	}
-
-	opts = append(opts, node.WithLibp2pOptions(libp2pOpts...))
-
-	if ledgerState != "" {
-		opts = append(opts, node.WithStore(blockchain.NewDiskStore(diskv.New(diskv.Options{
-			BasePath:     ledgerState,
-			CacheSizeMax: uint64(50), // 50MB
-		}))))
-	} else {
-		opts = append(opts, node.WithStore(&blockchain.MemoryStore{}))
-
-	}
-
-	return opts, vpnOpts, llger
+	return nodeOpts, vpnOpts, llger
 }
