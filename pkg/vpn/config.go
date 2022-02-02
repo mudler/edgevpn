@@ -39,9 +39,15 @@ type Config struct {
 	Timeout           time.Duration
 	Concurrency       int
 	ChannelBufferSize int
+	lowProfile        bool
 }
 
 type Option func(cfg *Config) error
+
+var LowProfile Option = func(cfg *Config) error {
+	cfg.lowProfile = true
+	return nil
+}
 
 // Apply applies the given options to the config, returning the first error
 // encountered (if any).

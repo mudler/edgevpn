@@ -88,7 +88,6 @@ func ShareFile(ll log.StandardLogger, announcetime time.Duration, fileID, filepa
 						}
 						io.Copy(stream, f)
 						f.Close()
-
 						stream.Close()
 
 						ll.Infof("(file %s) Done handling %s", fileID, stream.Conn().RemotePeer().String())
@@ -171,7 +170,6 @@ func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l
 				}
 
 				io.Copy(f, stream)
-
 				f.Close()
 
 				l.Infof("Received file %s to %s", fileID, path)

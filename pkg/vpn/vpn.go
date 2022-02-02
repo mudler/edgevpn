@@ -178,7 +178,9 @@ func handleFrame(frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledge
 	}
 
 	stream.Write(frame)
+	//if c.lowProfile {
 	stream.Close()
+	//}
 	return nil
 }
 

@@ -106,6 +106,12 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Changes the default rate limiting configured in helping other peers determine their reachability status",
 		EnvVar: "EDGEVPNNATRATELIMIT",
 	},
+	&cli.IntFlag{
+		Name:   "max-connections",
+		Usage:  "Max connections",
+		EnvVar: "EDGEVPNMAXCONNS",
+		Value:  100,
+	},
 	&cli.StringFlag{
 		Name:   "ledger-state",
 		Usage:  "Specify a ledger state directory",
@@ -150,6 +156,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "low-profile",
 		Usage:  "Enable low profile. Lowers connections usage",
 		EnvVar: "EDGEVPNLOWPROFILE",
+	},
+	&cli.BoolFlag{
+		Name:   "low-profile-vpn",
+		Usage:  "Enable low profile on vpn. Doesn't keep open connections",
+		EnvVar: "EDGEVPNVPNLOWPROFILE",
 	},
 	&cli.StringFlag{
 		Name:   "log-level",
@@ -260,6 +271,10 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 
 	libp2pOpts := []libp2p.Option{libp2p.UserAgent("edgevpn")}
 
+	if c.Bool("low-profile-vpn") {
+		vpnOpts = append(vpnOpts, vpn.LowProfile)
+	}
+
 	if c.Bool("autorelay") {
 		libp2pOpts = append(libp2pOpts, libp2p.EnableAutoRelay())
 	}
@@ -271,6 +286,17 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			time.Duration(c.Int("nat-ratelimit-interval"))*time.Second,
 		))
 	}
+
+	cm, err := connmanager.NewConnManager(
+		20,
+		c.Int("max-connections"),
+		connmanager.WithGracePeriod(80*time.Second),
+	)
+	if err != nil {
+		llger.Fatal("could not create connection manager")
+	}
+
+	libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
 
 	if c.Bool("low-profile") {
 		cm := connmanager.NewConnManager(20, 100, 80*time.Second)

@@ -87,7 +87,6 @@ func RegisterService(ll log.StandardLogger, announcetime time.Duration, serviceI
 
 					stream.Close()
 					c.Close()
-
 					ll.Infof("(service %s) Handled correctly '%s'", serviceID, stream.Conn().RemotePeer().String())
 				}()
 			}
@@ -158,7 +157,7 @@ func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node *node
 				}
 
 				// Open a stream
-				stream, err := node.Host().NewStream(context.Background(), d, protocol.ServiceProtocol.ID())
+				stream, err := node.Host().NewStream(ctx, d, protocol.ServiceProtocol.ID())
 				if err != nil {
 					conn.Close()
 					ll.Debugf("could not open stream '%s'", err.Error())
@@ -171,8 +170,8 @@ func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node *node
 				go copyStream(closer, conn, stream)
 				<-closer
 
-				stream.Close()
 				conn.Close()
+				stream.Close()
 				ll.Infof("(service %s) Done handling %s", serviceID, l.Addr().String())
 			}()
 		}
