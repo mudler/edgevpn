@@ -17,7 +17,6 @@ package client_test
 
 import (
 	"math/rand"
-	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -25,8 +24,6 @@ import (
 
 	. "github.com/mudler/edgevpn/api/client"
 )
-
-var testInstance = os.Getenv("TEST_INSTANCE")
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -40,14 +37,6 @@ func randStringBytes(n int) string {
 
 var _ = Describe("Client", func() {
 	c := NewClient(WithHost(testInstance))
-
-	// Start the test suite only if we have some machines connected
-	BeforeSuite(func() {
-		Eventually(func() (int, error) {
-			m, err := c.Machines()
-			return len(m), err
-		}, 100*time.Second, 1*time.Second).Should(BeNumerically(">=", 0))
-	})
 
 	Context("Operates blockchain", func() {
 		var testBucket string
