@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/mudler/edgevpn/pkg/blockchain"

@@ -17,7 +17,7 @@ package crypto_test
 
 import (
 	. "github.com/mudler/edgevpn/pkg/utils"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	. "github.com/mudler/edgevpn/pkg/crypto"
