@@ -23,6 +23,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/libp2p/go-libp2p-core/network"
+
 	"github.com/mudler/edgevpn/api"
 	edgevpn "github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/services"
@@ -70,6 +72,11 @@ func MainFlags() []cli.Flag {
 			Name:   "dhcp",
 			Usage:  "Enables p2p ip negotiation (experimental)",
 			EnvVar: "DHCP",
+		},
+		&cli.BoolFlag{
+			Name:   "transient-conn",
+			Usage:  "Allow transient connections",
+			EnvVar: "TRANSIENTCONN",
 		},
 		&cli.StringFlag{
 			Name:   "lease-dir",
@@ -192,6 +199,11 @@ func Main() func(c *cli.Context) error {
 		displayStart(ll)
 
 		ctx := context.Background()
+
+		if c.Bool("transient-conn") {
+			ctx = network.WithUseTransient(ctx, "accept")
+		}
+
 		if c.Bool("api") {
 			go api.API(ctx, c.String("api-listen"), 5*time.Second, 20*time.Second, e)
 		}
