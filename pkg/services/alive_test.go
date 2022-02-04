@@ -44,8 +44,8 @@ var _ = Describe("Alive service", func() {
 		It("detect both nodes alive after a while", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			e2 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
-			e1 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
+			e2, _ := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
+			e1, _ := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
 
 			e1.Start(ctx)
 			e2.Start(ctx)
@@ -81,8 +81,8 @@ var _ = Describe("Alive service", func() {
 		It("cleans up after a while", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			e2 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
-			e1 := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
+			e2, _ := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
+			e1, _ := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
 
 			e1.Start(ctx)
 			e2.Start(ctx)

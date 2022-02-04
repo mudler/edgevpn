@@ -184,7 +184,10 @@ func Main() func(c *cli.Context) error {
 			return err
 		}
 
-		e := edgevpn.New(append(o, opts...)...)
+		e, err := edgevpn.New(append(o, opts...)...)
+		if err != nil {
+			return err
+		}
 
 		displayStart(ll)
 

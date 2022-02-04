@@ -37,7 +37,7 @@ var _ = Describe("File services", func() {
 	logg := logger.New(log.LevelError)
 	l := node.Logger(logg)
 
-	e2 := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+	e2, _ := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
 
 	Context("File sharing", func() {
 		It("sends and receive files between two nodes", func() {
@@ -58,7 +58,7 @@ var _ = Describe("File services", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			opts = append(opts, node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
-			e := node.New(opts...)
+			e, _ := node.New(opts...)
 
 			e.Start(ctx)
 			e2.Start(ctx)

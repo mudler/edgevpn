@@ -78,7 +78,10 @@ This is also the ID used to refer when receiving it.`,
 			}
 			o = append(o, opts...)
 
-			e := node.New(o...)
+			e, err := node.New(o...)
+			if err != nil {
+				return err
+			}
 
 			displayStart(ll)
 
@@ -117,7 +120,10 @@ func FileReceive() cli.Command {
 				return err
 			}
 			o, _, ll := cliToOpts(c)
-			e := node.New(o...)
+			e, err := node.New(o...)
+			if err != nil {
+				return err
+			}
 
 			displayStart(ll)
 

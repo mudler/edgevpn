@@ -32,7 +32,10 @@ Useful for setting up relays or hop nodes to improve the network connectivity.`,
 		Flags:     CommonFlags,
 		Action: func(c *cli.Context) error {
 			o, _, ll := cliToOpts(c)
-			e := node.New(o...)
+			e, err := node.New(o...)
+			if err != nil {
+				return err
+			}
 
 			displayStart(ll)
 

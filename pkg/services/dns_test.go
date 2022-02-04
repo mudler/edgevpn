@@ -38,7 +38,7 @@ var _ = Describe("DNS service", func() {
 	logg := logger.New(log.LevelDebug)
 	l := node.Logger(logg)
 
-	e2 := node.New(
+	e2, _ := node.New(
 		append(Alive(15*time.Second, 90*time.Minute, 15*time.Minute),
 			node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)...)
 
@@ -49,7 +49,7 @@ var _ = Describe("DNS service", func() {
 
 			opts := DNS("127.0.0.1:19192", true, []string{"8.8.8.8:53"}, 10)
 			opts = append(opts, node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
-			e := node.New(opts...)
+			e, _  := node.New(opts...)
 
 			e.Start(ctx)
 			e2.Start(ctx)

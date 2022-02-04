@@ -59,7 +59,7 @@ var _ = Describe("Expose services", func() {
 	logg := logger.New(log.LevelFatal)
 	l := node.Logger(logg)
 
-	e2 := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+	e2, _ := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
 
 	Context("Service sharing", func() {
 		It("expose services and can connect to them", func() {
@@ -70,7 +70,7 @@ var _ = Describe("Expose services", func() {
 
 			opts := RegisterService(logg, 1*time.Second, serviceUUID, "142.250.184.35:80")
 			opts = append(opts, node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
-			e := node.New(opts...)
+			e, _ := node.New(opts...)
 
 			// First node expose a service
 			// redirects to google:80

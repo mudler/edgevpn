@@ -73,7 +73,10 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 
 			o = append(o, services.RegisterService(ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)...)
 
-			e := node.New(o...)
+			e, err := node.New(o...)
+			if err != nil {
+				return err
+			}
 
 			displayStart(ll)
 
@@ -115,8 +118,10 @@ to the service over the network`,
 				return err
 			}
 			o, _, ll := cliToOpts(c)
-			e := node.New(o...)
-
+			e, err := node.New(o...)
+			if err != nil {
+				return err
+			}
 			displayStart(ll)
 
 			// Join the node to the network, using our ledger

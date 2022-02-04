@@ -34,13 +34,22 @@ var _ = Describe("Node", func() {
 
 	l := Logger(logger.New(log.LevelFatal))
 
+	Context("Configuration", func() {
+		It("fails if is not valid", func() {
+			_, err := New(FromBase64(true, true, "  "), WithStore(&blockchain.MemoryStore{}), l)
+			Expect(err).To(HaveOccurred())
+			_, err = New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
 	Context("Connection", func() {
 		It("see each other node ID", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			e := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
-			e2 := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			e, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			e2, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
 
 			e.Start(ctx)
 			e2.Start(ctx)
@@ -54,8 +63,8 @@ var _ = Describe("Node", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			e := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
-			e2 := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			e, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			e2, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
 
 			e.Start(ctx)
 			e2.Start(ctx)
@@ -82,7 +91,7 @@ var _ = Describe("Node", func() {
 		It("blacklists", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			e := New(
+			e, _ := New(
 				WithBlacklist("1.1.1.1/32", "1.1.1.0/24"),
 				FromBase64(true, true, token),
 				WithStore(&blockchain.MemoryStore{}),

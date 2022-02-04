@@ -50,8 +50,8 @@ var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableAutoRelay(),
 }
 
-func New(p ...Option) *Node {
-	c := Config{
+func New(p ...Option) (*Node, error) {
+	c := &Config{
 		DiscoveryInterval:        120 * time.Second,
 		StreamHandlers:           make(map[protocol.Protocol]StreamHandler),
 		LedgerAnnounceTime:       5 * time.Second,
@@ -60,14 +60,18 @@ func New(p ...Option) *Node {
 		Options:                  defaultLibp2pOptions,
 		Logger:                   logger.New(log.LevelDebug),
 		Sealer:                   &crypto.AESSealer{},
+		Store:                    &blockchain.MemoryStore{},
 	}
-	c.Apply(p...)
+
+	if err := c.Apply(p...); err != nil {
+		return nil, err
+	}
 
 	return &Node{
-		config:  c,
+		config:  *c,
 		inputCh: make(chan *hub.Message, 3000),
 		seed:    0,
-	}
+	}, nil
 }
 
 // Ledger return the ledger which uses the node

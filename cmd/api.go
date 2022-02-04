@@ -40,7 +40,10 @@ A simple UI interface is available to display network data.`,
 		),
 		Action: func(c *cli.Context) error {
 			o, _, ll := cliToOpts(c)
-			e := node.New(o...)
+			e, err := node.New(o...)
+			if err != nil {
+				return err
+			}
 
 			displayStart(ll)
 
