@@ -23,6 +23,7 @@ const (
 	EdgeVPN         Protocol = "/edgevpn/0.1"
 	ServiceProtocol Protocol = "/edgevpn/service/0.1"
 	FileProtocol    Protocol = "/edgevpn/file/0.1"
+	EgressProtocol  Protocol = "/edgevpn/egress/0.1"
 )
 
 const (
@@ -32,6 +33,7 @@ const (
 	UsersLedgerKey    = "users"
 	HealthCheckKey    = "healthcheck"
 	DNSKey            = "dns"
+	EgressService     = "egress"
 )
 
 type Protocol string

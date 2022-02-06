@@ -41,7 +41,9 @@ func main() {
 			cmd.ServiceAdd(),
 			cmd.ServiceConnect(),
 			cmd.FileReceive(),
+			cmd.Proxy(),
 			cmd.FileSend(),
+			cmd.DNS(),
 		},
 
 		Action: cmd.Main(),

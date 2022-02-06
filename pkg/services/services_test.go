@@ -58,15 +58,17 @@ var _ = Describe("Expose services", func() {
 
 	logg := logger.New(log.LevelFatal)
 	l := node.Logger(logg)
+	serviceUUID := "test"
 
-	e2, _ := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+	e2, _ := node.New(
+
+		node.WithNetworkService(ConnectNetworkService(1*time.Second, serviceUUID, "127.0.0.1:9999")),
+		node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
 
 	Context("Service sharing", func() {
 		It("expose services and can connect to them", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-
-			serviceUUID := "test"
 
 			opts := RegisterService(logg, 1*time.Second, serviceUUID, "142.250.184.35:80")
 			opts = append(opts, node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
@@ -76,11 +78,8 @@ var _ = Describe("Expose services", func() {
 			// redirects to google:80
 
 			e.Start(ctx)
-			e2.Start(ctx)
 
-			ll, _ := e2.Ledger()
-
-			go ConnectToService(ctx, ll, e2, logg, 1*time.Second, serviceUUID, "127.0.0.1:9999")
+			go e2.Start(ctx)
 
 			Eventually(func() string {
 				return get("http://127.0.0.1:9999")

@@ -118,19 +118,24 @@ to the service over the network`,
 				return err
 			}
 			o, _, ll := cliToOpts(c)
-			e, err := node.New(o...)
+			e, err := node.New(
+				append(o,
+					node.WithNetworkService(
+						services.ConnectNetworkService(
+							time.Duration(c.Int("ledger-announce-interval"))*time.Second,
+							name,
+							address,
+						),
+					),
+				)...,
+			)
 			if err != nil {
 				return err
 			}
 			displayStart(ll)
 
-			// Join the node to the network, using our ledger
-			if err := e.Start(context.Background()); err != nil {
-				return err
-			}
-
-			ledger, _ := e.Ledger()
-			return services.ConnectToService(context.Background(), ledger, e, ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)
+			// starts the node
+			return e.Start(context.Background())
 		},
 	}
 }

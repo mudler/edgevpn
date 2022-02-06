@@ -94,87 +94,91 @@ func RegisterService(ll log.StandardLogger, announcetime time.Duration, serviceI
 		node.WithNetworkService(ExposeNetworkService(announcetime, serviceID))}
 }
 
-func ConnectToService(ctx context.Context, ledger *blockchain.Ledger, node *node.Node, ll log.StandardLogger, announcetime time.Duration, serviceID string, srcaddr string) error {
-	// Open local port for listening
-	l, err := net.Listen("tcp", srcaddr)
-	if err != nil {
-		return err
-	}
-	ll.Info("Binding local port on", srcaddr)
+// ConnectNetworkService returns a network service that binds to a service
+func ConnectNetworkService(announcetime time.Duration, serviceID string, srcaddr string) node.NetworkService {
+	return func(ctx context.Context, c node.Config, node *node.Node, ledger *blockchain.Ledger) error {
+		// Open local port for listening
+		l, err := net.Listen("tcp", srcaddr)
+		if err != nil {
+			return err
+		}
+		//	ll.Info("Binding local port on", srcaddr)
 
-	// Announce ourselves so nodes accepts our connection
-	ledger.Announce(
-		ctx,
-		announcetime,
-		func() {
-			// Retrieve current ID for ip in the blockchain
-			_, found := ledger.GetKey(protocol.UsersLedgerKey, node.Host().ID().String())
-			// If mismatch, update the blockchain
-			if !found {
-				updatedMap := map[string]interface{}{}
-				updatedMap[node.Host().ID().String()] = &types.User{
-					PeerID:    node.Host().ID().String(),
-					Timestamp: time.Now().String(),
-				}
-				ledger.Add(protocol.UsersLedgerKey, updatedMap)
-			}
-		},
-	)
-
-	defer l.Close()
-	for {
-		select {
-		case <-ctx.Done():
-			return errors.New("context canceled")
-		default:
-			// Listen for an incoming connection.
-			conn, err := l.Accept()
-			if err != nil {
-				ll.Error("Error accepting: ", err.Error())
-				continue
-			}
-
-			ll.Info("New connection from", l.Addr().String())
-			// Handle connections in a new goroutine, forwarding to the p2p service
-			go func() {
+		// Announce ourselves so nodes accepts our connection
+		ledger.Announce(
+			ctx,
+			announcetime,
+			func() {
 				// Retrieve current ID for ip in the blockchain
-				existingValue, found := ledger.GetKey(protocol.ServicesLedgerKey, serviceID)
-				service := &types.Service{}
-				existingValue.Unmarshal(service)
+				_, found := ledger.GetKey(protocol.UsersLedgerKey, node.Host().ID().String())
 				// If mismatch, update the blockchain
 				if !found {
-					conn.Close()
-					ll.Debugf("service '%s' not found on blockchain", serviceID)
-					return
+					updatedMap := map[string]interface{}{}
+					updatedMap[node.Host().ID().String()] = &types.User{
+						PeerID:    node.Host().ID().String(),
+						Timestamp: time.Now().String(),
+					}
+					ledger.Add(protocol.UsersLedgerKey, updatedMap)
 				}
+			},
+		)
 
-				// Decode the Peer
-				d, err := peer.Decode(service.PeerID)
+		defer l.Close()
+		for {
+			select {
+			case <-ctx.Done():
+				return errors.New("context canceled")
+			default:
+				// Listen for an incoming connection.
+				conn, err := l.Accept()
 				if err != nil {
-					conn.Close()
-					ll.Debugf("could not decode peer '%s'", service.PeerID)
-					return
+					//	ll.Error("Error accepting: ", err.Error())
+					continue
 				}
 
-				// Open a stream
-				stream, err := node.Host().NewStream(ctx, d, protocol.ServiceProtocol.ID())
-				if err != nil {
+				//	ll.Info("New connection from", l.Addr().String())
+				// Handle connections in a new goroutine, forwarding to the p2p service
+				go func() {
+					// Retrieve current ID for ip in the blockchain
+					existingValue, found := ledger.GetKey(protocol.ServicesLedgerKey, serviceID)
+					service := &types.Service{}
+					existingValue.Unmarshal(service)
+					// If mismatch, update the blockchain
+					if !found {
+						conn.Close()
+						//	ll.Debugf("service '%s' not found on blockchain", serviceID)
+						return
+					}
+
+					// Decode the Peer
+					d, err := peer.Decode(service.PeerID)
+					if err != nil {
+						conn.Close()
+						//	ll.Debugf("could not decode peer '%s'", service.PeerID)
+						return
+					}
+
+					// Open a stream
+					stream, err := node.Host().NewStream(ctx, d, protocol.ServiceProtocol.ID())
+					if err != nil {
+						conn.Close()
+						//	ll.Debugf("could not open stream '%s'", err.Error())
+						return
+					}
+					//	ll.Debugf("(service %s) Redirecting", serviceID, l.Addr().String())
+
+					closer := make(chan struct{}, 2)
+					go copyStream(closer, stream, conn)
+					go copyStream(closer, conn, stream)
+					<-closer
+
+					stream.Close()
 					conn.Close()
-					ll.Debugf("could not open stream '%s'", err.Error())
-					return
-				}
-				ll.Debugf("(service %s) Redirecting", serviceID, l.Addr().String())
-
-				closer := make(chan struct{}, 2)
-				go copyStream(closer, stream, conn)
-				go copyStream(closer, conn, stream)
-				<-closer
-
-				stream.Close()
-				conn.Close()
-				ll.Infof("(service %s) Done handling %s", serviceID, l.Addr().String())
-			}()
+					//	ll.Infof("(service %s) Done handling %s", serviceID, l.Addr().String())
+				}()
+			}
 		}
+
 	}
 }
 

@@ -101,6 +101,17 @@ func MainFlags() []cli.Flag {
 			Usage:  "Enables dns forwarding",
 			EnvVar: "DNSFORWARD",
 		},
+		&cli.BoolFlag{
+			Name:   "egress",
+			Usage:  "Enables nodes for egress",
+			EnvVar: "EGRESS",
+		},
+		&cli.IntFlag{
+			Name:   "egress-announce-time",
+			Usage:  "Egress announce time (s)",
+			EnvVar: "EGRESSANNOUNCE",
+			Value:  200,
+		},
 		&cli.IntFlag{
 			Name:   "dns-cache-size",
 			Usage:  "DNS LRU cache size",
@@ -159,11 +170,14 @@ func Main() func(c *cli.Context) error {
 		}
 		o, vpnOpts, ll := cliToOpts(c)
 
+		// Egress and DHCP needs the Alive service
+		// DHCP needs alive services enabled to all nodes, also those with a static IP.
 		o = append(o,
 			services.Alive(
 				time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second,
 				time.Duration(c.Int("aliveness-healthcheck-scrub-interval"))*time.Second,
 				time.Duration(c.Int("aliveness-healthcheck-max-interval"))*time.Second)...)
+
 		if c.Bool("dhcp") {
 			// Adds DHCP server
 			address, _, err := net.ParseCIDR(c.String("address"))
@@ -173,6 +187,10 @@ func Main() func(c *cli.Context) error {
 			nodeOpts, vO := vpn.DHCP(ll, 15*time.Minute, c.String("lease-dir"), address.String())
 			o = append(o, nodeOpts...)
 			vpnOpts = append(vpnOpts, vO...)
+		}
+
+		if c.Bool("egress") {
+			o = append(o, services.Egress(time.Duration(c.Int("egress-announce-time"))*time.Second)...)
 		}
 
 		dns := c.String("dns")
