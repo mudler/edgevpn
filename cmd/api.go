@@ -35,7 +35,7 @@ A simple UI interface is available to display network data.`,
 			&cli.StringFlag{
 				Name:  "listen",
 				Value: ":8080",
-				Usage: "Listening address",
+				Usage: "Listening address. To listen to a socket, prefix with unix://, e.g. unix:///socket.path",
 			},
 		),
 		Action: func(c *cli.Context) error {

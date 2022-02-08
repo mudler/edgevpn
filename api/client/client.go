@@ -40,6 +40,7 @@ const (
 	serviceURL    = "/api/services"
 	blockchainURL = "/api/blockchain"
 	ledgerURL     = "/api/ledger"
+	summaryURL    = "/api/summary"
 	fileURL       = "/api/files"
 )
 
@@ -143,6 +144,22 @@ func (c *Client) Users() (data []types.User, err error) {
 
 func (c *Client) Ledger() (data map[string]map[string]blockchain.Data, err error) {
 	res, err := c.do(http.MethodGet, ledgerURL, nil)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return data, err
+	}
+	if err = json.Unmarshal(body, &data); err != nil {
+		return data, err
+	}
+	return
+}
+
+func (c *Client) Summary() (data types.Summary, err error) {
+	res, err := c.do(http.MethodGet, summaryURL, nil)
 	if err != nil {
 		return
 	}

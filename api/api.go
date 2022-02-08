@@ -86,10 +86,16 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 		blockchain := ledger.Index()
 
-		return c.JSON(http.StatusOK, struct {
-			Files, Machines, Users, Services, BlockChain, OnChainNodes, Peers int
-			NodeID                                                            string
-		}{files, machines, users, services, blockchain, onChainNodes, p2pPeers, nodeID})
+		return c.JSON(http.StatusOK, types.Summary{
+			Files:        files,
+			Machines:     machines,
+			Users:        users,
+			Services:     services,
+			BlockChain:   blockchain,
+			OnChainNodes: onChainNodes,
+			Peers:        p2pPeers,
+			NodeID:       nodeID,
+		})
 	})
 
 	ec.GET("/api/machines", func(c echo.Context) error {
