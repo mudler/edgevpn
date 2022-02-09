@@ -21,6 +21,7 @@ import (
 	"time"
 
 	edgeVPNClient "github.com/mudler/edgevpn/api/client"
+	"github.com/mudler/edgevpn/pkg/protocol"
 )
 
 // Client is a wrapper of an edgeVPN client
@@ -59,8 +60,8 @@ func (c Client) Advertize(uuid string) error {
 	return c.Client.Put(c.serviceID, fmt.Sprintf("%s-uuid", uuid), advertizeMessage{Time: time.Now().UTC()})
 }
 
-// ActiveNodes returns a list of active nodes
-func (c Client) ActiveNodes() (active []string, err error) {
+// AdvertizingNodes returns a list of advertizing nodes
+func (c Client) AdvertizingNodes() (active []string, err error) {
 	uuids, err := c.ListItems(c.serviceID, "uuid")
 	if err != nil {
 		return
@@ -74,6 +75,24 @@ func (c Client) ActiveNodes() (active []string, err error) {
 		res.Unmarshal(&d)
 
 		if d.Time.Add(2 * time.Minute).After(time.Now().UTC()) {
+			active = append(active, u)
+		}
+	}
+	return
+}
+
+// ActiveNodes returns a list of active nodes
+func (c Client) ActiveNodes() (active []string, err error) {
+	res, err := c.Client.GetBucket(protocol.HealthCheckKey)
+	if err != nil {
+		return []string{}, err
+	}
+
+	for u, r := range res {
+		var s string
+		r.Unmarshal(&s)
+		parsed, _ := time.Parse(time.RFC3339, s)
+		if parsed.Add(15 * time.Minute).After(time.Now().UTC()) {
 			active = append(active, u)
 		}
 	}
