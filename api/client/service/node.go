@@ -297,7 +297,7 @@ func (k *Node) options() (r []RoleOption) {
 
 func (k *Node) execRoles(s string) {
 	r := Role(s)
-	k.logger.Info("Applying role", r)
+	k.logger.Infof("Applying role '%s'", r)
 
 	r.Apply(k.options()...)
 }
