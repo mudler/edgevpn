@@ -41,7 +41,7 @@ var _ = Describe("Service", func() {
 	Context("Advertize nodes", func() {
 		It("Detect nodes", func() {
 			n, err := s.AdvertizingNodes()
-			Expect(len(n)).To(Equal(1))
+			Expect(len(n)).To(Equal(0))
 			Expect(err).ToNot(HaveOccurred())
 
 			s.Advertize("foo")
