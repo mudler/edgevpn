@@ -152,10 +152,10 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Enable low profile. Lowers connections usage",
 		EnvVar: "EDGEVPNLOWPROFILE",
 	},
-	&cli.BoolFlag{
+	&cli.BoolTFlag{
 		Name:   "low-profile-vpn",
 		Usage:  "Enable low profile on VPN",
-		EnvVar: "EDGEVPNLOWPROFILEVPNN",
+		EnvVar: "EDGEVPNLOWPROFILEVPN",
 	},
 	&cli.IntFlag{
 		Name:   "max-streams",
