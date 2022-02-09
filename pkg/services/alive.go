@@ -36,7 +36,7 @@ func AliveNetworkService(announcetime, scrubTime, maxtime time.Duration) node.Ne
 			func() {
 				// Keep-alive
 				b.Add(protocol.HealthCheckKey, map[string]interface{}{
-					n.Host().ID().String(): time.Now().Format(time.RFC3339),
+					n.Host().ID().String(): time.Now().UTC().Format(time.RFC3339),
 				})
 
 				// Keep-alive scrub
@@ -75,7 +75,7 @@ func AvailableNodes(b *blockchain.Ledger, maxTime time.Duration) (active []strin
 		var s string
 		t.Unmarshal(&s)
 		parsed, _ := time.Parse(time.RFC3339, s)
-		if parsed.Add(maxTime).After(time.Now()) {
+		if parsed.Add(maxTime).After(time.Now().UTC()) {
 			active = append(active, u)
 		}
 	}

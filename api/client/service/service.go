@@ -56,7 +56,7 @@ type advertizeMessage struct {
 
 // Advertize advertize the given uuid to the ledger
 func (c Client) Advertize(uuid string) error {
-	return c.Client.Put(c.serviceID, fmt.Sprintf("%s-uuid", uuid), advertizeMessage{Time: time.Now()})
+	return c.Client.Put(c.serviceID, fmt.Sprintf("%s-uuid", uuid), advertizeMessage{Time: time.Now().UTC()})
 }
 
 // ActiveNodes returns a list of active nodes
@@ -73,7 +73,7 @@ func (c Client) ActiveNodes() (active []string, err error) {
 		}
 		res.Unmarshal(&d)
 
-		if d.Time.Add(2 * time.Minute).After(time.Now()) {
+		if d.Time.Add(2 * time.Minute).After(time.Now().UTC()) {
 			active = append(active, u)
 		}
 	}

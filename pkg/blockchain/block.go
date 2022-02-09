@@ -66,7 +66,7 @@ func (b Block) Checksum() string {
 func (oldBlock Block) NewBlock(s map[string]map[string]Data) Block {
 	var newBlock Block
 
-	t := time.Now()
+	t := time.Now().UTC()
 
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Timestamp = t.String()
