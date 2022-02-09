@@ -29,7 +29,7 @@ var _ = Describe("Service", func() {
 	c := client.NewClient(client.WithHost(testInstance))
 	s := NewClient("foo", c)
 	Context("Retrieves nodes", func() {
-		It("Detect nodes", func() {
+		PIt("Detect nodes", func() {
 			Eventually(func() []string {
 				n, _ := s.ActiveNodes()
 				return n
