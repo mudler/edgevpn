@@ -67,7 +67,7 @@ Dashboard            |  Connections index
 
 # Kubernetes 
 
-See [c3os](https://github.com/mudler/c3os) for seeing EdgeVPN in action with Kubernetes!
+Check out [c3os](https://github.com/mudler/c3os) for seeing EdgeVPN in action with Kubernetes!
 
 # :running: Installation
 
@@ -167,6 +167,8 @@ If you are not really interested in network performance (again, that's for devel
    on node B: `K3S_URL=https://10.1.0.3:6443 K3S_TOKEN=xx k3s agent --flannel-iface=edgevpn0 --node-ip 10.1.0.4`
 
 We have used flannel here, but other CNI should work as well.
+
+Don't miss out [c3os](https://github.com/mudler/c3os) which is a Linux derivative built on top of k3s and EdgeVPN for automatic node discovery!
 
 # :notebook: As a library
 
