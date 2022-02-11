@@ -19,7 +19,9 @@ import (
 	"context"
 	"embed"
 	"io/fs"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/network"
@@ -51,6 +53,15 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 	ledger, _ := e.Ledger()
 
 	ec := echo.New()
+
+	if strings.HasPrefix(l, "unix://") {
+		unixListener, err := net.Listen("unix", strings.ReplaceAll(l, "unix://", ""))
+		if err != nil {
+			return err
+		}
+		ec.Listener = unixListener
+	}
+
 	assetHandler := http.FileServer(getFileSystem())
 
 	// Get data from ledger
