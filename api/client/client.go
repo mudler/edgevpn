@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/types"
 )
@@ -35,16 +36,6 @@ type (
 		host       string
 		httpClient *http.Client
 	}
-)
-
-const (
-	machineURL    = "/api/machines"
-	usersURL      = "/api/users"
-	serviceURL    = "/api/services"
-	blockchainURL = "/api/blockchain"
-	ledgerURL     = "/api/ledger"
-	summaryURL    = "/api/summary"
-	fileURL       = "/api/files"
 )
 
 func WithHost(host string) func(c *Client) error {
@@ -109,7 +100,7 @@ func (c *Client) do(method, endpoint string, params map[string]string) (*http.Re
 
 // Get methods (Services, Users, Files, Ledger, Blockchain, Machines)
 func (c *Client) Services() (resp []types.Service, err error) {
-	res, err := c.do(http.MethodGet, serviceURL, nil)
+	res, err := c.do(http.MethodGet, api.ServiceURL, nil)
 	if err != nil {
 		return
 	}
@@ -125,7 +116,7 @@ func (c *Client) Services() (resp []types.Service, err error) {
 }
 
 func (c *Client) Files() (data []types.File, err error) {
-	res, err := c.do(http.MethodGet, fileURL, nil)
+	res, err := c.do(http.MethodGet, api.FileURL, nil)
 	if err != nil {
 		return
 	}
@@ -141,7 +132,7 @@ func (c *Client) Files() (data []types.File, err error) {
 }
 
 func (c *Client) Users() (data []types.User, err error) {
-	res, err := c.do(http.MethodGet, usersURL, nil)
+	res, err := c.do(http.MethodGet, api.UsersURL, nil)
 	if err != nil {
 		return
 	}
@@ -157,7 +148,7 @@ func (c *Client) Users() (data []types.User, err error) {
 }
 
 func (c *Client) Ledger() (data map[string]map[string]blockchain.Data, err error) {
-	res, err := c.do(http.MethodGet, ledgerURL, nil)
+	res, err := c.do(http.MethodGet, api.LedgerURL, nil)
 	if err != nil {
 		return
 	}
@@ -173,7 +164,7 @@ func (c *Client) Ledger() (data map[string]map[string]blockchain.Data, err error
 }
 
 func (c *Client) Summary() (data types.Summary, err error) {
-	res, err := c.do(http.MethodGet, summaryURL, nil)
+	res, err := c.do(http.MethodGet, api.SummaryURL, nil)
 	if err != nil {
 		return
 	}
@@ -189,7 +180,7 @@ func (c *Client) Summary() (data types.Summary, err error) {
 }
 
 func (c *Client) Blockchain() (data blockchain.Block, err error) {
-	res, err := c.do(http.MethodGet, blockchainURL, nil)
+	res, err := c.do(http.MethodGet, api.BlockchainURL, nil)
 	if err != nil {
 		return
 	}
@@ -205,7 +196,7 @@ func (c *Client) Blockchain() (data blockchain.Block, err error) {
 }
 
 func (c *Client) Machines() (resp []types.Machine, err error) {
-	res, err := c.do(http.MethodGet, machineURL, nil)
+	res, err := c.do(http.MethodGet, api.MachineURL, nil)
 	if err != nil {
 		return
 	}
@@ -221,7 +212,7 @@ func (c *Client) Machines() (resp []types.Machine, err error) {
 }
 
 func (c *Client) GetBucket(b string) (resp map[string]blockchain.Data, err error) {
-	res, err := c.do(http.MethodGet, fmt.Sprintf("%s/%s", ledgerURL, b), nil)
+	res, err := c.do(http.MethodGet, fmt.Sprintf("%s/%s", api.LedgerURL, b), nil)
 	if err != nil {
 		return
 	}
@@ -259,7 +250,7 @@ func (c *Client) GetBuckets() (resp []string, err error) {
 }
 
 func (c *Client) GetBucketKey(b, k string) (resp blockchain.Data, err error) {
-	res, err := c.do(http.MethodGet, fmt.Sprintf("%s/%s/%s", ledgerURL, b, k), nil)
+	res, err := c.do(http.MethodGet, fmt.Sprintf("%s/%s/%s", api.LedgerURL, b, k), nil)
 	if err != nil {
 		return
 	}
@@ -296,7 +287,7 @@ func (c *Client) Put(b, k string, v interface{}) (err error) {
 
 	d := base64.URLEncoding.EncodeToString(dat)
 
-	res, err := c.do(http.MethodPut, fmt.Sprintf("%s/%s/%s/%s", ledgerURL, b, k, d), nil)
+	res, err := c.do(http.MethodPut, fmt.Sprintf("%s/%s/%s/%s", api.LedgerURL, b, k, d), nil)
 	if err != nil {
 		return
 	}
@@ -319,7 +310,7 @@ func (c *Client) Put(b, k string, v interface{}) (err error) {
 
 func (c *Client) Delete(b, k string) (err error) {
 	s := struct{ State string }{}
-	res, err := c.do(http.MethodDelete, fmt.Sprintf("%s/%s/%s", ledgerURL, b, k), nil)
+	res, err := c.do(http.MethodDelete, fmt.Sprintf("%s/%s/%s", api.LedgerURL, b, k), nil)
 	if err != nil {
 		return
 	}
@@ -340,7 +331,7 @@ func (c *Client) Delete(b, k string) (err error) {
 
 func (c *Client) DeleteBucket(b string) (err error) {
 	s := struct{ State string }{}
-	res, err := c.do(http.MethodDelete, fmt.Sprintf("%s/%s", ledgerURL, b), nil)
+	res, err := c.do(http.MethodDelete, fmt.Sprintf("%s/%s", api.LedgerURL, b), nil)
 	if err != nil {
 		return
 	}

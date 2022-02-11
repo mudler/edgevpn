@@ -18,6 +18,7 @@ package api
 import (
 	"context"
 	"embed"
+	"fmt"
 	"io/fs"
 	"net"
 	"net/http"
@@ -48,6 +49,19 @@ func getFileSystem() http.FileSystem {
 	return http.FS(fsys)
 }
 
+const (
+	MachineURL    = "/api/machines"
+	UsersURL      = "/api/users"
+	ServiceURL    = "/api/services"
+	BlockchainURL = "/api/blockchain"
+	LedgerURL     = "/api/ledger"
+	SummaryURL    = "/api/summary"
+	FileURL       = "/api/files"
+	NodesURL      = "/api/nodes"
+	DNSURL        = "/api/dns"
+	PeerstoreURL  = "/api/peerstore"
+)
+
 func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, e *node.Node) error {
 
 	ledger, _ := e.Ledger()
@@ -65,7 +79,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 	assetHandler := http.FileServer(getFileSystem())
 
 	// Get data from ledger
-	ec.GET("/api/files", func(c echo.Context) error {
+	ec.GET(FileURL, func(c echo.Context) error {
 		list := []*types.File{}
 		for _, v := range ledger.CurrentData()[protocol.FilesLedgerKey] {
 			machine := &types.File{}
@@ -75,7 +89,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		return c.JSON(http.StatusOK, list)
 	})
 
-	ec.GET("/api/summary", func(c echo.Context) error {
+	ec.GET(SummaryURL, func(c echo.Context) error {
 		files := len(ledger.CurrentData()[protocol.FilesLedgerKey])
 		machines := len(ledger.CurrentData()[protocol.MachinesLedgerKey])
 		users := len(ledger.CurrentData()[protocol.UsersLedgerKey])
@@ -98,7 +112,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		})
 	})
 
-	ec.GET("/api/machines", func(c echo.Context) error {
+	ec.GET(MachineURL, func(c echo.Context) error {
 		list := []*apiTypes.Machine{}
 		for _, v := range ledger.CurrentData()[protocol.MachinesLedgerKey] {
 			machine := &types.Machine{}
@@ -119,7 +133,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		return c.JSON(http.StatusOK, list)
 	})
 
-	ec.GET("/api/nodes", func(c echo.Context) error {
+	ec.GET(NodesURL, func(c echo.Context) error {
 		list := []apiTypes.Peer{}
 		for _, v := range e.HubRoom.Topic.ListPeers() {
 			list = append(list, apiTypes.Peer{ID: v.String()})
@@ -128,7 +142,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		return c.JSON(http.StatusOK, list)
 	})
 
-	ec.GET("/api/peerstore", func(c echo.Context) error {
+	ec.GET(PeerstoreURL, func(c echo.Context) error {
 		list := []apiTypes.Peer{}
 		for _, v := range e.Host().Network().Peerstore().Peers() {
 			list = append(list, apiTypes.Peer{ID: v.String()})
@@ -138,7 +152,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		return c.JSON(http.StatusOK, list)
 	})
 
-	ec.GET("/api/users", func(c echo.Context) error {
+	ec.GET(UsersURL, func(c echo.Context) error {
 		user := []*types.User{}
 		for _, v := range ledger.CurrentData()[protocol.UsersLedgerKey] {
 			u := &types.User{}
@@ -148,7 +162,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		return c.JSON(http.StatusOK, user)
 	})
 
-	ec.GET("/api/services", func(c echo.Context) error {
+	ec.GET(ServiceURL, func(c echo.Context) error {
 		list := []*types.Service{}
 		for _, v := range ledger.CurrentData()[protocol.ServicesLedgerKey] {
 			srvc := &types.Service{}
@@ -160,21 +174,21 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 	ec.GET("/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
 
-	ec.GET("/api/blockchain", func(c echo.Context) error {
+	ec.GET(BlockchainURL, func(c echo.Context) error {
 		return c.JSON(http.StatusOK, ledger.LastBlock())
 	})
 
-	ec.GET("/api/ledger", func(c echo.Context) error {
+	ec.GET(LedgerURL, func(c echo.Context) error {
 		return c.JSON(http.StatusOK, ledger.CurrentData())
 	})
 
-	ec.GET("/api/ledger/:bucket/:key", func(c echo.Context) error {
+	ec.GET(fmt.Sprintf("%s/:bucket/:key", LedgerURL), func(c echo.Context) error {
 		bucket := c.Param("bucket")
 		key := c.Param("key")
 		return c.JSON(http.StatusOK, ledger.CurrentData()[bucket][key])
 	})
 
-	ec.GET("/api/ledger/:bucket", func(c echo.Context) error {
+	ec.GET(fmt.Sprintf("%s/:bucket", LedgerURL), func(c echo.Context) error {
 		bucket := c.Param("bucket")
 		return c.JSON(http.StatusOK, ledger.CurrentData()[bucket])
 	})
@@ -182,7 +196,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 	announcing := struct{ State string }{"Announcing"}
 
 	// Store arbitrary data
-	ec.PUT("/api/ledger/:bucket/:key/:value", func(c echo.Context) error {
+	ec.PUT(fmt.Sprintf("%s/:bucket/:key/:value", LedgerURL), func(c echo.Context) error {
 		bucket := c.Param("bucket")
 		key := c.Param("key")
 		value := c.Param("value")
@@ -191,7 +205,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		return c.JSON(http.StatusOK, announcing)
 	})
 
-	ec.GET("/api/dns", func(c echo.Context) error {
+	ec.GET(DNSURL, func(c echo.Context) error {
 		res := []apiTypes.DNS{}
 		for r, e := range ledger.CurrentData()[protocol.DNSKey] {
 			var t types.DNS
@@ -212,7 +226,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 	})
 
 	// Announce dns
-	ec.POST("/api/dns", func(c echo.Context) error {
+	ec.POST(DNSURL, func(c echo.Context) error {
 		d := new(apiTypes.DNS)
 		if err := c.Bind(d); err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -227,14 +241,14 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 	})
 
 	// Delete data from ledger
-	ec.DELETE("/api/ledger/:bucket", func(c echo.Context) error {
+	ec.DELETE(fmt.Sprintf("%s/:bucket", LedgerURL), func(c echo.Context) error {
 		bucket := c.Param("bucket")
 
 		ledger.AnnounceDeleteBucket(context.Background(), defaultInterval, timeout, bucket)
 		return c.JSON(http.StatusOK, announcing)
 	})
 
-	ec.DELETE("/api/ledger/:bucket/:key", func(c echo.Context) error {
+	ec.DELETE(fmt.Sprintf("%s/:bucket/:key", LedgerURL), func(c echo.Context) error {
 		bucket := c.Param("bucket")
 		key := c.Param("key")
 
