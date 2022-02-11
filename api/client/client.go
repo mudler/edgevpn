@@ -16,11 +16,14 @@
 package client
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/mudler/edgevpn/pkg/blockchain"
@@ -47,6 +50,17 @@ const (
 func WithHost(host string) func(c *Client) error {
 	return func(c *Client) error {
 		c.host = host
+		if strings.HasPrefix(host, "unix://") {
+			socket := strings.ReplaceAll(host, "unix://", "")
+			c.host = "http://unix"
+			c.httpClient = &http.Client{
+				Transport: &http.Transport{
+					DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+						return net.Dial("unix", socket)
+					},
+				},
+			}
+		}
 		return nil
 	}
 }

@@ -19,8 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -44,13 +42,7 @@ var _ = Describe("API", func() {
 			os.MkdirAll(d, os.ModePerm)
 			socket := filepath.Join(d, "socket")
 
-			c := client.NewClient(client.WithHost("http://unix"), client.WithHTTPClient(&http.Client{
-				Transport: &http.Transport{
-					DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-						return net.Dial("unix", socket)
-					},
-				},
-			}))
+			c := client.NewClient(client.WithHost("unix://" + socket))
 
 			token := node.GenerateNewConnectionData().Base64()
 			ctx, cancel := context.WithCancel(context.Background())
