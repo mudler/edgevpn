@@ -53,6 +53,9 @@ var _ = Describe("Client", func() {
 		})
 
 		It("Summary returns some info", func() {
+			err := c.Put(testBucket, "foo", "bar")
+			Expect(err).ToNot(HaveOccurred())
+
 			Eventually(func() string {
 				s, _ := c.Summary()
 				return s.NodeID
