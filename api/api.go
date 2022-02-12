@@ -264,8 +264,9 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 	go func() {
 		<-ctx.Done()
-		ec.Shutdown(ctx)
-
+		ct, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ec.Shutdown(ct)
+		cancel()
 	}()
 
 	return nil
