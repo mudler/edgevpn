@@ -52,16 +52,6 @@ var _ = Describe("Client", func() {
 			testBucket = randStringBytes(10)
 		})
 
-		It("Summary returns some info", func() {
-			err := c.Put(testBucket, "foo", "bar")
-			Expect(err).ToNot(HaveOccurred())
-
-			Eventually(func() string {
-				s, _ := c.Summary()
-				return s.NodeID
-			}, 100*time.Second, 1*time.Second).ShouldNot(BeEmpty())
-		})
-
 		It("Puts string data", func() {
 			err := c.Put(testBucket, "foo", "bar")
 			Expect(err).ToNot(HaveOccurred())
