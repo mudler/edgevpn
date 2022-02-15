@@ -190,10 +190,10 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		))
 	}
 
-	cm := connmanager.NewConnManager(
+	cm, err := connmanager.NewConnManager(
 		20,
 		c.Connection.MaxConnections,
-		80*time.Second,
+		connmanager.WithGracePeriod(80*time.Second),
 	)
 	if err != nil {
 		llger.Fatal("could not create connection manager")
