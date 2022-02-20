@@ -22,6 +22,7 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"strings"
 	"time"
 
@@ -62,7 +63,7 @@ const (
 	PeerstoreURL  = "/api/peerstore"
 )
 
-func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, e *node.Node) error {
+func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, e *node.Node, debugMode bool) error {
 
 	ledger, _ := e.Ledger()
 
@@ -77,6 +78,9 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 	}
 
 	assetHandler := http.FileServer(getFileSystem())
+	if debugMode {
+		ec.GET("/debug/pprof/*", echo.WrapHandler(http.DefaultServeMux))
+	}
 
 	// Get data from ledger
 	ec.GET(FileURL, func(c echo.Context) error {

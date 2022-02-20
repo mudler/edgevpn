@@ -58,6 +58,10 @@ func MainFlags() []cli.Flag {
 			Usage: "Encodes the new config in base64, so it can be used as a token",
 		},
 		&cli.BoolFlag{
+			Name:  "debug",
+			Usage: "Starts API with pprof attached",
+		},
+		&cli.BoolFlag{
 			Name:   "api",
 			Usage:  "Starts also the API daemon locally for inspecting the network status",
 			EnvVar: "API",
@@ -223,7 +227,7 @@ func Main() func(c *cli.Context) error {
 		}
 
 		if c.Bool("api") {
-			go api.API(ctx, c.String("api-listen"), 5*time.Second, 20*time.Second, e)
+			go api.API(ctx, c.String("api-listen"), 5*time.Second, 20*time.Second, e, c.Bool("debug"))
 		}
 
 		return e.Start(ctx)

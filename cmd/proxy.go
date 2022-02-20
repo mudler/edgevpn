@@ -38,6 +38,9 @@ func Proxy() cli.Command {
 				Usage:  "Listening address",
 				EnvVar: "PROXYLISTEN",
 			},
+			&cli.BoolFlag{
+				Name: "debug",
+			},
 			&cli.IntFlag{
 				Name:   "interval",
 				Usage:  "proxy announce time interval",
@@ -71,7 +74,7 @@ func Proxy() cli.Command {
 				return err
 			}
 
-			return api.API(ctx, c.String("listen"), 5*time.Second, 20*time.Second, e)
+			return api.API(ctx, c.String("listen"), 5*time.Second, 20*time.Second, e, c.Bool("debug"))
 		},
 	}
 }

@@ -32,6 +32,9 @@ func API() cli.Command {
 A simple UI interface is available to display network data.`,
 		UsageText: "edgevpn api",
 		Flags: append(CommonFlags,
+			&cli.BoolFlag{
+				Name: "debug",
+			},
 			&cli.StringFlag{
 				Name:  "listen",
 				Value: ":8080",
@@ -53,7 +56,7 @@ A simple UI interface is available to display network data.`,
 				return err
 			}
 
-			return api.API(ctx, c.String("listen"), 5*time.Second, 20*time.Second, e)
+			return api.API(ctx, c.String("listen"), 5*time.Second, 20*time.Second, e, c.Bool("debug"))
 		},
 	}
 }
