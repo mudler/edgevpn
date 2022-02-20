@@ -224,7 +224,7 @@ func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Nod
 	}
 
 	_, err = stream.Write(frame)
-	if c.lowProfile && err == nil {
+	if c.lowProfile {
 		return stream.Close()
 	}
 	return err
