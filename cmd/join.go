@@ -24,11 +24,11 @@ import (
 
 func Start() cli.Command {
 	return cli.Command{
-		Name:  "Start",
+		Name:  "start",
 		Usage: "Start the network without activating any interface",
 		Description: `Connect over the p2p network without establishing a VPN.
 Useful for setting up relays or hop nodes to improve the network connectivity.`,
-		UsageText: "edgevpn Start",
+		UsageText: "edgevpn start",
 		Flags:     CommonFlags,
 		Action: func(c *cli.Context) error {
 			o, _, ll := cliToOpts(c)
@@ -45,9 +45,8 @@ Useful for setting up relays or hop nodes to improve the network connectivity.`,
 			}
 
 			ll.Info("Joining p2p network")
-
-			for {
-			}
+			<-context.Background().Done()
+			return nil
 		},
 	}
 }
