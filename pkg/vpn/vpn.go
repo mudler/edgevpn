@@ -59,7 +59,9 @@ func VPNNetworkService(p ...Option) node.NetworkService {
 			Logger:             logger.New(log.LevelDebug),
 			MaxStreams:         30,
 		}
-		c.Apply(p...)
+		if err := c.Apply(p...); err != nil {
+			return err
+		}
 
 		ifce, err := createInterface(c)
 		if err != nil {
