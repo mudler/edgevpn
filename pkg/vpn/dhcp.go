@@ -45,6 +45,14 @@ func checkDHCPLease(c node.Config, leasedir string) string {
 	}
 	return ""
 }
+func contains(slice []string, elem string) bool {
+	for _, s := range slice {
+		if elem == s {
+			return true
+		}
+	}
+	return false
+}
 
 // DHCPNetworkService returns a DHCP network service
 func DHCPNetworkService(ip chan string, l log.StandardLogger, maxTime time.Duration, leasedir string, address string) node.NetworkService {
@@ -88,15 +96,32 @@ func DHCPNetworkService(ip chan string, l log.StandardLogger, maxTime time.Durat
 				continue
 			}
 
-			lead := utils.Leader(nodesWithNoIP)
-			l.Debug("Nodes with no ip", nodesWithNoIP)
+			shouldBeLeader := utils.Leader(nodesWithNoIP)
 
-			if n.Host().ID().String() != lead {
-				l.Debug("Not leader, sleeping")
+			var lead string
+			v, exists := b.GetKey("dhcp", "leader")
+			if exists {
+				v.Unmarshal(&lead)
+			}
+
+			if shouldBeLeader != n.Host().ID().String() && lead != n.Host().ID().String() {
+				c.Logger.Infof("<%s> not a leader, leader is '%s', sleeping", n.Host().ID().String(), shouldBeLeader)
+				continue
+			}
+
+			if shouldBeLeader == n.Host().ID().String() && (lead == "" || !contains(nodesWithNoIP, lead)) {
+				b.Persist(ctx, 5*time.Second, 15*time.Second, "dhcp", "leader", n.Host().ID().String())
+				c.Logger.Info("Announcing ourselves as leader, backing off")
+				continue
+			}
+
+			if lead != n.Host().ID().String() {
+				c.Logger.Info("Backing off, as we are not currently flagged as leader")
 				time.Sleep(5 * time.Second)
 				continue
 			}
 
+			l.Debug("Nodes with no ip", nodesWithNoIP)
 			// We are lead
 			l.Debug("picking up between", ips)
 
