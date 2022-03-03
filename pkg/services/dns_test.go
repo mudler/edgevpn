@@ -47,9 +47,9 @@ var _ = Describe("DNS service", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			opts := DNS("127.0.0.1:19192", true, []string{"8.8.8.8:53"}, 10)
+			opts := DNS(logg, "127.0.0.1:19192", true, []string{"8.8.8.8:53"}, 10)
 			opts = append(opts, node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
-			e, _  := node.New(opts...)
+			e, _ := node.New(opts...)
 
 			e.Start(ctx)
 			e2.Start(ctx)

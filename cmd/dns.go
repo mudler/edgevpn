@@ -61,7 +61,7 @@ func DNS() cli.Command {
 			dns := c.String("listen")
 			// Adds DNS Server
 			o = append(o,
-				services.DNS(dns,
+				services.DNS(ll, dns,
 					c.Bool("dns-forwarder"),
 					c.StringSlice("dns-forward-server"),
 					c.Int("dns-cache-size"),

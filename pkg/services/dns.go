@@ -22,6 +22,7 @@ import (
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
+	"github.com/ipfs/go-log"
 	"github.com/miekg/dns"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/node"
@@ -30,7 +31,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DNSNetworkService(listenAddr string, forwarder bool, forward []string, cacheSize int) node.NetworkService {
+func DNSNetworkService(ll log.StandardLogger, listenAddr string, forwarder bool, forward []string, cacheSize int) node.NetworkService {
 	return func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
 		server := &dns.Server{Addr: listenAddr, Net: "udp"}
 		cache, err := lru.New(cacheSize)
@@ -38,7 +39,7 @@ func DNSNetworkService(listenAddr string, forwarder bool, forward []string, cach
 			return err
 		}
 		go func() {
-			dns.HandleFunc(".", dnsHandler{ctx, b, forwarder, forward, cache}.handleDNSRequest())
+			dns.HandleFunc(".", dnsHandler{ctx, b, forwarder, forward, cache, ll}.handleDNSRequest())
 			fmt.Println(server.ListenAndServe())
 		}()
 
@@ -53,9 +54,9 @@ func DNSNetworkService(listenAddr string, forwarder bool, forward []string, cach
 
 // DNS returns a network service binding a dns blockchain resolver on listenAddr.
 // Takes an associated name for the addresses in the blockchain
-func DNS(listenAddr string, forwarder bool, forward []string, cacheSize int) []node.Option {
+func DNS(ll log.StandardLogger, listenAddr string, forwarder bool, forward []string, cacheSize int) []node.Option {
 	return []node.Option{
-		node.WithNetworkService(DNSNetworkService(listenAddr, forwarder, forward, cacheSize)),
+		node.WithNetworkService(DNSNetworkService(ll, listenAddr, forwarder, forward, cacheSize)),
 	}
 }
 
@@ -78,10 +79,12 @@ type dnsHandler struct {
 	forwarder bool
 	forward   []string
 	cache     *lru.Cache
+	ll        log.StandardLogger
 }
 
 func (d dnsHandler) parseQuery(m *dns.Msg, forward bool) *dns.Msg {
 	response := m.Copy()
+	d.ll.Debug("Received DNS request", m)
 	if len(m.Question) > 0 {
 		q := m.Question[0]
 		// Resolve the entry to an IP from the blockchain data
@@ -94,16 +97,19 @@ func (d dnsHandler) parseQuery(m *dns.Msg, forward bool) *dns.Msg {
 					rr, err := dns.NewRR(fmt.Sprintf("%s %s %s", q.Name, dns.TypeToString[q.Qtype], val))
 					if err == nil {
 						response.Answer = append(m.Answer, rr)
+						d.ll.Debug("Response from blockchain", response)
 						return response
 					}
 				}
 			}
 		}
 		if forward {
+			d.ll.Debug("Forwarding DNS request", m)
 			r, err := d.forwardQuery(m)
 			if err == nil {
 				response.Answer = r.Answer
 			}
+			d.ll.Debug("Response from fw server", r)
 		}
 	}
 	return response
@@ -111,15 +117,13 @@ func (d dnsHandler) parseQuery(m *dns.Msg, forward bool) *dns.Msg {
 
 func (d dnsHandler) handleDNSRequest() func(w dns.ResponseWriter, r *dns.Msg) {
 	return func(w dns.ResponseWriter, r *dns.Msg) {
-		m := new(dns.Msg)
-		m.SetReply(r)
-		m.Compress = false
 		var resp *dns.Msg
 		switch r.Opcode {
 		case dns.OpcodeQuery:
 			resp = d.parseQuery(r, d.forwarder)
 		}
-
+		resp.SetReply(r)
+		resp.Compress = false
 		w.WriteMsg(resp)
 	}
 }
@@ -129,6 +133,7 @@ func (d dnsHandler) forwardQuery(dnsMessage *dns.Msg) (*dns.Msg, error) {
 	if len(reqCopy.Question) > 0 {
 		if v, ok := d.cache.Get(reqCopy.Question[0].String()); ok {
 			q := v.(*dns.Msg)
+			q.Id = reqCopy.Id
 			return q, nil
 		}
 	}
@@ -139,14 +144,14 @@ func (d dnsHandler) forwardQuery(dnsMessage *dns.Msg) (*dns.Msg, error) {
 		}
 
 		if err != nil {
-			return nil, err
+			continue
 		}
 
 		if r.Rcode == dns.RcodeSuccess {
 			d.cache.Add(reqCopy.Question[0].String(), r)
 		}
 
-		if r == nil || r.Rcode == dns.RcodeNameError || r.Rcode == dns.RcodeSuccess || err == nil {
+		if r.Rcode == dns.RcodeNameError || r.Rcode == dns.RcodeSuccess || err == nil {
 			return r, err
 		}
 	}
