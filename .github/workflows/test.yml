@@ -79,8 +79,10 @@ jobs:
         include:
           - ip: "10.1.0.13/24"
             target_ip: "10.1.0.11"
+            role: "download"
           - ip: "10.1.0.11/24"
             target_ip: "10.1.0.13"
+            role: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -98,10 +100,15 @@ jobs:
           path: ./
       - name: Ping test
         run: |
+              # Start caddy server to share file across nodes
+              docker run -d -p 80:80 \
+                -v $PWD/:/usr/share/caddy/ \
+                -v caddy_data:/data \
+                caddy
               chmod +x edgevpn
               sudo sysctl -w net.core.rmem_max=2500000
-              sudo EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=${{ matrix.ip }} ./edgevpn --api --log-level debug &
-              bash ./.github/vpntest.sh ${{ matrix.target_ip }}
+              sudo EDGEVPNCONFIG=config.yaml IFACE=edgevpn0 ADDRESS=${{ matrix.ip }} ./edgevpn --api --log-level debug --libp2p-log-level debug &
+              bash ./.github/vpntest.sh ${{ matrix.target_ip }} ${{ matrix.ip }} ${{ matrix.role }}
 
   servicestest:
     runs-on: ubuntu-latest
