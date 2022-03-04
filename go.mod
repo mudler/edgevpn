@@ -22,7 +22,7 @@ require (
 	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.10 // indirect
 	github.com/labstack/echo/v4 v4.6.3
-	github.com/libp2p/go-libp2p v0.18.0-rc5
+	github.com/libp2p/go-libp2p v0.18.0-rc6
 	github.com/libp2p/go-libp2p-connmgr v0.3.1
 	github.com/libp2p/go-libp2p-core v0.14.0
 	github.com/libp2p/go-libp2p-discovery v0.6.0
