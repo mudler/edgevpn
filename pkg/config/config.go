@@ -17,12 +17,14 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	connmanager "github.com/libp2p/go-libp2p-connmgr"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	rcmgr "github.com/libp2p/go-libp2p-resource-manager"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/crypto"
 	"github.com/mudler/edgevpn/pkg/discovery"
@@ -51,6 +53,13 @@ type Config struct {
 	Connection                                 Connection
 	Discovery                                  Discovery
 	Ledger                                     Ledger
+	Limit                                      ResourceLimit
+}
+
+type ResourceLimit struct {
+	FileLimit   string
+	LimitConfig *node.NetLimitConfig
+	Scope       string
 }
 
 // Ledger is the ledger configuration structure
@@ -200,6 +209,34 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	}
 
 	libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
+
+	var limiter *rcmgr.BasicLimiter
+
+	if c.Limit.FileLimit != "" {
+		limitFile, err := os.Open(c.Limit.FileLimit)
+		if err != nil {
+			return opts, vpnOpts, err
+		}
+		defer limitFile.Close()
+
+		limiter, err = rcmgr.NewDefaultLimiterFromJSON(limitFile)
+		if err != nil {
+			return opts, vpnOpts, err
+		}
+	} else {
+		limiter = rcmgr.NewDefaultLimiter()
+	}
+
+	libp2p.SetDefaultServiceLimits(limiter)
+
+	rc, err := rcmgr.NewResourceManager(limiter)
+	if c.Limit.LimitConfig != nil {
+		if err := node.NetSetLimit(rc, c.Limit.Scope, *c.Limit.LimitConfig); err != nil {
+			return opts, vpnOpts, err
+		}
+	}
+
+	libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(rc))
 
 	if c.Connection.HolePunch {
 		libp2pOpts = append(libp2pOpts, libp2p.EnableHolePunching())
