@@ -189,7 +189,95 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "token",
 		Usage:  "Specify an edgevpn token in place of a config file",
 		EnvVar: "EDGEVPNTOKEN",
-	}}
+	},
+	&cli.StringFlag{
+		Name:   "limit-file",
+		Usage:  "Specify an limit config (json)",
+		EnvVar: "LIMITFILE",
+	},
+	&cli.StringFlag{
+		Name:   "limit-scope",
+		Usage:  "Specify a limit scope",
+		EnvVar: "LIMITSCOPE",
+		Value:  "system",
+	},
+	&cli.BoolFlag{
+		Name:   "limit-config",
+		Usage:  "Enable inline resource limit configuration",
+		EnvVar: "LIMITCONFIG",
+	},
+	&cli.BoolFlag{
+		Name:   "limit-config-dynamic",
+		Usage:  "Enable dynamic resource limit configuration",
+		EnvVar: "LIMITCONFIGDYNAMIC",
+	},
+	&cli.Int64Flag{
+		Name:   "limit-config-memory",
+		Usage:  "Memory resource limit configuration",
+		EnvVar: "LIMITCONFIGMEMORY",
+		Value:  128,
+	},
+	&cli.Float64Flag{
+		Name:   "limit-config-memory-fraction",
+		Usage:  "Fraction memory resource limit configuration (dynamic)",
+		EnvVar: "LIMITCONFIGMEMORYFRACTION",
+		Value:  10,
+	},
+	&cli.Int64Flag{
+		Name:   "limit-config-min-memory",
+		Usage:  "Minimum memory resource limit configuration (dynamic)",
+		EnvVar: "LIMITCONFIGMINMEMORY",
+		Value:  10,
+	},
+	&cli.Int64Flag{
+		Name:   "limit-config-max-memory",
+		Usage:  "Maximum memory resource limit configuration (dynamic)",
+		EnvVar: "LIMITCONFIGMAXMEMORY",
+		Value:  200,
+	},
+	&cli.IntFlag{
+		Name:   "limit-config-streams",
+		Usage:  "Streams resource limit configuration",
+		EnvVar: "LIMITCONFIGSTREAMS",
+		Value:  200,
+	},
+	&cli.IntFlag{
+		Name:   "limit-config-streams-inbound",
+		Usage:  "Inbound streams resource limit configuration",
+		EnvVar: "LIMITCONFIGSTREAMSINBOUND",
+		Value:  30,
+	},
+	&cli.IntFlag{
+		Name:   "limit-config-streams-outbound",
+		Usage:  "Outbound streams resource limit configuration",
+		EnvVar: "LIMITCONFIGSTREAMSOUTBOUND",
+		Value:  30,
+	},
+	&cli.IntFlag{
+		Name:   "limit-config-conn",
+		Usage:  "Connections resource limit configuration",
+		EnvVar: "LIMITCONFIGCONNS",
+		Value:  200,
+	},
+	&cli.IntFlag{
+		Name:   "limit-config-conn-inbound",
+		Usage:  "Inbound connections resource limit configuration",
+		EnvVar: "LIMITCONFIGCONNSINBOUND",
+		Value:  30,
+	},
+	&cli.IntFlag{
+		Name:   "limit-config-conn-outbound",
+		Usage:  "Outbound connections resource limit configuration",
+		EnvVar: "LIMITCONFIGCONNSOUTBOUND",
+		Value:  30,
+	},
+	&cli.IntFlag{
+		Name:   "limit-config-fd",
+		Usage:  "Max fd resource limit configuration",
+		EnvVar: "LIMITCONFIGFD",
+		Value:  30,
+	},
+}
 
 func displayStart(ll *logger.Logger) {
 	ll.Info(Copyright)
@@ -198,6 +286,26 @@ func displayStart(ll *logger.Logger) {
 }
 
 func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
+
+	var limitConfig *node.NetLimitConfig
+
+	if c.Bool("limit-config") {
+		limitConfig = &node.NetLimitConfig{
+			Dynamic:         c.Bool("limit-config-dynamic"),
+			Memory:          c.Int64("limit-config-memory"),
+			MinMemory:       c.Int64("limit-config-min-memory"),
+			MaxMemory:       c.Int64("limit-config-max-memory"),
+			MemoryFraction:  c.Float64("limit-config-memory-fraction"),
+			Streams:         c.Int("limit-config-streams"),
+			StreamsInbound:  c.Int("limit-config-streams-inbound"),
+			StreamsOutbound: c.Int("limit-config-streams-outbound"),
+			Conns:           c.Int("limit-config-conn"),
+			ConnsInbound:    c.Int("limit-config-conn-inbound"),
+			ConnsOutbound:   c.Int("limit-config-conn-outbound"),
+			FD:              c.Int("limit-config-fd"),
+		}
+	}
+
 	nc := nodeConfig.Config{
 		NetworkConfig:     c.String("config"),
 		NetworkToken:      c.String("token"),
@@ -238,6 +346,11 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			MaxConnections: c.Int("max-connections"),
 			MaxStreams:     c.Int("max-streams"),
 			HolePunch:      c.Bool("holepunch"),
+		},
+		Limit: config.ResourceLimit{
+			FileLimit:   c.String("limit-file"),
+			Scope:       c.String("limit-scope"),
+			LimitConfig: limitConfig,
 		},
 	}
 
