@@ -157,11 +157,11 @@ no = 'Sorry to hear that. Please <a href="https://github.com/EdgeVPN-lab/docs/is
 	url = "https://github.com/mudler/edgevpn/discussions"
 	icon = "fab fa-github"
         desc = "Discussion and help from your fellow users"
-#[[params.links.developer]]
-#	name = "Slack"
-#	url = ""
-#	icon = "fab fa-slack"
-#        desc = "Join us on Slack!"
+[[params.links.user]]
+	name = "Matrix chat"
+	url = "https://matrix.to/#/#edgevpn:matrix.org"
+	icon = "fas fa-comments"
+        desc = "Join us on Matrix!"
 # [[params.links.developer]]
 # 	name = "Developer mailing list"
 # 	url = "https://example.org/mail"
