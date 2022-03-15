@@ -28,15 +28,15 @@ import (
 	"github.com/mudler/edgevpn/pkg/crypto"
 	protocol "github.com/mudler/edgevpn/pkg/protocol"
 
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	"github.com/mudler/edgevpn/pkg/logger"
 )
 
 type Node struct {
-	config  Config
-	HubRoom *hub.Room
+	config     Config
+	MessageHub *hub.MessageHub
+	//HubRoom *hub.Room
 	inputCh chan *hub.Message
 	seed    int64
 	host    host.Host
@@ -159,19 +159,7 @@ func (e *Node) startNetwork(ctx context.Context) error {
 	e.config.Logger.Info("Node ID:", host.ID())
 	e.config.Logger.Info("Node Addresses:", host.Addrs())
 
-	// create a new PubSub service using the GossipSub router
-	ps, err := pubsub.NewGossipSub(ctx, host, pubsub.WithMaxMessageSize(e.config.MaxMessageSize))
-	if err != nil {
-		return err
-	}
-
-	// join the "chat" room
-	cr, err := hub.JoinRoom(ctx, ps, host.ID(), e.config.RoomName)
-	if err != nil {
-		return err
-	}
-
-	e.HubRoom = cr
+	e.MessageHub = hub.NewHub(e.config.RoomName, e.config.MaxMessageSize, e.config.SealKeyLength, e.config.SealKeyInterval)
 
 	for _, sd := range e.config.ServiceDiscovery {
 		if err := sd.Run(e.config.Logger, ctx, host); err != nil {
@@ -180,6 +168,7 @@ func (e *Node) startNetwork(ctx context.Context) error {
 	}
 
 	go e.handleEvents(ctx)
+	go e.MessageHub.Start(ctx, host)
 
 	e.config.Logger.Debug("Network started")
 	return nil

@@ -273,7 +273,7 @@ func GenerateNewConnectionData(i ...int) *YAMLConnectionConfig {
 
 	return &YAMLConnectionConfig{
 		MaxMessageSize: maxMessSize,
-		RoomName:       utils.RandStringRunes(defaultKeyLength),
+		RoomName:       gotp.RandomSecret(defaultKeyLength),
 		Rendezvous:     utils.RandStringRunes(defaultKeyLength),
 		MDNS:           utils.RandStringRunes(defaultKeyLength),
 		OTP: OTP{

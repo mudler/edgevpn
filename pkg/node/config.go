@@ -35,7 +35,7 @@ type Config struct {
 	// ExchangeKey is a Symmetric key used to seal the messages
 	ExchangeKey string
 
-	// RoomName is the gossip room where all peers are subscribed to
+	// RoomName is the OTP token gossip room where all peers are subscribed to
 	RoomName string
 
 	// ListenAddresses is the discovery peer initial bootstrap addresses

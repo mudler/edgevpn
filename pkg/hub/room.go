@@ -31,9 +31,6 @@ const RoomBufSize = 128
 // can be published to the topic with Room.Publish, and received
 // messages are pushed to the Messages channel.
 type Room struct {
-	// Messages is a channel of messages received from other peers in the chat room
-	Messages chan *Message
-
 	ctx   context.Context
 	ps    *pubsub.PubSub
 	Topic *pubsub.Topic
@@ -45,7 +42,7 @@ type Room struct {
 
 // JoinRoom tries to subscribe to the PubSub topic for the room name, returning
 // a Room on success.
-func JoinRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName string) (*Room, error) {
+func JoinRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName string, messageChan chan *Message) (*Room, error) {
 	// join the pubsub topic
 	topic, err := ps.Join(roomName)
 	if err != nil {
@@ -65,11 +62,10 @@ func JoinRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName s
 		sub:      sub,
 		self:     selfID,
 		roomName: roomName,
-		Messages: make(chan *Message, RoomBufSize),
 	}
 
 	// start reading messages from the subscription in a loop
-	go cr.readLoop()
+	go cr.readLoop(messageChan)
 	return cr, nil
 }
 
@@ -98,11 +94,10 @@ func (cr *Room) PublishMessage(m *Message) error {
 }
 
 // readLoop pulls messages from the pubsub topic and pushes them onto the Messages channel.
-func (cr *Room) readLoop() {
+func (cr *Room) readLoop(messageChan chan *Message) {
 	for {
 		msg, err := cr.sub.Next(cr.ctx)
 		if err != nil {
-			close(cr.Messages)
 			return
 		}
 		// only forward messages delivered by others
@@ -115,6 +110,6 @@ func (cr *Room) readLoop() {
 			continue
 		}
 		// send valid messages onto the Messages channel
-		cr.Messages <- cm
+		messageChan <- cm
 	}
 }

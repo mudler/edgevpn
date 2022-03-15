@@ -98,7 +98,11 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		machines := len(ledger.CurrentData()[protocol.MachinesLedgerKey])
 		users := len(ledger.CurrentData()[protocol.UsersLedgerKey])
 		services := len(ledger.CurrentData()[protocol.ServicesLedgerKey])
-		onChainNodes := len(e.HubRoom.Topic.ListPeers())
+		peers, err := e.MessageHub.ListPeers()
+		if err != nil {
+			return err
+		}
+		onChainNodes := len(peers)
 		p2pPeers := len(e.Host().Network().Peerstore().Peers())
 		nodeID := e.Host().ID().String()
 
@@ -125,7 +129,11 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 			if e.Host().Network().Connectedness(peer.ID(machine.PeerID)) == network.Connected {
 				m.Connected = true
 			}
-			for _, p := range e.HubRoom.Topic.ListPeers() {
+			peers, err := e.MessageHub.ListPeers()
+			if err != nil {
+				return err
+			}
+			for _, p := range peers {
 				if p.String() == machine.PeerID {
 					m.OnChain = true
 				}
@@ -139,7 +147,11 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 	ec.GET(NodesURL, func(c echo.Context) error {
 		list := []apiTypes.Peer{}
-		for _, v := range e.HubRoom.Topic.ListPeers() {
+		peers, err := e.MessageHub.ListPeers()
+		if err != nil {
+			return err
+		}
+		for _, v := range peers {
 			list = append(list, apiTypes.Peer{ID: v.String()})
 		}
 
@@ -151,9 +163,12 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		for _, v := range e.Host().Network().Peerstore().Peers() {
 			list = append(list, apiTypes.Peer{ID: v.String()})
 		}
-		e.HubRoom.Topic.ListPeers()
+		peers, err := e.MessageHub.ListPeers()
+		if err != nil {
+			return err
+		}
 
-		return c.JSON(http.StatusOK, list)
+		return c.JSON(http.StatusOK, peers)
 	})
 
 	ec.GET(UsersURL, func(c echo.Context) error {

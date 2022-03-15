@@ -22,6 +22,8 @@ import (
 	mrand "math/rand"
 	"net"
 
+	internalCrypto "github.com/mudler/edgevpn/pkg/crypto"
+
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -115,7 +117,7 @@ func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 }
 
 func (e *Node) sealkey() string {
-	return gotp.NewTOTP(e.config.ExchangeKey, e.config.SealKeyLength, e.config.SealKeyInterval, nil).Now()
+	return internalCrypto.MD5(gotp.NewTOTP(e.config.ExchangeKey, e.config.SealKeyLength, e.config.SealKeyInterval, nil).Now())
 }
 
 func (e *Node) handleEvents(ctx context.Context) {
@@ -128,18 +130,18 @@ func (e *Node) handleEvents(ctx context.Context) {
 			c := m.Copy()
 			str, err := e.config.Sealer.Seal(c.Message, e.sealkey())
 			if err != nil {
-				e.config.Logger.Warn(err.Error())
+				e.config.Logger.Warnf("%w from %s", err.Error(), c.SenderID)
 			}
 			c.Message = str
 			e.handleOutgoingMessage(c)
-		case m := <-e.HubRoom.Messages:
+		case m := <-e.MessageHub.Messages:
 			if m == nil {
 				continue
 			}
 			c := m.Copy()
 			str, err := e.config.Sealer.Unseal(c.Message, e.sealkey())
 			if err != nil {
-				e.config.Logger.Warn(err.Error())
+				e.config.Logger.Warnf("%w from %s", err.Error(), c.SenderID)
 			}
 			c.Message = str
 			e.handleReceivedMessage(c)
@@ -158,7 +160,7 @@ func (e *Node) handleReceivedMessage(m *hub.Message) {
 }
 
 func (e *Node) handleOutgoingMessage(m *hub.Message) {
-	err := e.HubRoom.PublishMessage(m)
+	err := e.MessageHub.PublishMessage(m)
 	if err != nil {
 		e.config.Logger.Warnf("publish error: %s", err)
 	}

@@ -23,6 +23,7 @@ import (
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	connmanager "github.com/libp2p/go-libp2p-connmgr"
+	"github.com/libp2p/go-libp2p-core/network"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	rcmgr "github.com/libp2p/go-libp2p-resource-manager"
 	"github.com/mudler/edgevpn/pkg/blockchain"
@@ -60,6 +61,7 @@ type ResourceLimit struct {
 	FileLimit   string
 	LimitConfig *node.NetLimitConfig
 	Scope       string
+	Disable     bool
 }
 
 // Ledger is the ledger configuration structure
@@ -210,33 +212,41 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 
 	libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
 
-	var limiter *rcmgr.BasicLimiter
-
-	if c.Limit.FileLimit != "" {
-		limitFile, err := os.Open(c.Limit.FileLimit)
-		if err != nil {
-			return opts, vpnOpts, err
-		}
-		defer limitFile.Close()
-
-		limiter, err = rcmgr.NewDefaultLimiterFromJSON(limitFile)
-		if err != nil {
-			return opts, vpnOpts, err
-		}
+	if c.Limit.Disable {
+		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(network.NullResourceManager))
 	} else {
-		limiter = rcmgr.NewDefaultLimiter()
-	}
+		var limiter *rcmgr.BasicLimiter
 
-	libp2p.SetDefaultServiceLimits(limiter)
+		if c.Limit.FileLimit != "" {
+			limitFile, err := os.Open(c.Limit.FileLimit)
+			if err != nil {
+				return opts, vpnOpts, err
+			}
+			defer limitFile.Close()
 
-	rc, err := rcmgr.NewResourceManager(limiter)
-	if c.Limit.LimitConfig != nil {
-		if err := node.NetSetLimit(rc, c.Limit.Scope, *c.Limit.LimitConfig); err != nil {
-			return opts, vpnOpts, err
+			limiter, err = rcmgr.NewDefaultLimiterFromJSON(limitFile)
+			if err != nil {
+				return opts, vpnOpts, err
+			}
+		} else {
+			limiter = rcmgr.NewDefaultLimiter()
 		}
-	}
 
-	libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(rc))
+		libp2p.SetDefaultServiceLimits(limiter)
+
+		rc, err := rcmgr.NewResourceManager(limiter)
+		if err != nil {
+			llger.Fatal("could not create resource manager")
+		}
+
+		if c.Limit.LimitConfig != nil {
+			if err := node.NetSetLimit(rc, c.Limit.Scope, *c.Limit.LimitConfig); err != nil {
+				return opts, vpnOpts, err
+			}
+		}
+
+		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(rc))
+	}
 
 	if c.Connection.HolePunch {
 		libp2pOpts = append(libp2pOpts, libp2p.EnableHolePunching())

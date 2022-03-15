@@ -20,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	internalCrypto "github.com/mudler/edgevpn/pkg/crypto"
+
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -59,7 +61,7 @@ func (d *DHT) Rendezvous() string {
 		totp := gotp.NewTOTP(d.OTPKey, d.KeyLength, d.OTPInterval, nil)
 
 		//totp := gotp.NewDefaultTOTP(d.OTPKey)
-		rv := totp.Now()
+		rv := internalCrypto.MD5(totp.Now())
 		d.latestRendezvous = rv
 		return rv
 	}

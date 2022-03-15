@@ -207,6 +207,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "LIMITCONFIG",
 	},
 	&cli.BoolFlag{
+		Name:   "limit-disable",
+		Usage:  "Disable resource limit",
+		EnvVar: "LIMITDISABLE",
+	},
+	&cli.BoolFlag{
 		Name:   "limit-config-dynamic",
 		Usage:  "Enable dynamic resource limit configuration",
 		EnvVar: "LIMITCONFIGDYNAMIC",
@@ -348,6 +353,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			HolePunch:      c.Bool("holepunch"),
 		},
 		Limit: config.ResourceLimit{
+			Disable:     c.Bool("limit-disable"),
 			FileLimit:   c.String("limit-file"),
 			Scope:       c.String("limit-scope"),
 			LimitConfig: limitConfig,
