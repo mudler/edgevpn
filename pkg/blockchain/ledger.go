@@ -125,8 +125,7 @@ func (l *Ledger) Update(h *hub.Message) (err error) {
 	}
 
 	l.Lock()
-	if block.Index > l.blockchain.Len() || (block.Index == l.blockchain.Len() &&
-		block.Hash != l.blockchain.Last().Hash) {
+	if block.Index > l.blockchain.Len() {
 		l.blockchain.Add(*block)
 	}
 	l.Unlock()
