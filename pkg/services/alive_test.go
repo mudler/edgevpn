@@ -30,13 +30,14 @@ import (
 )
 
 var _ = Describe("Alive service", func() {
-	token := node.GenerateNewConnectionData().Base64()
+	token := node.GenerateNewConnectionData(25).Base64()
 
 	logg := logger.New(log.LevelError)
 	l := node.Logger(logg)
 
 	opts := append(
 		Alive(5*time.Second, 100*time.Second, 15*time.Minute),
+		node.WithDiscoveryInterval(10*time.Second),
 		node.FromBase64(true, true, token),
 		l)
 
@@ -52,7 +53,7 @@ var _ = Describe("Alive service", func() {
 
 			ll, _ := e1.Ledger()
 
-			ll.Persist(ctx, 1*time.Second, 100*time.Second, "t", "t", "test")
+			ll.Persist(ctx, 5*time.Second, 100*time.Second, "t", "t", "test")
 
 			matches := And(ContainElement(e2.Host().ID().String()),
 				ContainElement(e1.Host().ID().String()))
@@ -73,7 +74,8 @@ var _ = Describe("Alive service", func() {
 	Context("Aliveness Scrub", func() {
 		BeforeEach(func() {
 			opts = append(
-				Alive(2*time.Second, 4*time.Second, 15*time.Minute),
+				Alive(5*time.Second, 20*time.Second, 15*time.Minute),
+				node.WithDiscoveryInterval(10*time.Second),
 				node.FromBase64(true, true, token),
 				l)
 		})
@@ -89,7 +91,7 @@ var _ = Describe("Alive service", func() {
 
 			ll, _ := e1.Ledger()
 
-			ll.Persist(ctx, 1*time.Second, 100*time.Second, "t", "t", "test")
+			ll.Persist(ctx, 5*time.Second, 100*time.Second, "t", "t", "test")
 
 			matches := And(ContainElement(e2.Host().ID().String()),
 				ContainElement(e1.Host().ID().String()))
@@ -112,7 +114,7 @@ var _ = Describe("Alive service", func() {
 					return []string{}
 				}
 				return AvailableNodes(ll, 15*time.Minute)
-			}, 30*time.Second, 1*time.Second).Should(BeEmpty())
+			}, 50*time.Second, 1*time.Second).Should(BeEmpty())
 
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
 			index = ll.LastBlock().Index
@@ -123,7 +125,7 @@ var _ = Describe("Alive service", func() {
 					return []string{}
 				}
 				return AvailableNodes(ll, 15*time.Minute)
-			}, 10*time.Second, 1*time.Second).Should(matches)
+			}, 30*time.Second, 1*time.Second).Should(matches)
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
 
 		})

@@ -17,6 +17,7 @@ package services_test
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -32,12 +33,15 @@ import (
 )
 
 var _ = Describe("File services", func() {
-	token := node.GenerateNewConnectionData().Base64()
+	token := node.GenerateNewConnectionData(25).Base64()
 
 	logg := logger.New(log.LevelError)
 	l := node.Logger(logg)
 
-	e2, _ := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+	e2, _ := node.New(
+		node.WithDiscoveryInterval(10*time.Second),
+		node.WithNetworkService(AliveNetworkService(2*time.Second, 4*time.Second, 15*time.Minute)),
+		node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
 
 	Context("File sharing", func() {
 		It("sends and receive files between two nodes", func() {
@@ -54,7 +58,7 @@ var _ = Describe("File services", func() {
 			ioutil.WriteFile(f.Name(), []byte("testfile"), os.ModePerm)
 
 			// First node expose a file
-			opts, err := ShareFile(logg, 1*time.Second, fileUUID, f.Name())
+			opts, err := ShareFile(logg, 10*time.Second, fileUUID, f.Name())
 			Expect(err).ToNot(HaveOccurred())
 
 			opts = append(opts, node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
@@ -64,7 +68,7 @@ var _ = Describe("File services", func() {
 			e2.Start(ctx)
 
 			Eventually(func() string {
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 				defer cancel()
 
 				f, err := ioutil.TempFile("", "test")
@@ -73,11 +77,12 @@ var _ = Describe("File services", func() {
 				defer os.RemoveAll(f.Name())
 
 				ll, _ := e2.Ledger()
-
-				ReceiveFile(ctx, ll, e2, logg, 1*time.Second, fileUUID, f.Name())
+				ll1, _ := e.Ledger()
+				By(fmt.Sprint(ll.CurrentData(), ll.LastBlock().Index, ll1.CurrentData()))
+				ReceiveFile(ctx, ll, e2, logg, 2*time.Second, fileUUID, f.Name())
 				b, _ := ioutil.ReadFile(f.Name())
 				return string(b)
-			}, 100*time.Second, 1*time.Second).Should(Equal("testfile"))
+			}, 190*time.Second, 1*time.Second).Should(Equal("testfile"))
 		})
 	})
 })

@@ -64,8 +64,8 @@ var _ = Describe("Node", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			e, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
-			e2, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			e, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), WithDiscoveryInterval(10*time.Second), l)
+			e2, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), WithDiscoveryInterval(10*time.Second), l)
 
 			e.Start(ctx)
 			e2.Start(ctx)
@@ -75,7 +75,7 @@ var _ = Describe("Node", func() {
 			l2, err := e2.Ledger()
 			Expect(err).ToNot(HaveOccurred())
 
-			l.Announce(ctx, 1*time.Second, func() { l.Add("foo", map[string]interface{}{"bar": "baz"}) })
+			l.Announce(ctx, 2*time.Second, func() { l.Add("foo", map[string]interface{}{"bar": "baz"}) })
 
 			Eventually(func() string {
 				var s string

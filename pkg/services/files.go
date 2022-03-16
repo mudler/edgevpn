@@ -99,13 +99,13 @@ func ShareFile(ll log.StandardLogger, announcetime time.Duration, fileID, filepa
 
 func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l log.StandardLogger, announcetime time.Duration, fileID string, path string) error {
 	// Announce ourselves so nodes accepts our connection
-
 	ledger.Announce(
 		ctx,
 		announcetime,
 		func() {
 			// Retrieve current ID for ip in the blockchain
 			_, found := ledger.GetKey(protocol.UsersLedgerKey, n.Host().ID().String())
+
 			// If mismatch, update the blockchain
 			if !found {
 				updatedMap := map[string]interface{}{}
@@ -127,10 +127,6 @@ func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l
 
 			l.Debug("Attempting to find file in the blockchain")
 
-			_, found := ledger.GetKey(protocol.UsersLedgerKey, n.Host().ID().String())
-			if !found {
-				continue
-			}
 			existingValue, found := ledger.GetKey(protocol.FilesLedgerKey, fileID)
 			fi := &types.File{}
 			existingValue.Unmarshal(fi)
@@ -154,6 +150,8 @@ func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l
 				if err != nil {
 					return err
 				}
+
+				l.Debug("file found on blockchain, opening stream to", d)
 
 				// Open a stream
 				stream, err := n.Host().NewStream(ctx, d, protocol.FileProtocol.ID())
