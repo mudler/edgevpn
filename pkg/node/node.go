@@ -17,6 +17,7 @@ package node
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/ipfs/go-log"
@@ -42,6 +43,7 @@ type Node struct {
 	host    host.Host
 	cg      *conngater.BasicConnectionGater
 	ledger  *blockchain.Ledger
+	sync.Mutex
 }
 
 var defaultLibp2pOptions = []libp2p.Option{
@@ -77,6 +79,8 @@ func New(p ...Option) (*Node, error) {
 // Ledger return the ledger which uses the node
 // connection to broadcast messages
 func (e *Node) Ledger() (*blockchain.Ledger, error) {
+	e.Lock()
+	defer e.Unlock()
 	if e.ledger != nil {
 		return e.ledger, nil
 	}
@@ -159,6 +163,9 @@ func (e *Node) startNetwork(ctx context.Context) error {
 	e.config.Logger.Info("Node ID:", host.ID())
 	e.config.Logger.Info("Node Addresses:", host.Addrs())
 
+	// Hub rotates within sealkey interval.
+	// this time length should be enough to make room for few block exchanges. This is ideally on minutes (10, 20, etc. )
+	// it makes sure that if a bruteforce is attempted over the encrypted messages, the real key is not exposed.
 	e.MessageHub = hub.NewHub(e.config.RoomName, e.config.MaxMessageSize, e.config.SealKeyLength, e.config.SealKeyInterval)
 
 	for _, sd := range e.config.ServiceDiscovery {

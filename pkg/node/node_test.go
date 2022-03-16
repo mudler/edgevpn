@@ -30,7 +30,8 @@ import (
 )
 
 var _ = Describe("Node", func() {
-	token := GenerateNewConnectionData().Base64()
+	// Trigger key rotation on a low frequency to test everything works in between
+	token := GenerateNewConnectionData(25).Base64()
 
 	l := Logger(logger.New(log.LevelFatal))
 
@@ -56,7 +57,7 @@ var _ = Describe("Node", func() {
 
 			Eventually(func() []peer.ID {
 				return e.Host().Network().Peers()
-			}, 100*time.Second, 1*time.Second).Should(ContainElement(e2.Host().ID()))
+			}, 240*time.Second, 1*time.Second).Should(ContainElement(e2.Host().ID()))
 		})
 
 		It("nodes can write to the ledger", func() {
@@ -83,7 +84,7 @@ var _ = Describe("Node", func() {
 					v.Unmarshal(&s)
 				}
 				return s
-			}, 100*time.Second, 1*time.Second).Should(Equal("baz"))
+			}, 240*time.Second, 1*time.Second).Should(Equal("baz"))
 		})
 	})
 
