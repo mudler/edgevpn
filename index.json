@@ -25,11 +25,11 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://mudler.github.io/edgevpn/index.json" /><meta property="article:section" content="" />
 
-<meta property="article:modified_time" content="2022-03-03T17:44:45+01:00" /><meta property="og:site_name" content="EdgeVPN" />
+<meta property="article:modified_time" content="2022-03-16T21:56:14+01:00" /><meta property="og:site_name" content="EdgeVPN" />
 
 <meta itemprop="name" content="">
 <meta itemprop="description" content="">
-<meta itemprop="dateModified" content="2022-03-03T17:44:45+01:00" />
+<meta itemprop="dateModified" content="2022-03-16T21:56:14+01:00" />
 <meta itemprop="wordCount" content="0">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content=""/>
@@ -145,6 +145,12 @@ if (!doNotTrack) {
   <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub Discussions" aria-label="GitHub Discussions">
     <a class="text-white" target="_blank" rel="noopener" href="https://github.com/mudler/edgevpn/discussions" aria-label="GitHub Discussions">
       <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Matrix chat" aria-label="Matrix chat">
+    <a class="text-white" target="_blank" rel="noopener" href="https://matrix.to/#/#edgevpn:matrix.org" aria-label="Matrix chat">
+      <i class="fas fa-comments"></i>
     </a>
   </li>
   
