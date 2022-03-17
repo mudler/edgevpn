@@ -30,7 +30,7 @@ import (
 )
 
 var _ = Describe("Alive service", func() {
-	token := node.GenerateNewConnectionData(25).Base64()
+	token := node.GenerateNewConnectionData().Base64()
 
 	logg := logger.New(log.LevelError)
 	l := node.Logger(logg)
@@ -103,7 +103,7 @@ var _ = Describe("Alive service", func() {
 					return []string{}
 				}
 				return AvailableNodes(ll, 15*time.Minute)
-			}, 100*time.Second, 1*time.Second).Should(matches)
+			}, 120*time.Second, 1*time.Second).Should(matches)
 
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
 			index = ll.LastBlock().Index
@@ -114,7 +114,7 @@ var _ = Describe("Alive service", func() {
 					return []string{}
 				}
 				return AvailableNodes(ll, 15*time.Minute)
-			}, 50*time.Second, 1*time.Second).Should(BeEmpty())
+			}, 120*time.Second, 1*time.Second).Should(BeEmpty())
 
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
 			index = ll.LastBlock().Index
@@ -125,7 +125,7 @@ var _ = Describe("Alive service", func() {
 					return []string{}
 				}
 				return AvailableNodes(ll, 15*time.Minute)
-			}, 30*time.Second, 1*time.Second).Should(matches)
+			}, 60*time.Second, 1*time.Second).Should(matches)
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
 
 		})
