@@ -40,7 +40,6 @@ type DHT struct {
 	RendezvousString     string
 	BootstrapPeers       AddrList
 	latestRendezvous     string
-	console              log.StandardLogger
 	RefreshDiscoveryTime time.Duration
 	dht                  *dht.IpfsDHT
 	dhtOptions           []dht.Option
@@ -89,7 +88,6 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 		d.KeyLength = 12
 	}
 
-	d.console = c
 	if len(d.BootstrapPeers) == 0 {
 		d.BootstrapPeers = dht.DefaultBootstrapPeers
 	}
@@ -112,11 +110,11 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 	connect := func() {
 		d.bootstrapPeers(c, ctx, host)
 		if d.latestRendezvous != "" {
-			d.announceAndConnect(ctx, kademliaDHT, host, d.latestRendezvous)
+			d.announceAndConnect(c, ctx, kademliaDHT, host, d.latestRendezvous)
 		}
 
 		rv := d.Rendezvous()
-		d.announceAndConnect(ctx, kademliaDHT, host, rv)
+		d.announceAndConnect(c, ctx, kademliaDHT, host, rv)
 	}
 
 	go func() {
@@ -161,14 +159,14 @@ func (d *DHT) bootstrapPeers(c log.StandardLogger, ctx context.Context, host hos
 	wg.Wait()
 }
 
-func (d *DHT) announceAndConnect(ctx context.Context, kademliaDHT *dht.IpfsDHT, host host.Host, rv string) error {
-	d.console.Debug("Announcing ourselves...")
+func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kademliaDHT *dht.IpfsDHT, host host.Host, rv string) error {
+	l.Debug("Announcing ourselves...")
 	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
 	discovery.Advertise(ctx, routingDiscovery, rv)
-	d.console.Debug("Successfully announced!")
+	l.Debug("Successfully announced!")
 	// Now, look for others who have announced
 	// This is like your friend telling you the location to meet you.
-	d.console.Debug("Searching for other peers...")
+	l.Debug("Searching for other peers...")
 	peerChan, err := routingDiscovery.FindPeers(ctx, rv)
 	if err != nil {
 		return err
@@ -181,14 +179,14 @@ func (d *DHT) announceAndConnect(ctx context.Context, kademliaDHT *dht.IpfsDHT, 
 		}
 
 		if host.Network().Connectedness(p.ID) != network.Connected {
-			d.console.Debug("Found peer:", p)
+			l.Debug("Found peer:", p)
 			if err := host.Connect(ctx, p); err != nil {
-				d.console.Debug("Failed connecting to", p)
+				l.Debug("Failed connecting to", p)
 			} else {
-				d.console.Debug("Connected to:", p)
+				l.Debug("Connected to:", p)
 			}
 		} else {
-			d.console.Debug("Known peer (already connected):", p)
+			l.Debug("Known peer (already connected):", p)
 		}
 	}
 
