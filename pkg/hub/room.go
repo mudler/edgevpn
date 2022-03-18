@@ -24,13 +24,10 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
-// RoomBufSize is the number of incoming messages to buffer for each topic.
-const RoomBufSize = 128
-
 // Room represents a subscription to a single PubSub topic. Messages
 // can be published to the topic with Room.Publish, and received
 // messages are pushed to the Messages channel.
-type Room struct {
+type room struct {
 	ctx   context.Context
 	ps    *pubsub.PubSub
 	Topic *pubsub.Topic
@@ -40,9 +37,9 @@ type Room struct {
 	self     peer.ID
 }
 
-// JoinRoom tries to subscribe to the PubSub topic for the room name, returning
+// connect tries to subscribe to the PubSub topic for the room name, returning
 // a Room on success.
-func JoinRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName string, messageChan chan *Message) (*Room, error) {
+func connect(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName string, messageChan chan *Message) (*room, error) {
 	// join the pubsub topic
 	topic, err := ps.Join(roomName)
 	if err != nil {
@@ -55,7 +52,7 @@ func JoinRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName s
 		return nil, err
 	}
 
-	cr := &Room{
+	cr := &room{
 		ctx:      ctx,
 		ps:       ps,
 		Topic:    topic,
@@ -69,21 +66,8 @@ func JoinRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName s
 	return cr, nil
 }
 
-// Publish sends a message to the pubsub topic.
-func (cr *Room) Publish(message string, o ...func(*Message)) error {
-	m := &Message{
-		Message: message,
-	}
-
-	for _, f := range o {
-		f(m)
-	}
-
-	return cr.PublishMessage(m)
-}
-
-// Publish sends a message to the pubsub topic.
-func (cr *Room) PublishMessage(m *Message) error {
+// publishMessage sends a message to the pubsub topic.
+func (cr *room) publishMessage(m *Message) error {
 	m.SenderID = cr.self.Pretty()
 
 	msgBytes, err := json.Marshal(m)
@@ -94,7 +78,7 @@ func (cr *Room) PublishMessage(m *Message) error {
 }
 
 // readLoop pulls messages from the pubsub topic and pushes them onto the Messages channel.
-func (cr *Room) readLoop(messageChan chan *Message) {
+func (cr *room) readLoop(messageChan chan *Message) {
 	for {
 		msg, err := cr.sub.Next(cr.ctx)
 		if err != nil {

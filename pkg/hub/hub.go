@@ -33,7 +33,7 @@ import (
 type MessageHub struct {
 	sync.Mutex
 
-	r         *Room
+	r         *room
 	otpKey    string
 	maxsize   int
 	keyLength int
@@ -43,9 +43,12 @@ type MessageHub struct {
 	Messages  chan *Message
 }
 
+// roomBufSize is the number of incoming messages to buffer for each topic.
+const roomBufSize = 128
+
 func NewHub(otp string, maxsize, keyLength, interval int) *MessageHub {
 	return &MessageHub{otpKey: otp, maxsize: maxsize, keyLength: keyLength, interval: interval,
-		Messages: make(chan *Message, RoomBufSize)}
+		Messages: make(chan *Message, roomBufSize)}
 }
 
 func (m *MessageHub) topicKey() string {
@@ -71,7 +74,7 @@ func (m *MessageHub) joinRoom(host host.Host) error {
 	}
 
 	// join the "chat" room
-	cr, err := JoinRoom(ctx, ps, host.ID(), m.topicKey(), m.Messages)
+	cr, err := connect(ctx, ps, host.ID(), m.topicKey(), m.Messages)
 	if err != nil {
 		return err
 	}
@@ -115,7 +118,7 @@ func (m *MessageHub) PublishMessage(mess *Message) error {
 	m.Lock()
 	defer m.Unlock()
 	if m.r != nil {
-		return m.r.PublishMessage(mess)
+		return m.r.publishMessage(mess)
 	}
 	return errors.New("no message room available")
 }
