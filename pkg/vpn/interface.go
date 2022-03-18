@@ -19,7 +19,7 @@
 package vpn
 
 import (
-	"github.com/songgao/water"
+	"github.com/fumiama/water"
 	"github.com/vishvananda/netlink"
 )
 

@@ -9,6 +9,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/fumiama/water v0.0.0-20211231134027-da391938d6ac
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/gookit/color v1.5.0 // indirect
@@ -44,7 +45,6 @@ require (
 	github.com/prometheus/client_golang v1.12.1 // indirect
 	github.com/pterm/pterm v0.12.36
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
-	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/urfave/cli v1.22.5
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect

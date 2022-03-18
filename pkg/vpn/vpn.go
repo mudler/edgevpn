@@ -37,9 +37,9 @@ import (
 	"github.com/mudler/edgevpn/pkg/stream"
 	"github.com/mudler/edgevpn/pkg/types"
 
+	"github.com/fumiama/water"
 	"github.com/pkg/errors"
 	"github.com/songgao/packets/ethernet"
-	"github.com/songgao/water"
 	"golang.org/x/net/ipv4"
 )
 

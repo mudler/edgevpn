@@ -227,7 +227,7 @@ and any other way if not mentioned here.
 # :notebook: Credits
 
 - The awesome [libp2p](https://github.com/libp2p) library
-- [https://github.com/songgao/water](https://github.com/songgao/water) for tun/tap devices in golang
+- [https://github.com/fumiama/water/](https://github.com/fumiama/water/) for tun/tap devices in golang
 - [Room example](https://github.com/libp2p/go-libp2p/tree/master/examples/chat-with-rendezvous) (shamelessly parts are copied by)
 - Logo originally made by [Uniconlabs](https://www.flaticon.com/authors/uniconlabs) from [www.flaticon.com](https://www.flaticon.com/), modified by me
 

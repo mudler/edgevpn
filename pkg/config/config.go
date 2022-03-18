@@ -21,6 +21,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/fumiama/water"
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	connmanager "github.com/libp2p/go-libp2p-connmgr"
@@ -35,7 +36,6 @@ import (
 	"github.com/mudler/edgevpn/pkg/vpn"
 	"github.com/peterbourgon/diskv"
 	"github.com/pkg/errors"
-	"github.com/songgao/water"
 )
 
 // Config is the config struct for the node and the default EdgeVPN services

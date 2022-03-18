@@ -18,8 +18,8 @@ package vpn
 import (
 	"time"
 
+	"github.com/fumiama/water"
 	"github.com/ipfs/go-log"
-	"github.com/songgao/water"
 )
 
 type Config struct {

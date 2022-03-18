@@ -24,7 +24,7 @@ import (
 	"net"
 	"os/exec"
 
-	"github.com/songgao/water"
+	"github.com/fumiama/water"
 )
 
 func prepareInterface(c *Config) error {
@@ -42,7 +42,7 @@ func prepareInterface(c *Config) error {
 func createInterface(c *Config) (*water.Interface, error) {
 	// TUN on Windows requires address and network to be set on device creation stage
 	// We also set network to 0.0.0.0/0 so we able to reach networks behind the node
-	// https://github.com/songgao/water/blob/master/params_windows.go
+	// https://github.com/fumiama/water//blob/master/params_windows.go
 	// https://gitlab.com/openconnect/openconnect/-/blob/master/tun-win32.c
 	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
