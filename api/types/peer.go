@@ -16,5 +16,6 @@
 package types
 
 type Peer struct {
-	ID string
+	ID     string
+	Online bool
 }

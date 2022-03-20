@@ -151,8 +151,24 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		if err != nil {
 			return err
 		}
+
+		// Sum up state also from services
+		online := services.AvailableNodes(ledger, 10*time.Minute)
+		p := map[string]interface{}{}
+
+		for _, v := range online {
+			p[v] = nil
+		}
+
 		for _, v := range peers {
-			list = append(list, apiTypes.Peer{ID: v.String()})
+			_, exists := p[v.String()]
+			if !exists {
+				p[v.String()] = nil
+			}
+		}
+
+		for id, _ := range p {
+			list = append(list, apiTypes.Peer{ID: id, Online: true})
 		}
 
 		return c.JSON(http.StatusOK, list)
@@ -163,12 +179,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		for _, v := range e.Host().Network().Peerstore().Peers() {
 			list = append(list, apiTypes.Peer{ID: v.String()})
 		}
-		peers, err := e.MessageHub.ListPeers()
-		if err != nil {
-			return err
-		}
-
-		return c.JSON(http.StatusOK, peers)
+		return c.JSON(http.StatusOK, list)
 	})
 
 	ec.GET(UsersURL, func(c echo.Context) error {
