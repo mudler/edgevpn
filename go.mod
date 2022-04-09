@@ -3,6 +3,7 @@ module github.com/mudler/edgevpn
 go 1.16
 
 require (
+	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/benbjohnson/clock v1.3.0
 	github.com/c-robinson/iplib v1.0.3
 	github.com/containerd/cgroups v1.0.3 // indirect

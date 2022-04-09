@@ -15,6 +15,7 @@
 
 package main
 
+//go:generate go run ./api/generate ./api/public/functions.tmpl ./api/public/index.tmpl ./api/public/index.html
 import (
 	"fmt"
 	"os"

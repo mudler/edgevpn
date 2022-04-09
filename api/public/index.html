@@ -1,239 +1,2399 @@
+
+
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
- <meta charset="utf-8">
- <meta name="viewport" content="width=device-width, initial-scale=1">
- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
- <link href="/css/fonts.css" rel="stylesheet"> 
- <link rel="stylesheet" href="/css/bulma.min.css" />
- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous">
- <script src="/js/jquery.min.js"></script> 
- <link rel="stylesheet" type="text/css" href="/css/dt.min.css">
- <script type="text/javascript" charset="utf8" src="/js/dt.min.js"></script>
- <script src="/js/dt.js"></script> 
- <script src="/js/common.js"></script> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>EdgeVPN</title>
+    <meta name="description" content="Edgevpn dashboard">
+    <meta name="keywords" content="edgevpn,dashboard">
+    <script src="https://cdn.jsdelivr.net/gh/alpine-collective/alpine-magic-helpers@1.2.x/dist/index.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.7.3/dist/alpine.min.js" defer></script>   
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<style>
+		.bg-black-alt  {
+			background:#191919;
+		}
+		.text-black-alt  {
+			color:#191919;
+		}
+		.border-black-alt {
+			border-color: #191919;
+		}
+    .string { color: green; }
+    .number { color: darkorange; }
+    .boolean { color: blue; }
+    .null { color: magenta; }
+    .key { color: red; }
+		
 
- <link rel="stylesheet" type="text/css" href="/css/style.css">
+    #checkbox:checked + label .switch-ball{
+      background-color: white;
+      transform: translateX(24px);
+      transition: transform 0.3s linear;
+    }
+  </style>
 
-<title>EdgeVPN - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              clifford: '#da373d',
+            }
+          }
+        }
+      }
+    </script>
 </head>
 
-<body>
-  <nav  class="navbar is-light is-spaced has-shadow" role="navigation" aria-label="main navigation">
-    <div class="navbar-brand">
-      <a class="navbar-item" href="/">
-        <img src="/images/logo.png" > &nbsp;
-        EdgeVPN
-      </a>
-  
-      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="menu">
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-      </a>
-    </div>
-    <div id="menu" class="navbar-menu">
-      <div class="navbar-start">
-        <a class="navbar-item" href="/machines.html">
-          <i class="fas fa-server"></i>&nbsp;
-          Machines
-        </a>
-       
-        <a class="navbar-item" href="/users.html">
-          <i class="fas fa-user-clock"></i>&nbsp;
-          Users
-        </a>
-        <a class="navbar-item" href="/blockchain.html">
-          <i class="fas fa-dice-d20"></i>&nbsp;
-          Blockchain
-        </a>
+<body class="font-sans leading-normal tracking-normal" 
+      x-data="{page: location.hash, 'darkMode': false }" 
+      @hashchange.window="page = location.hash" 
+      x-init="
+         darkMode = JSON.parse(localStorage.getItem('darkMode'));
+         $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
+      x-bind:class="darkMode === true ? 'dark bg-black-alt': 'bg-white'"
+>
 
-        <div class="dropdown">
-          <div class="dropdown-trigger">
-            <button class="button" aria-haspopup="true" aria-controls="services-menu">
-              <span> <i class="fas fa-project-diagram"></i> Services
-              </span>
-              <span class="icon is-small">
-                <i class="fas fa-angle-down" aria-hidden="true"></i>
-              </span>
-            </button>
-          </div>
-          <div class="dropdown-menu" id="services-menu" role="menu">
-            <div class="dropdown-content">
-              <a class="dropdown-item" href="/services.html">
-                <i class="fas fa-project-diagram"></i>&nbsp;
-                TCP tunnels
-              </a>
-              <a class="dropdown-item" href="/files.html">
-                <i class="fas fa-file-upload"></i>&nbsp;
-                Files
-              </a>
-              <a class="dropdown-item" href="/dns.html">
-                <i class="fas fa-globe"></i>&nbsp;
-                DNS
-              </a>
-            </div>
-          </div>
-        </div>
-        <div class="dropdown">
-          <div class="dropdown-trigger">
-            <button class="button" aria-haspopup="true" aria-controls="nodes-menu">
-              <span><i class="fas fa-ethernet"></i> Nodes</span>
-              <span class="icon is-small">
-                <i class="fas fa-angle-down" aria-hidden="true"></i>
-              </span>
-            </button>
-          </div>
-          <div class="dropdown-menu" id="nodes-menu" role="menu">
-            <div class="dropdown-content">
-              <a class="dropdown-item" href="/peerstore.html">
-                <i class="fas fa-database"></i>&nbsp;
-                Peerstore
-              </a>
-              <a class="dropdown-item" href="/nodes.html">
-                <i class="fas fa-ethernet"></i>&nbsp;
-                On chain nodes
-              </a>
-            </div>
-          </div>
-        </div> 
+<nav id="header" class="bg-slate-100 dark:bg-gray-900 fixed w-full z-10 top-0 shadow">
+	
+		<div class="w-full container mx-auto flex flex-wrap items-center mt-0 pt-3 pb-3 md:pb-0">
+				
+			<div class="w-1/2 pl-2 md:pl-0 align-text-bottom">
+				<a class="text-gray-100 text-base xl:text-xl no-underline hover:no-underline font-bold align-top"  href="#"> 
+					<img src="/images/logo.png" class="object-scale-down float-left h-7 w-7"> <span class="pl-4 pt-1 md:pb-0 text-md text-slate-700 dark:text-slate-100"> EdgeVPN </span>
+				</a>
       </div>
 
-      <div class="navbar-end">
-        <div class="navbar-item">
-          <div class="buttons">
-            <a class="button is-link" href="https://github.com/mudler/edgevpn" target=_blank>
-             <strong><i class="fab fa-github-alt"></i> GitHub</strong>
-            </a>
-            <a class="button is-light" href="https://github.com/mudler/edgevpn/issues/new" target=_blank>
-             <i class="fas fa-bug"></i>&nbsp; Report issue
-            </a>
-            <a class="button is-light" href="https://mudler.github.io/edgevpn/docs" target=_blank>
-              <i class="fas fa-book"></i>&nbsp; Documentation
-             </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </nav>
-    <section class="hero">
-      <div class="hero-body">
-        <div class="container">
-          <h1 class="title">
-            <i class="fas fa-tachometer-alt"></i> Dashboard
-          </h1>
-          <h2 class="subtitle">
-            Accessible via api at <a href="/api/summary" target=_blank><code> /api/summary </code></a>
-          </h2>
-        </div>
-      </div>
-    </section>
-    <section class="section">
-        <div class="container">
-            <div class="tile is-ancestor has-text-centered row">
-              <div class="tile is-parent">
-                  <article class="tile is-child box">
-                    <a href="/machines.html">
-                      <p class="title" id="machines"></p>
-                      <p class="subtitle"><i class="fas fa-server"></i> Machines</p>
-                    </a>
-                  </article>
-              </div>
-              <div class="tile is-parent">
-                  <article class="tile is-child box">
-                    <a href="/services.html">
-                      <p class="title" id="services"></p>
-                      <p class="subtitle"><i class="fas fa-project-diagram"></i> Services</p>
-                    </a>
-                  </article>
-              </div>
-              <div class="tile is-parent">
-                  <article class="tile is-child box">
-                    <a href="/files.html">
-                      <p class="title" id="files"></p>
-                      <p class="subtitle"><i class="fas fa-file-upload"></i> Files</p>
-                    </a>
-                  </article>
+			<div class="w-1/2 pr-0">
+				<div class="flex relative inline-block float-right">
+        <!-- Dark/Light mode button-->				
+          <div >
+            <div>
+              <div class="dark:text-gray-100">
+                <div class="flex items-center justify-center space-x-2">
+                  <span class="text-sm text-gray-800 dark:text-gray-500 p-2">Light</span>
+                  <label for="toggle"
+                    class="flex items-center h-5 p-1 duration-300 ease-in-out bg-gray-300 rounded-full cursor-pointer w-9 dark:bg-gray-600">
+                    <div
+                      class="w-4 h-4 duration-300 ease-in-out transform bg-white rounded-full shadow-md toggle-dot dark:translate-x-3">
+                    </div>
+                  </label>
+                  <span class="text-sm text-gray-400 dark:text-white p-2">Dark</span>
+                  <input id="toggle" type="checkbox" class="hidden" :value="darkMode" @change="darkMode = !darkMode" />
+                </div>
               </div>
             </div>
-          <div class="tile is-ancestor has-text-centered row">
-
-              <div class="tile is-parent">
-                  <article class="tile is-child box">
-                    <a href="/users.html">
-                      <p class="title" id="users"></p>
-                      <p class="subtitle"><i class="fas fa-user-clock"></i> Users</p>
-                    </a>
-                  </article>
-              </div>
-              <div class="tile is-parent">
-                <article class="tile is-child box">
-                  <a href="/blockchain.html">
-                    <p class="title" id="blockchain"></p>
-                    <p class="subtitle"><i class="fas fa-dice-d20"></i> Blockchain index</p>
-                  </a>
-                </article>
-              </div>
-              <div class="tile is-parent">
-                <article class="tile is-child box">
-                  <a href="/nodes.html">
-                    <p class="title" id="nodes"></p>
-                    <p class="subtitle"><i class="fas fa-ethernet"></i> On chain nodes</p>
-                  </a>
-                </article>
-              </div>
-              <div class="tile is-parent">
-                <article class="tile is-child box">
-                  <a href="/peerstore.html">
-                    <p class="title" id="peers"></p>
-                    <p class="subtitle"><i class="fas fa-database"></i> p2p known peers</p>
-                  </a>
-                </article>
-              </div>
           </div>
-        </div>
-        </div>
-    </section>
-        <script type="text/javascript">
+        <!-- END Dark/Light mode button-->				
+
+					<div class="block lg:hidden pr-4">
+					<button id="nav-toggle" class="flex items-center px-3 py-2 border rounded text-gray-500 border-gray-600 hover:text-gray-100 hover:border-teal-500 appearance-none focus:outline-none">
+						<svg class="fill-current h-3 w-3" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><title>Menu</title><path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/></svg>
+					</button>
+				  </div>
+				</div>
+			</div>
+
+
+			<div class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden lg:block mt-2 lg:mt-0 bg-white-300 dark:bg-gray-900 z-20" id="nav-content">
+				<ul class="list-reset lg:flex flex-1 items-center px-4 md:px-0">
+                    
+                    
+
+
+
+
+
+
+
+        <li class="mr-6 my-2 md:my-0">
+            <a href="#"
+            x-bind:class="page === '' ? 'text-blue-400 border-blue-400 hover:border-blue-400' : 'text-gray-500 dark:hover:text-gray-100 dark:hover:border-violet-900 hover:text-gray-900 border-sky-100 dark:border-sky-900 hover:border-pink-400'"
+            class="block py-1 md:py-3 pl-1 align-middle no-underline border-b-2">
+              <i
+              x-bind:class="page === '' ? 'text-blue-400' : '' "
+              class="fas fa-home fa-fw mr-3"></i><span class="pb-1 md:pb-0 text-sm">Home</span>
+          </a>
+        </li>
+
+
+                    
+                    
+
+
+
+
+
+        <li class="mr-6 my-2 md:my-0">
+            <a href="#nodes"
+            x-bind:class="page === '#nodes' ? 'text-blue-400 border-blue-400 hover:border-blue-400' : 'text-gray-500 dark:hover:text-gray-100 dark:hover:border-violet-900 hover:text-gray-900 border-sky-100 dark:border-sky-900 hover:border-pink-400'"
+            class="block py-1 md:py-3 pl-1 align-middle no-underline border-b-2">
+              <i
+              x-bind:class="page === '#nodes' ? 'text-blue-400' : '' "
+              class="fas fa-server fa-fw mr-3"></i><span class="pb-1 md:pb-0 text-sm">Nodes</span>
+          </a>
+        </li>
+
+
+                    
+                    
+
+
+
+
+
+        <li class="mr-6 my-2 md:my-0">
+            <a href="#dns"
+            x-bind:class="page === '#dns' ? 'text-blue-400 border-blue-400 hover:border-blue-400' : 'text-gray-500 dark:hover:text-gray-100 dark:hover:border-violet-900 hover:text-gray-900 border-sky-100 dark:border-sky-900 hover:border-pink-400'"
+            class="block py-1 md:py-3 pl-1 align-middle no-underline border-b-2">
+              <i
+              x-bind:class="page === '#dns' ? 'text-blue-400' : '' "
+              class="fas fa-globe fa-fw mr-3"></i><span class="pb-1 md:pb-0 text-sm">DNS</span>
+          </a>
+        </li>
+
+
+                    
+                    
+
+
+
+
+
+        <li class="mr-6 my-2 md:my-0">
+            <a href="#blockchain"
+            x-bind:class="page === '#blockchain' ? 'text-blue-400 border-blue-400 hover:border-blue-400' : 'text-gray-500 dark:hover:text-gray-100 dark:hover:border-violet-900 hover:text-gray-900 border-sky-100 dark:border-sky-900 hover:border-pink-400'"
+            class="block py-1 md:py-3 pl-1 align-middle no-underline border-b-2">
+              <i
+              x-bind:class="page === '#blockchain' ? 'text-blue-400' : '' "
+              class="fas fa-dice-d20 fa-fw mr-3"></i><span class="pb-1 md:pb-0 text-sm">Blockchain</span>
+          </a>
+        </li>
+
+
+                    
+                    
+
+
+
+
+
+        <li class="mr-6 my-2 md:my-0">
+            <a href="#services"
+            x-bind:class="page === '#services' ? 'text-blue-400 border-blue-400 hover:border-blue-400' : 'text-gray-500 dark:hover:text-gray-100 dark:hover:border-violet-900 hover:text-gray-900 border-sky-100 dark:border-sky-900 hover:border-pink-400'"
+            class="block py-1 md:py-3 pl-1 align-middle no-underline border-b-2">
+              <i
+              x-bind:class="page === '#services' ? 'text-blue-400' : '' "
+              class="fas fa-ethernet fa-fw mr-3"></i><span class="pb-1 md:pb-0 text-sm">Services</span>
+          </a>
+        </li>
+
+
+                    
+                    
+
+
+
+
+
+        <li class="mr-6 my-2 md:my-0">
+            <a href="#peers"
+            x-bind:class="page === '#peers' ? 'text-blue-400 border-blue-400 hover:border-blue-400' : 'text-gray-500 dark:hover:text-gray-100 dark:hover:border-violet-900 hover:text-gray-900 border-sky-100 dark:border-sky-900 hover:border-pink-400'"
+            class="block py-1 md:py-3 pl-1 align-middle no-underline border-b-2">
+              <i
+              x-bind:class="page === '#peers' ? 'text-blue-400' : '' "
+              class="fas fa-users fa-fw mr-3"></i><span class="pb-1 md:pb-0 text-sm">Peers</span>
+          </a>
+        </li>
+
+        	</ul>
+				
+				  <div class="relative pull-right pl-4 pr-4 md:pr-0">
+          </div>
+			</div>
+		</div>
+	</nav>
+
+	<!-- Nodes Container-->
+    <div class="container w-full mx-auto pt-20" x-show="page === '#nodes'">
+
         
-            $(document).ready(function() {
-              sync = function() {
-                $.ajax({
-                    url: "/api/summary",
-                    type: "GET",
-                    cache: false,
-                    async: true,
+        
 
-                    dataType: "json",
-                    success: function (response) {
-                        // response is JSON
-                        $('#services').html(response.Services);
-                        $('#users').html(response.Users);
-                        $('#files').html(response.Files);
-                        $('#machines').html(response.Machines);
-                        $('#blockchain').html(response.BlockChain);
-                        $('#nodes').html(response.OnChainNodes);
-                        $('#peers').html(response.Peers);
-                    }
-                });
-              }
 
-              sync()
-
-              setInterval( function () {
-               sync()
-              }, 5000 ); // 5 s
-
-            } );
-        </script>
-        <footer class="footer">
-          <div class="content has-text-centered">
-            <p>
-              <strong>EdgeVPN</strong> by <a href="https://github.com/mudler/edgevpn">Ettore Di Giacinto</a>. The source code is licensed
-              <a href="https://github.com/mudler/edgevpn/blob/master/LICENSE">GPLv3</a>. 
-              Logo originally made by <a href="https://www.flaticon.com/authors/uniconlabs" title="Uniconlabs">Uniconlabs</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
-            </p>
+        <div class="px-4 md:px-0 md:mt-8 mb-20 leading-normal " >
+          
+          <div class="relative " >
+          <a class="mr-2 bg-sky-300 dark:bg-sky-600 text-white p-2 rounded leading-none items-center absolute top-10 right-1 " href="https://mudler.github.io/edgevpn/docs/getting-started/api/#apimachines" target=_blank>
+            <i class="fa-solid fa-book fa-fw pr-1"></i> Machines API Documentation 
+          </a>
           </div>
-        </footer>  
-    </body>
+        </div>
+
+        
+        
+
+
+
+
+
+
+        <div class="w-full px-4 md:px-0 md:mt-8 mb-16 text-gray-800 leading-normal"
+
+                x-data="machines()"
+                x-init="$interval(updateItems, 1500)"
+                >
+            <div class="w-full mt-12 p-3 dark:bg-gray-900 border dark:border-gray-800 rounded shadow">
+                <div class="border-b bg-white-200 dark:bg-gray-900 dark:border-gray-800 p-3">
+                    <h5 class="font-bold uppercase dark:text-gray-600">Nodes</h5>
+                </div>
+                <br>
+                <div class="relative mt-1 ">
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+
+                <input
+                  x-ref="searchField"
+                  x-model="search"
+                  x-on:click="viewPage(0)"
+                  x-on:keydown.window.prevent.slash=" viewPage(0), $refs.searchField.focus()"
+                  placeholder="Search..."
+                  type="search"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  />
+                
+                </div>
+
+                <div class="overflow-auto">
+			 
+
+                    <table class="min-w-full bg-white-200 dark:bg-gray-900">
+                        <thead class="bg-slate-200 dark:bg-gray-800 dark:text-white">
+                            <tr>
+
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Address</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">PeerID</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Hostname</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">OS</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Architecture</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Version</th>
+                            
+
+                            </tr>
+                        </thead>
+                        <tbody class="text-black dark:text-white">
+                            <template x-for="(d, index) in filtered" :key="index">
+                                   <tr
+                                    x-bind:class="d.Online ? 'bg-lime-100 dark:bg-lime-800' : 'bg-stone-200 dark:bg-stone-800'"
+                                   >
+                                    
+                                        <td x-text="d.Address" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="d.PeerID" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="d.Hostname" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="d.OS" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="d.Architecture" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="d.Version" class="text-left py-3 px-4"></td>
+                                    
+                                   </tr>
+                             </template>                          
+                        </tbody>
+                    </table>
+                    <!--Pagination Buttons-->
+                    <div
+                    class="w-full md:w-1/2 mx-auto py-6 flex justify-between items-center"
+                    x-show="pageCount() > 1"
+                     >
+                    <!--First Button-->
+                    <button
+                      x-on:click="viewPage(0)"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                        <line x1="5" y1="19" x2="5" y2="5"></line>
+                      </svg>
+                    </button>
+            
+                    <!--Previous Button-->
+                    <button
+                      x-on:click="prevPage"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!-- Display page numbers -->
+                    <template x-for="(page,index) in pages()" :key="page">
+                      <button
+                        class="px-3 py-2 rounded"
+                        :class="{ 'bg-indigo-600 text-white font-bold' : page === pageNumber }"
+                        type="button"
+                        x-on:click="viewPage(page)"
+                      >
+                        <span x-text="page" class="dark:text-white"></span>
+                      </button>
+                    </template>
+            
+                    <!--Next Button-->
+                    <button
+                      x-on:click="nextPage"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!--Last Button-->
+                    <button
+                      x-on:click="viewPage(Math.ceil(total/size)-1)"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                      </svg>
+                    </button>
+                </div>
+                <!-- /Pagination Buttons-->
+
+
+                </div>
+            </div>
+        </div>
+
+    </div>  
+	<!--END Node Container-->
+
+    <!-- Blockchain Container-->
+    <div class="container w-full mx-auto pt-20" x-show="page === '#blockchain'">
+        <div class="w-full px-4 md:px-0 md:mt-8 mb-16 text-gray-800 leading-normal">
+            <div class="w-full mt-12 p-3 dark:bg-gray-900 bg-white-100 border dark:border-gray-800 rounded shadow"
+            x-data="blockchain()"
+            x-init="$interval(updateItems, 5500)"
+            >
+                <div class="border-b border-gray-800 p-3">
+                    <h5 class="font-bold uppercase text-gray-600">Blockchain </h5>
+                    <h5 class="font-bold uppercase text-gray-600">  
+                        <span class="mt-1 text-xs px-2 py-1 font-semibold leading-tight text-slate-700 bg-slate-100 rounded-full dark:bg-slate-700 dark:text-slate-100"><i class="fa-solid fa-hashtag fa-fw mr-3"></i> <span x-text="blockchain.Index"></span> </span>
+                        <span class="mt-1 text-xs px-2 py-1 font-semibold leading-tight text-slate-700 bg-slate-100 rounded-full dark:bg-slate-700 dark:text-slate-100"><i class="fa-solid fa-clock fa-fw mr-3"></i> <span x-text="blockchain.Timestamp"></span> </span>
+                        <span class="mt-1 text-xs px-2 py-1 font-semibold leading-tight text-slate-700 bg-slate-100 rounded-full dark:bg-slate-700 dark:text-slate-100"><i class="fa-solid fa-dice-d20 fa-fw mr-3"></i> <span x-text="blockchain.Hash"></span> </span>
+                        <span class="mt-1 text-xs px-2 py-1 font-semibold leading-tight text-slate-700 bg-slate-100 rounded-full dark:bg-slate-700 dark:text-slate-100"><i class="fa-solid fa-link fa-fw mr-3"></i> <span x-text="blockchain.PrevHash"></span> </span>
+                </div>               
+                <section class="flex justify-center mt-10">
+                  
+                    <div class="bg-white-300 py-1 w-11/12 rounded  border-b-4 border-red-400 flex dark:text-white">
+                        <pre class="overflow-auto"><code class="overflow-auto" x-html="syntaxHighlight(JSON.stringify(blockchain, null, 2))"></code></pre>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+	<!--END Blockchain Container-->
+
+    <!-- DNS Container-->
+    <div class="container w-full mx-auto pt-20" x-show="page === '#dns'">
+        
+        
+
+
+        <div class="px-4 md:px-0 md:mt-8 mb-20 leading-normal " >
+          
+          <div class="relative " >
+          <a class="mr-2 bg-sky-300 dark:bg-sky-600 text-white p-2 rounded leading-none items-center absolute top-10 right-1 " href="https://mudler.github.io/edgevpn/docs/concepts/overview/dns/" target=_blank>
+            <i class="fa-solid fa-book fa-fw pr-1"></i> DNS Documentation 
+          </a>
+          </div>
+        </div>
+
+        
+        
+
+
+
+
+
+
+        <div class="w-full px-4 md:px-0 md:mt-8 mb-16 text-gray-800 leading-normal"
+
+                x-data="dns()"
+                x-init="$interval(updateItems, 1500)"
+                >
+            <div class="w-full mt-12 p-3 dark:bg-gray-900 border dark:border-gray-800 rounded shadow">
+                <div class="border-b bg-white-200 dark:bg-gray-900 dark:border-gray-800 p-3">
+                    <h5 class="font-bold uppercase dark:text-gray-600">DNS</h5>
+                </div>
+                <br>
+                <div class="relative mt-1 ">
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+
+                <input
+                  x-ref="searchField"
+                  x-model="search"
+                  x-on:click="viewPage(0)"
+                  x-on:keydown.window.prevent.slash=" viewPage(0), $refs.searchField.focus()"
+                  placeholder="Search..."
+                  type="search"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  />
+                
+                </div>
+
+                <div class="overflow-auto">
+			 
+
+                    <table class="min-w-full bg-white-200 dark:bg-gray-900">
+                        <thead class="bg-slate-200 dark:bg-gray-800 dark:text-white">
+                            <tr>
+
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Regex</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Records</th>
+                            
+
+                            </tr>
+                        </thead>
+                        <tbody class="text-black dark:text-white">
+                            <template x-for="(d, index) in filtered" :key="index">
+                                   <tr
+                                    
+                                   >
+                                    
+                                        <td x-text="d.Regex" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="syntaxHighlight(JSON.stringify(d.Records, null, 2))" class="text-left py-3 px-4"></td>
+                                    
+                                   </tr>
+                             </template>                          
+                        </tbody>
+                    </table>
+                    <!--Pagination Buttons-->
+                    <div
+                    class="w-full md:w-1/2 mx-auto py-6 flex justify-between items-center"
+                    x-show="pageCount() > 1"
+                     >
+                    <!--First Button-->
+                    <button
+                      x-on:click="viewPage(0)"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                        <line x1="5" y1="19" x2="5" y2="5"></line>
+                      </svg>
+                    </button>
+            
+                    <!--Previous Button-->
+                    <button
+                      x-on:click="prevPage"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!-- Display page numbers -->
+                    <template x-for="(page,index) in pages()" :key="page">
+                      <button
+                        class="px-3 py-2 rounded"
+                        :class="{ 'bg-indigo-600 text-white font-bold' : page === pageNumber }"
+                        type="button"
+                        x-on:click="viewPage(page)"
+                      >
+                        <span x-text="page" class="dark:text-white"></span>
+                      </button>
+                    </template>
+            
+                    <!--Next Button-->
+                    <button
+                      x-on:click="nextPage"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!--Last Button-->
+                    <button
+                      x-on:click="viewPage(Math.ceil(total/size)-1)"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                      </svg>
+                    </button>
+                </div>
+                <!-- /Pagination Buttons-->
+
+
+                </div>
+            </div>
+        </div>
+ 
+
+    </div>
+	<!--END DNS Container-->
+
+   <!-- Services Container-->
+    <div class="container w-full mx-auto pt-20" x-show="page === '#services'">
+        
+        
+
+
+        <div class="px-4 md:px-0 md:mt-8 mb-20 leading-normal " >
+          
+          <div class="relative " >
+          <a class="mr-2 bg-sky-300 dark:bg-sky-600 text-white p-2 rounded leading-none items-center absolute top-10 right-1 " href="https://mudler.github.io/edgevpn/docs/concepts/overview/services/" target=_blank>
+            <i class="fa-solid fa-book fa-fw pr-1"></i> Tunnelling Documentation 
+          </a>
+          </div>
+        </div>
+
+        
+        
+
+
+
+
+
+
+        <div class="w-full px-4 md:px-0 md:mt-8 mb-16 text-gray-800 leading-normal"
+
+                x-data="services()"
+                x-init="$interval(updateItems, 1500)"
+                >
+            <div class="w-full mt-12 p-3 dark:bg-gray-900 border dark:border-gray-800 rounded shadow">
+                <div class="border-b bg-white-200 dark:bg-gray-900 dark:border-gray-800 p-3">
+                    <h5 class="font-bold uppercase dark:text-gray-600">TCP Tunnels</h5>
+                </div>
+                <br>
+                <div class="relative mt-1 ">
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+
+                <input
+                  x-ref="searchField"
+                  x-model="search"
+                  x-on:click="viewPage(0)"
+                  x-on:keydown.window.prevent.slash=" viewPage(0), $refs.searchField.focus()"
+                  placeholder="Search..."
+                  type="search"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  />
+                
+                </div>
+
+                <div class="overflow-auto">
+			 
+
+                    <table class="min-w-full bg-white-200 dark:bg-gray-900">
+                        <thead class="bg-slate-200 dark:bg-gray-800 dark:text-white">
+                            <tr>
+
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Name</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">PeerID</th>
+                            
+
+                            </tr>
+                        </thead>
+                        <tbody class="text-black dark:text-white">
+                            <template x-for="(d, index) in filtered" :key="index">
+                                   <tr
+                                    
+                                   >
+                                    
+                                        <td x-text="d.Name" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="d.PeerID" class="text-left py-3 px-4"></td>
+                                    
+                                   </tr>
+                             </template>                          
+                        </tbody>
+                    </table>
+                    <!--Pagination Buttons-->
+                    <div
+                    class="w-full md:w-1/2 mx-auto py-6 flex justify-between items-center"
+                    x-show="pageCount() > 1"
+                     >
+                    <!--First Button-->
+                    <button
+                      x-on:click="viewPage(0)"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                        <line x1="5" y1="19" x2="5" y2="5"></line>
+                      </svg>
+                    </button>
+            
+                    <!--Previous Button-->
+                    <button
+                      x-on:click="prevPage"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!-- Display page numbers -->
+                    <template x-for="(page,index) in pages()" :key="page">
+                      <button
+                        class="px-3 py-2 rounded"
+                        :class="{ 'bg-indigo-600 text-white font-bold' : page === pageNumber }"
+                        type="button"
+                        x-on:click="viewPage(page)"
+                      >
+                        <span x-text="page" class="dark:text-white"></span>
+                      </button>
+                    </template>
+            
+                    <!--Next Button-->
+                    <button
+                      x-on:click="nextPage"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!--Last Button-->
+                    <button
+                      x-on:click="viewPage(Math.ceil(total/size)-1)"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                      </svg>
+                    </button>
+                </div>
+                <!-- /Pagination Buttons-->
+
+
+                </div>
+            </div>
+        </div>
+ 
+        <hr class="border-b-2 border-gray-600 my-8 mx-4">
+        
+        
+
+
+        <div class="px-4 md:px-0 md:mt-8 mb-20 leading-normal " >
+          
+          <div class="relative " >
+          <a class="mr-2 bg-sky-300 dark:bg-sky-600 text-white p-2 rounded leading-none items-center absolute top-10 right-1 " href="https://mudler.github.io/edgevpn/docs/concepts/overview/files/" target=_blank>
+            <i class="fa-solid fa-book fa-fw pr-1"></i> Files Documentation 
+          </a>
+          </div>
+        </div>
+
+        
+        
+
+
+
+
+
+
+        <div class="w-full px-4 md:px-0 md:mt-8 mb-16 text-gray-800 leading-normal"
+
+                x-data="files()"
+                x-init="$interval(updateItems, 1500)"
+                >
+            <div class="w-full mt-12 p-3 dark:bg-gray-900 border dark:border-gray-800 rounded shadow">
+                <div class="border-b bg-white-200 dark:bg-gray-900 dark:border-gray-800 p-3">
+                    <h5 class="font-bold uppercase dark:text-gray-600">Files</h5>
+                </div>
+                <br>
+                <div class="relative mt-1 ">
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+
+                <input
+                  x-ref="searchField"
+                  x-model="search"
+                  x-on:click="viewPage(0)"
+                  x-on:keydown.window.prevent.slash=" viewPage(0), $refs.searchField.focus()"
+                  placeholder="Search..."
+                  type="search"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  />
+                
+                </div>
+
+                <div class="overflow-auto">
+			 
+
+                    <table class="min-w-full bg-white-200 dark:bg-gray-900">
+                        <thead class="bg-slate-200 dark:bg-gray-800 dark:text-white">
+                            <tr>
+
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Name</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">PeerID</th>
+                            
+
+                            </tr>
+                        </thead>
+                        <tbody class="text-black dark:text-white">
+                            <template x-for="(d, index) in filtered" :key="index">
+                                   <tr
+                                    
+                                   >
+                                    
+                                        <td x-text="d.Name" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="d.PeerID" class="text-left py-3 px-4"></td>
+                                    
+                                   </tr>
+                             </template>                          
+                        </tbody>
+                    </table>
+                    <!--Pagination Buttons-->
+                    <div
+                    class="w-full md:w-1/2 mx-auto py-6 flex justify-between items-center"
+                    x-show="pageCount() > 1"
+                     >
+                    <!--First Button-->
+                    <button
+                      x-on:click="viewPage(0)"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                        <line x1="5" y1="19" x2="5" y2="5"></line>
+                      </svg>
+                    </button>
+            
+                    <!--Previous Button-->
+                    <button
+                      x-on:click="prevPage"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!-- Display page numbers -->
+                    <template x-for="(page,index) in pages()" :key="page">
+                      <button
+                        class="px-3 py-2 rounded"
+                        :class="{ 'bg-indigo-600 text-white font-bold' : page === pageNumber }"
+                        type="button"
+                        x-on:click="viewPage(page)"
+                      >
+                        <span x-text="page" class="dark:text-white"></span>
+                      </button>
+                    </template>
+            
+                    <!--Next Button-->
+                    <button
+                      x-on:click="nextPage"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!--Last Button-->
+                    <button
+                      x-on:click="viewPage(Math.ceil(total/size)-1)"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                      </svg>
+                    </button>
+                </div>
+                <!-- /Pagination Buttons-->
+
+
+                </div>
+            </div>
+        </div>
+        
+    </div>
+	<!--END Services Container-->
+
+  <!-- Peers Container-->
+    <div class="container w-full mx-auto pt-20" x-show="page === '#peers'">
+        
+        
+
+
+
+
+
+
+        <div class="w-full px-4 md:px-0 md:mt-8 mb-16 text-gray-800 leading-normal"
+
+                x-data="nodes()"
+                x-init="$interval(updateItems, 1500)"
+                >
+            <div class="w-full mt-12 p-3 dark:bg-gray-900 border dark:border-gray-800 rounded shadow">
+                <div class="border-b bg-white-200 dark:bg-gray-900 dark:border-gray-800 p-3">
+                    <h5 class="font-bold uppercase dark:text-gray-600">Nodes</h5>
+                </div>
+                <br>
+                <div class="relative mt-1 ">
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+
+                <input
+                  x-ref="searchField"
+                  x-model="search"
+                  x-on:click="viewPage(0)"
+                  x-on:keydown.window.prevent.slash=" viewPage(0), $refs.searchField.focus()"
+                  placeholder="Search..."
+                  type="search"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  />
+                
+                </div>
+
+                <div class="overflow-auto">
+			 
+
+                    <table class="min-w-full bg-white-200 dark:bg-gray-900">
+                        <thead class="bg-slate-200 dark:bg-gray-800 dark:text-white">
+                            <tr>
+
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">PeerID</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Online</th>
+                            
+
+                            </tr>
+                        </thead>
+                        <tbody class="text-black dark:text-white">
+                            <template x-for="(d, index) in filtered" :key="index">
+                                   <tr
+                                    
+                                   >
+                                    
+                                        <td x-text="d.ID" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="d.Online" class="text-left py-3 px-4"></td>
+                                    
+                                   </tr>
+                             </template>                          
+                        </tbody>
+                    </table>
+                    <!--Pagination Buttons-->
+                    <div
+                    class="w-full md:w-1/2 mx-auto py-6 flex justify-between items-center"
+                    x-show="pageCount() > 1"
+                     >
+                    <!--First Button-->
+                    <button
+                      x-on:click="viewPage(0)"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                        <line x1="5" y1="19" x2="5" y2="5"></line>
+                      </svg>
+                    </button>
+            
+                    <!--Previous Button-->
+                    <button
+                      x-on:click="prevPage"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!-- Display page numbers -->
+                    <template x-for="(page,index) in pages()" :key="page">
+                      <button
+                        class="px-3 py-2 rounded"
+                        :class="{ 'bg-indigo-600 text-white font-bold' : page === pageNumber }"
+                        type="button"
+                        x-on:click="viewPage(page)"
+                      >
+                        <span x-text="page" class="dark:text-white"></span>
+                      </button>
+                    </template>
+            
+                    <!--Next Button-->
+                    <button
+                      x-on:click="nextPage"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!--Last Button-->
+                    <button
+                      x-on:click="viewPage(Math.ceil(total/size)-1)"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                      </svg>
+                    </button>
+                </div>
+                <!-- /Pagination Buttons-->
+
+
+                </div>
+            </div>
+        </div>
+
+        <hr class="border-b-2 border-gray-600 my-8 mx-4">
+        
+        
+
+
+
+
+
+
+        <div class="w-full px-4 md:px-0 md:mt-8 mb-16 text-gray-800 leading-normal"
+
+                x-data="peerstore()"
+                x-init="$interval(updateItems, 1500)"
+                >
+            <div class="w-full mt-12 p-3 dark:bg-gray-900 border dark:border-gray-800 rounded shadow">
+                <div class="border-b bg-white-200 dark:bg-gray-900 dark:border-gray-800 p-3">
+                    <h5 class="font-bold uppercase dark:text-gray-600">Peer store</h5>
+                </div>
+                <br>
+                <div class="relative mt-1 ">
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+
+                <input
+                  x-ref="searchField"
+                  x-model="search"
+                  x-on:click="viewPage(0)"
+                  x-on:keydown.window.prevent.slash=" viewPage(0), $refs.searchField.focus()"
+                  placeholder="Search..."
+                  type="search"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  />
+                
+                </div>
+
+                <div class="overflow-auto">
+			 
+
+                    <table class="min-w-full bg-white-200 dark:bg-gray-900">
+                        <thead class="bg-slate-200 dark:bg-gray-800 dark:text-white">
+                            <tr>
+
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">PeerID</th>
+                            
+
+                            </tr>
+                        </thead>
+                        <tbody class="text-black dark:text-white">
+                            <template x-for="(d, index) in filtered" :key="index">
+                                   <tr
+                                    
+                                   >
+                                    
+                                        <td x-text="d.ID" class="text-left py-3 px-4"></td>
+                                    
+                                   </tr>
+                             </template>                          
+                        </tbody>
+                    </table>
+                    <!--Pagination Buttons-->
+                    <div
+                    class="w-full md:w-1/2 mx-auto py-6 flex justify-between items-center"
+                    x-show="pageCount() > 1"
+                     >
+                    <!--First Button-->
+                    <button
+                      x-on:click="viewPage(0)"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                        <line x1="5" y1="19" x2="5" y2="5"></line>
+                      </svg>
+                    </button>
+            
+                    <!--Previous Button-->
+                    <button
+                      x-on:click="prevPage"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!-- Display page numbers -->
+                    <template x-for="(page,index) in pages()" :key="page">
+                      <button
+                        class="px-3 py-2 rounded"
+                        :class="{ 'bg-indigo-600 text-white font-bold' : page === pageNumber }"
+                        type="button"
+                        x-on:click="viewPage(page)"
+                      >
+                        <span x-text="page" class="dark:text-white"></span>
+                      </button>
+                    </template>
+            
+                    <!--Next Button-->
+                    <button
+                      x-on:click="nextPage"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!--Last Button-->
+                    <button
+                      x-on:click="viewPage(Math.ceil(total/size)-1)"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                      </svg>
+                    </button>
+                </div>
+                <!-- /Pagination Buttons-->
+
+
+                </div>
+            </div>
+        </div>
+
+        </div>
+    </div>
+	<!--END Peers Container-->
+
+	<!-- Index Container-->
+	<div class="container w-full mx-auto pt-20" x-show="page === ''">
+		
+		<div class="w-full px-4 md:px-0 md:mt-8 mb-16 text-gray-800 leading-normal"
+            x-data="summary()"
+            x-init="$interval(updateItems, 1500)"
+        >
+			<!--Summary Content-->
+			
+			<div class="flex flex-wrap">
+                
+                
+
+
+
+
+                <div class="w-full md:w-1/2 xl:w-1/3 p-3">
+                    <!--Metric Card-->
+                    <div class="dark:bg-gray-900 bg-white-100 dark:border-gray-800 dark:border-gray-600 border-b-4 rounded shadow p-2">
+                        <div class="flex flex-row items-center">
+                            <div class="flex-shrink pr-4">
+                                <div class="rounded p-3 bg-emerald-600"><i class="fas fa-network-wired fa-2x fa-fw fa-inverse"></i></div>
+                            </div>
+                            <div class="flex-1 text-right md:text-center">
+                                <h5 class="font-bold uppercase text-gray-400">VPN Nodes</h5>
+                                <h3 class="font-bold text-3xl text-gray-600" x-text="summary.Machines"></h3>
+                            </div>
+                        </div>
+                    </div>
+                    <!--/Metric Card-->
+                </div>
+  
+
+                
+                
+
+
+
+
+                <div class="w-full md:w-1/2 xl:w-1/3 p-3">
+                    <!--Metric Card-->
+                    <div class="dark:bg-gray-900 bg-white-100 dark:border-gray-800 dark:border-gray-600 border-b-4 rounded shadow p-2">
+                        <div class="flex flex-row items-center">
+                            <div class="flex-shrink pr-4">
+                                <div class="rounded p-3 bg-cyan-600"><i class="fa-solid fa-circle-nodes fa-2x fa-fw fa-inverse"></i></div>
+                            </div>
+                            <div class="flex-1 text-right md:text-center">
+                                <h5 class="font-bold uppercase text-gray-400">P2P peers</h5>
+                                <h3 class="font-bold text-3xl text-gray-600" x-text="summary.Peers"></h3>
+                            </div>
+                        </div>
+                    </div>
+                    <!--/Metric Card-->
+                </div>
+  
+
+                
+                
+
+
+
+
+                <div class="w-full md:w-1/2 xl:w-1/3 p-3">
+                    <!--Metric Card-->
+                    <div class="dark:bg-gray-900 bg-white-100 dark:border-gray-800 dark:border-gray-600 border-b-4 rounded shadow p-2">
+                        <div class="flex flex-row items-center">
+                            <div class="flex-shrink pr-4">
+                                <div class="rounded p-3 bg-yellow-600"><i class="fa-solid fa-box-archive fa-2x fa-fw fa-inverse"></i></div>
+                            </div>
+                            <div class="flex-1 text-right md:text-center">
+                                <h5 class="font-bold uppercase text-gray-400">Files</h5>
+                                <h3 class="font-bold text-3xl text-gray-600" x-text="summary.Files"></h3>
+                            </div>
+                        </div>
+                    </div>
+                    <!--/Metric Card-->
+                </div>
+   
+
+                
+                
+
+
+
+
+                <div class="w-full md:w-1/2 xl:w-1/3 p-3">
+                    <!--Metric Card-->
+                    <div class="dark:bg-gray-900 bg-white-100 dark:border-gray-800 dark:border-gray-600 border-b-4 rounded shadow p-2">
+                        <div class="flex flex-row items-center">
+                            <div class="flex-shrink pr-4">
+                                <div class="rounded p-3 bg-pink-600"><i class="fas fa-users fa-2x fa-fw fa-inverse"></i></div>
+                            </div>
+                            <div class="flex-1 text-right md:text-center">
+                                <h5 class="font-bold uppercase text-gray-400">Users</h5>
+                                <h3 class="font-bold text-3xl text-gray-600" x-text="summary.Users"></h3>
+                            </div>
+                        </div>
+                    </div>
+                    <!--/Metric Card-->
+                </div>
+      
+
+                
+                
+
+
+
+
+                <div class="w-full md:w-1/2 xl:w-1/3 p-3">
+                    <!--Metric Card-->
+                    <div class="dark:bg-gray-900 bg-white-100 dark:border-gray-800 dark:border-gray-600 border-b-4 rounded shadow p-2">
+                        <div class="flex flex-row items-center">
+                            <div class="flex-shrink pr-4">
+                                <div class="rounded p-3 bg-indigo-600"><i class="fas fa-dice-d20 fa-2x fa-fw fa-inverse"></i></div>
+                            </div>
+                            <div class="flex-1 text-right md:text-center">
+                                <h5 class="font-bold uppercase text-gray-400">Blockchain index</h5>
+                                <h3 class="font-bold text-3xl text-gray-600" x-text="summary.BlockChain"></h3>
+                            </div>
+                        </div>
+                    </div>
+                    <!--/Metric Card-->
+                </div>
+      
+
+                
+                
+
+
+
+
+                <div class="w-full md:w-1/2 xl:w-1/3 p-3">
+                    <!--Metric Card-->
+                    <div class="dark:bg-gray-900 bg-white-100 dark:border-gray-800 dark:border-gray-600 border-b-4 rounded shadow p-2">
+                        <div class="flex flex-row items-center">
+                            <div class="flex-shrink pr-4">
+                                <div class="rounded p-3 bg-sky-600"><i class="fa-solid fa-car-tunnel fa-2x fa-fw fa-inverse"></i></div>
+                            </div>
+                            <div class="flex-1 text-right md:text-center">
+                                <h5 class="font-bold uppercase text-gray-400">Services</h5>
+                                <h3 class="font-bold text-3xl text-gray-600" x-text="summary.Services"></h3>
+                            </div>
+                        </div>
+                    </div>
+                    <!--/Metric Card-->
+                </div>
+
+      </div>
+
+			<!--Divider-->
+			<hr class="border-b-2 border-gray-600 my-8 mx-4">
+
+      
+      
+
+
+
+
+
+
+        <div class="w-full px-4 md:px-0 md:mt-8 mb-16 text-gray-800 leading-normal"
+
+                x-data="users()"
+                x-init="$interval(updateItems, 1500)"
+                >
+            <div class="w-full mt-12 p-3 dark:bg-gray-900 border dark:border-gray-800 rounded shadow">
+                <div class="border-b bg-white-200 dark:bg-gray-900 dark:border-gray-800 p-3">
+                    <h5 class="font-bold uppercase dark:text-gray-600">Connected users</h5>
+                </div>
+                <br>
+                <div class="relative mt-1 ">
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+
+                <input
+                  x-ref="searchField"
+                  x-model="search"
+                  x-on:click="viewPage(0)"
+                  x-on:keydown.window.prevent.slash=" viewPage(0), $refs.searchField.focus()"
+                  placeholder="Search..."
+                  type="search"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  />
+                
+                </div>
+
+                <div class="overflow-auto">
+			 
+
+                    <table class="min-w-full bg-white-200 dark:bg-gray-900">
+                        <thead class="bg-slate-200 dark:bg-gray-800 dark:text-white">
+                            <tr>
+
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">PeerID</th>
+                            
+                                <th class="w-1/3 text-left py-3 px-4 uppercase font-semibold text-sm">Time</th>
+                            
+
+                            </tr>
+                        </thead>
+                        <tbody class="text-black dark:text-white">
+                            <template x-for="(d, index) in filtered" :key="index">
+                                   <tr
+                                    
+                                   >
+                                    
+                                        <td x-text="d.PeerID" class="text-left py-3 px-4"></td>
+                                    
+                                        <td x-text="d.Timestamp" class="text-left py-3 px-4"></td>
+                                    
+                                   </tr>
+                             </template>                          
+                        </tbody>
+                    </table>
+                    <!--Pagination Buttons-->
+                    <div
+                    class="w-full md:w-1/2 mx-auto py-6 flex justify-between items-center"
+                    x-show="pageCount() > 1"
+                     >
+                    <!--First Button-->
+                    <button
+                      x-on:click="viewPage(0)"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                        <line x1="5" y1="19" x2="5" y2="5"></line>
+                      </svg>
+                    </button>
+            
+                    <!--Previous Button-->
+                    <button
+                      x-on:click="prevPage"
+                      :disabled="pageNumber==0"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber==0 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!-- Display page numbers -->
+                    <template x-for="(page,index) in pages()" :key="page">
+                      <button
+                        class="px-3 py-2 rounded"
+                        :class="{ 'bg-indigo-600 text-white font-bold' : page === pageNumber }"
+                        type="button"
+                        x-on:click="viewPage(page)"
+                      >
+                        <span x-text="page" class="dark:text-white"></span>
+                      </button>
+                    </template>
+            
+                    <!--Next Button-->
+                    <button
+                      x-on:click="nextPage"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+            
+                    <!--Last Button-->
+                    <button
+                      x-on:click="viewPage(Math.ceil(total/size)-1)"
+                      :disabled="pageNumber >= pageCount() -1"
+                      :class="{ 'disabled cursor-not-allowed text-gray-600' : pageNumber >= pageCount() -1 }"
+                    >
+                      <svg
+                        class="h-8 w-8 text-indigo-600"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                      </svg>
+                    </button>
+                </div>
+                <!-- /Pagination Buttons-->
+
+
+                </div>
+            </div>
+        </div>
+        
+								
+			<!--/ Summary Content-->
+					
+		</div>
+
+	</div> 
+	<!--END Index /container-->
+	
+	<footer class="dark:bg-gray-900 border-t dark:border-gray-400 shadow">	
+		<div class="container max-w-md mx-auto flex py-8">
+
+			<div class="w-full mx-auto flex flex-wrap">
+				<div class="flex w-full md:w-1/2 ">
+					<div class="px-8">
+						<h3 class="font-bold font-bold dark:text-gray-100">About</h3>
+						<p class="py-4 text-gray-600 text-sm">
+                            <strong>EdgeVPN</strong> by <a href="https://github.com/mudler/edgevpn">Ettore Di Giacinto</a>.<br>
+                            License <a href="https://github.com/mudler/edgevpn/blob/master/LICENSE">GPLv3</a>. <br>
+                            Logo originally made by <a href="https://www.flaticon.com/authors/uniconlabs" title="Uniconlabs">Uniconlabs</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
+                        </p>
+					</div>
+				</div>
+				
+				<div class="flex w-full md:w-1/2">
+					<div class="px-8">
+					<h3 class="font-bold font-bold dark:text-gray-100">Links</h3>
+						<ul class="list-reset items-center text-sm pt-3">
+						  <li>
+							<a class="inline-block text-gray-600 no-underline hover:text-black dark:hover:text-gray-100 hover:text-underline py-1" href="https://github.com/mudler/edgevpn" target=_blank><i class="fa-brands fa-github-alt fa-fw mr-3"></i>Github</a>
+						  </li>
+						  <li>
+							<a class="inline-block text-gray-600 no-underline hover:text-black dark:hover:text-gray-100 hover:text-underline py-1" href="https://mudler.github.io/edgevpn/docs" target=_blank><i class="fas fa-book fa-fw mr-3"></i>Documentation</a>
+						  </li>
+						  <li>
+							<a class="inline-block text-gray-600 no-underline hover:text-black dark:hover:text-gray-100 hover:text-underline py-1" href="https://github.com/mudler/edgevpn/issues/new" target=_blank><i class="fas fa-bug fa-fw mr-3"></i>Report issue</a>
+						  </li>
+						</ul>
+					</div>
+				</div>
+			</div>		
+		</div>
+	</footer>
+
+<script>
+    const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+    function calcPages(n, total, size) {
+              start = 1;
+              if (n > 5 ){
+                  start = n - 5
+              } 
+              end = Math.ceil(total / size);
+              if (end - n  > 5 ){
+                  end = n + 5
+                  // Math.ceil(this.total / this.size) - 10
+              } 
+            return range(start, end ,1)
+    }
+
+    function filter(obj, key) {
+            const start = obj.pageNumber * obj.size,
+              end = start + obj.size;
+
+            if (obj.search === "") {
+                obj.total = obj.data.length;
+              return obj.data.slice(start, end);
+            }
+
+            //Return the total results of the filters
+            obj.total = obj.data.filter((item) => {
+              return item[key]
+                .toLowerCase()
+                .includes(obj.search.toLowerCase());
+            }).length;
+
+            //Return the filtered data
+            return obj.data
+              .filter((item) => {
+                return item[key]
+                  .toLowerCase()
+                  .includes(obj.search.toLowerCase());
+              })
+              .slice(start, end);
+    }
+
+    function endRes(obj) {
+            let resultsOnPage = (obj.pageNumber + 1) * obj.size;
+
+            if (resultsOnPage <= obj.total) {
+              return resultsOnPage;
+            }
+
+            return obj.total;
+    }
+
+     function sortData(key, order = "asc") {
+      return function innerSort(a, b) {
+        if (!a.hasOwnProperty(key) || !b.hasOwnProperty(key)) {
+          return 0;
+        }
+
+        const varA = typeof a[key] === "string" ? a[key].toUpperCase() : a[key];
+        const varB = typeof b[key] === "string" ? b[key].toUpperCase() : b[key];
+
+        let comparison = 0;
+        if (varA > varB) {
+          comparison = 1;
+        } else if (varA < varB) {
+          comparison = -1;
+        }
+        return order === "desc" ? comparison * -1 : comparison;
+        }
+     }
+
+    
+    
+
+
+
+
+    function machines(){
+        return {
+            data: [
+             
+            ],
+            updateItems() {
+              fetch('/api/machines')
+                .then(response => response.json())
+                .then(data => { 
+                    data.sort(sortData("Address","asc"));
+                    this.data = data;
+                 } )
+            },
+             search: "",
+             pageNumber: 0,
+             size: 10,
+             total: "",
+           
+           get filtered() {return filter(this, "Address") },
+ 
+           //Create array of all pages (for loop to display page numbers)
+           pages() {
+               return calcPages(this.pageNumber, this.total, this.size)
+           },
+ 
+           //Next Page
+           nextPage() {
+             this.pageNumber++;
+           },
+ 
+           //Previous Page
+           prevPage() {
+             this.pageNumber--;
+           },
+ 
+           //Total number of pages
+           pageCount() {
+             return Math.ceil(this.total / this.size);
+           },
+ 
+           //Return the start range of the paginated results
+           startResults() {
+             return this.pageNumber * this.size + 1;
+           },
+ 
+           //Return the end range of the paginated results
+           endResults() {
+               return endRes(this)
+           },
+ 
+           //Link to navigate to page
+           viewPage(index) {
+             this.pageNumber = index;
+           },
+ 
+         };
+    }
+
+
+    
+    
+
+
+
+
+    function peerstore(){
+        return {
+            data: [
+             
+            ],
+            updateItems() {
+              fetch('/api/peerstore')
+                .then(response => response.json())
+                .then(data => { 
+                    data.sort(sortData("ID","asc"));
+                    this.data = data;
+                 } )
+            },
+             search: "",
+             pageNumber: 0,
+             size: 10,
+             total: "",
+           
+           get filtered() {return filter(this, "ID") },
+ 
+           //Create array of all pages (for loop to display page numbers)
+           pages() {
+               return calcPages(this.pageNumber, this.total, this.size)
+           },
+ 
+           //Next Page
+           nextPage() {
+             this.pageNumber++;
+           },
+ 
+           //Previous Page
+           prevPage() {
+             this.pageNumber--;
+           },
+ 
+           //Total number of pages
+           pageCount() {
+             return Math.ceil(this.total / this.size);
+           },
+ 
+           //Return the start range of the paginated results
+           startResults() {
+             return this.pageNumber * this.size + 1;
+           },
+ 
+           //Return the end range of the paginated results
+           endResults() {
+               return endRes(this)
+           },
+ 
+           //Link to navigate to page
+           viewPage(index) {
+             this.pageNumber = index;
+           },
+ 
+         };
+    }
+
+
+    
+    
+
+
+
+
+    function nodes(){
+        return {
+            data: [
+             
+            ],
+            updateItems() {
+              fetch('/api/nodes')
+                .then(response => response.json())
+                .then(data => { 
+                    data.sort(sortData("ID","asc"));
+                    this.data = data;
+                 } )
+            },
+             search: "",
+             pageNumber: 0,
+             size: 10,
+             total: "",
+           
+           get filtered() {return filter(this, "ID") },
+ 
+           //Create array of all pages (for loop to display page numbers)
+           pages() {
+               return calcPages(this.pageNumber, this.total, this.size)
+           },
+ 
+           //Next Page
+           nextPage() {
+             this.pageNumber++;
+           },
+ 
+           //Previous Page
+           prevPage() {
+             this.pageNumber--;
+           },
+ 
+           //Total number of pages
+           pageCount() {
+             return Math.ceil(this.total / this.size);
+           },
+ 
+           //Return the start range of the paginated results
+           startResults() {
+             return this.pageNumber * this.size + 1;
+           },
+ 
+           //Return the end range of the paginated results
+           endResults() {
+               return endRes(this)
+           },
+ 
+           //Link to navigate to page
+           viewPage(index) {
+             this.pageNumber = index;
+           },
+ 
+         };
+    }
+
+
+    
+    
+
+
+
+
+    function users(){
+        return {
+            data: [
+             
+            ],
+            updateItems() {
+              fetch('/api/users')
+                .then(response => response.json())
+                .then(data => { 
+                    data.sort(sortData("ID","asc"));
+                    this.data = data;
+                 } )
+            },
+             search: "",
+             pageNumber: 0,
+             size: 10,
+             total: "",
+           
+           get filtered() {return filter(this, "ID") },
+ 
+           //Create array of all pages (for loop to display page numbers)
+           pages() {
+               return calcPages(this.pageNumber, this.total, this.size)
+           },
+ 
+           //Next Page
+           nextPage() {
+             this.pageNumber++;
+           },
+ 
+           //Previous Page
+           prevPage() {
+             this.pageNumber--;
+           },
+ 
+           //Total number of pages
+           pageCount() {
+             return Math.ceil(this.total / this.size);
+           },
+ 
+           //Return the start range of the paginated results
+           startResults() {
+             return this.pageNumber * this.size + 1;
+           },
+ 
+           //Return the end range of the paginated results
+           endResults() {
+               return endRes(this)
+           },
+ 
+           //Link to navigate to page
+           viewPage(index) {
+             this.pageNumber = index;
+           },
+ 
+         };
+    }
+
+
+    
+    
+
+
+
+
+    function dns(){
+        return {
+            data: [
+             
+            ],
+            updateItems() {
+              fetch('/api/dns')
+                .then(response => response.json())
+                .then(data => { 
+                    data.sort(sortData("Regex","asc"));
+                    this.data = data;
+                 } )
+            },
+             search: "",
+             pageNumber: 0,
+             size: 10,
+             total: "",
+           
+           get filtered() {return filter(this, "Regex") },
+ 
+           //Create array of all pages (for loop to display page numbers)
+           pages() {
+               return calcPages(this.pageNumber, this.total, this.size)
+           },
+ 
+           //Next Page
+           nextPage() {
+             this.pageNumber++;
+           },
+ 
+           //Previous Page
+           prevPage() {
+             this.pageNumber--;
+           },
+ 
+           //Total number of pages
+           pageCount() {
+             return Math.ceil(this.total / this.size);
+           },
+ 
+           //Return the start range of the paginated results
+           startResults() {
+             return this.pageNumber * this.size + 1;
+           },
+ 
+           //Return the end range of the paginated results
+           endResults() {
+               return endRes(this)
+           },
+ 
+           //Link to navigate to page
+           viewPage(index) {
+             this.pageNumber = index;
+           },
+ 
+         };
+    }
+
+
+    
+    
+
+
+
+
+    function services(){
+        return {
+            data: [
+             
+            ],
+            updateItems() {
+              fetch('/api/services')
+                .then(response => response.json())
+                .then(data => { 
+                    data.sort(sortData("Name","asc"));
+                    this.data = data;
+                 } )
+            },
+             search: "",
+             pageNumber: 0,
+             size: 10,
+             total: "",
+           
+           get filtered() {return filter(this, "Name") },
+ 
+           //Create array of all pages (for loop to display page numbers)
+           pages() {
+               return calcPages(this.pageNumber, this.total, this.size)
+           },
+ 
+           //Next Page
+           nextPage() {
+             this.pageNumber++;
+           },
+ 
+           //Previous Page
+           prevPage() {
+             this.pageNumber--;
+           },
+ 
+           //Total number of pages
+           pageCount() {
+             return Math.ceil(this.total / this.size);
+           },
+ 
+           //Return the start range of the paginated results
+           startResults() {
+             return this.pageNumber * this.size + 1;
+           },
+ 
+           //Return the end range of the paginated results
+           endResults() {
+               return endRes(this)
+           },
+ 
+           //Link to navigate to page
+           viewPage(index) {
+             this.pageNumber = index;
+           },
+ 
+         };
+    }
+
+
+    
+    
+
+
+
+
+    function files(){
+        return {
+            data: [
+             
+            ],
+            updateItems() {
+              fetch('/api/files')
+                .then(response => response.json())
+                .then(data => { 
+                    data.sort(sortData("Name","asc"));
+                    this.data = data;
+                 } )
+            },
+             search: "",
+             pageNumber: 0,
+             size: 10,
+             total: "",
+           
+           get filtered() {return filter(this, "Name") },
+ 
+           //Create array of all pages (for loop to display page numbers)
+           pages() {
+               return calcPages(this.pageNumber, this.total, this.size)
+           },
+ 
+           //Next Page
+           nextPage() {
+             this.pageNumber++;
+           },
+ 
+           //Previous Page
+           prevPage() {
+             this.pageNumber--;
+           },
+ 
+           //Total number of pages
+           pageCount() {
+             return Math.ceil(this.total / this.size);
+           },
+ 
+           //Return the start range of the paginated results
+           startResults() {
+             return this.pageNumber * this.size + 1;
+           },
+ 
+           //Return the end range of the paginated results
+           endResults() {
+               return endRes(this)
+           },
+ 
+           //Link to navigate to page
+           viewPage(index) {
+             this.pageNumber = index;
+           },
+ 
+         };
+    }
+
+
+    function blockchain(){
+        return {
+            blockchain: {},
+            updateItems() {
+              fetch('/api/blockchain')
+                .then(response => response.json())
+                .then(data => this.blockchain =  data )
+            }
+        };
+    }
+    function syntaxHighlight(json) {
+        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+            var cls = 'number';
+            if (/^"/.test(match)) {
+                if (/:$/.test(match)) {
+                    cls = 'key';
+                } else {
+                    cls = 'string';
+                }
+            } else if (/true|false/.test(match)) {
+                cls = 'boolean';
+            } else if (/null/.test(match)) {
+                cls = 'null';
+            }
+            return '<span class="' + cls + '">' + match + '</span>';
+        });
+    }
+    function summary(){
+        return {
+            summary: {},
+            updateItems() {
+              fetch('/api/summary')
+                .then(response => response.json())
+                .then(data => this.summary = data )
+            }
+        };
+    }
+
+	/*Toggle dropdown list*/
+	/*https://gist.github.com/slavapas/593e8e50cf4cc16ac972afcbad4f70c8*/
+
+
+	var navMenuDiv = document.getElementById("nav-content");
+	var navMenu = document.getElementById("nav-toggle");
+	
+	document.onclick = check;
+
+	function check(e){
+	  var target = (e && e.target) || (event && event.srcElement);
+	  
+	  //Nav Menu
+	  if (!checkParent(target, navMenuDiv)) {
+		// click NOT on the menu
+		if (checkParent(target, navMenu)) {
+		  // click on the link
+		  if (navMenuDiv.classList.contains("hidden")) {
+			navMenuDiv.classList.remove("hidden");
+		  } else {navMenuDiv.classList.add("hidden");}
+		} else {
+		  // click both outside link and outside menu, hide menu
+		  navMenuDiv.classList.add("hidden");
+		}
+	  }
+	  
+	}
+
+	function checkParent(t, elm) {
+	  while(t.parentNode) {
+		if( t == elm ) {return true;}
+		t = t.parentNode;
+	  }
+	  return false;
+	}
+
+
+</script>
+
+</body>
 </html>
