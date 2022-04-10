@@ -46,7 +46,7 @@ type Config struct {
 	Router                                     string
 	Interface                                  string
 	Libp2pLogLevel, LogLevel                   string
-	LowProfile, VPNLowProfile                  bool
+	LowProfile, VPNLowProfile, BootstrapIface  bool
 	Blacklist                                  []string
 	Concurrency                                int
 	FrameTimeout                               string
@@ -178,7 +178,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		vpn.Logger(llger),
 		vpn.WithTimeout(c.FrameTimeout),
 		vpn.WithInterfaceType(water.TUN),
-		vpn.NetLinkBootstrap(true),
+		vpn.NetLinkBootstrap(c.BootstrapIface),
 		vpn.WithChannelBufferSize(c.ChannelBufferSize),
 		vpn.WithInterfaceMTU(c.InterfaceMTU),
 		vpn.WithPacketMTU(c.PacketMTU),

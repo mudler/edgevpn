@@ -25,7 +25,8 @@ import (
 
 func createInterface(c *Config) (*water.Interface, error) {
 	config := water.Config{
-		DeviceType: c.DeviceType,
+		DeviceType:             c.DeviceType,
+		PlatformSpecificParams: water.PlatformSpecificParams{Persist: !c.NetLinkBootstrap},
 	}
 	config.Name = c.InterfaceName
 

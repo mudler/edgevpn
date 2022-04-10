@@ -48,6 +48,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "EDGEVPNMTU",
 		Value:  1200,
 	},
+	&cli.BoolTFlag{
+		Name:   "bootstrap-iface",
+		Usage:  "Setup interface on startup (need privileges)",
+		EnvVar: "EDGEVPNBOOTSTRAPIFACE",
+	},
 	&cli.IntFlag{
 		Name:   "packet-mtu",
 		Usage:  "Specify a mtu",
@@ -327,6 +332,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		ChannelBufferSize: c.Int("channel-buffer-size"),
 		InterfaceMTU:      c.Int("mtu"),
 		PacketMTU:         c.Int("packet-mtu"),
+		BootstrapIface:    c.Bool("bootstrap-iface"),
 		Ledger: config.Ledger{
 			StateDir:         c.String("ledger-state"),
 			AnnounceInterval: time.Duration(c.Int("ledger-announce-interval")) * time.Second,
