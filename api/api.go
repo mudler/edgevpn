@@ -122,6 +122,9 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 	ec.GET(MachineURL, func(c echo.Context) error {
 		list := []*apiTypes.Machine{}
+
+		online := services.AvailableNodes(ledger, 20*time.Minute)
+
 		for _, v := range ledger.CurrentData()[protocol.MachinesLedgerKey] {
 			machine := &types.Machine{}
 			v.Unmarshal(machine)
@@ -136,6 +139,11 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 			for _, p := range peers {
 				if p.String() == machine.PeerID {
 					m.OnChain = true
+				}
+			}
+			for _, a := range online {
+				if a == machine.PeerID {
+					m.Online = true
 				}
 			}
 			list = append(list, m)
