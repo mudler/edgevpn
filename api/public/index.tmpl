@@ -166,7 +166,7 @@
     <div class="container w-full mx-auto pt-20" x-show="page === '#dns'">
         {{ $opts:= dict "text" "DNS Documentation " "url" "https://mudler.github.io/edgevpn/docs/concepts/overview/dns/"}}
         {{ template "readme_badge" $opts}}
-        {{ $opts:= dict "title" "DNS" "func" "dns" "fields" ( list "Regex" "Records") "struct" (list "d.Regex" "syntaxHighlight(JSON.stringify(d.Records, null, 2))")}}
+        {{ $opts:= dict "title" "DNS" "func" "dns" "fields" ( list "Regex" "Records") "struct" (list "d.Regex" "JSON.stringify(d.Records)")}}
         {{ template "table" $opts}} 
 
     </div>
