@@ -32,4 +32,4 @@ Check out the docs below for further example and reference, have a look at our [
 
 | WebUI            | [Desktop](https://github.com/mudler/edgevpn-gui)                                          |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| ![img](https://user-images.githubusercontent.com/2420543/139602703-f04ac4cb-b949-498c-a23a-0ce8deb036f9.png) | ![](https://user-images.githubusercontent.com/2420543/147854909-a223a7c1-5caa-4e90-b0ac-0ae04dc0949d.png) |
+| ![img](https://user-images.githubusercontent.com/2420543/163020448-8e9238c1-3b6d-435d-9b25-7729d8779ebd.png) | ![](https://user-images.githubusercontent.com/2420543/147854909-a223a7c1-5caa-4e90-b0ac-0ae04dc0949d.png) |
