@@ -21,7 +21,12 @@ import (
 	"log"
 	"os/exec"
 
+
 	"github.com/mudler/water"
+	"github.com/fumiama/water"
+	"github.com/fumiama/wintun"
+	"golang.org/x/sys/windows"
+	"github.com/google/uuid"
 )
 
 func prepareInterface(c *Config) error {
@@ -37,9 +42,17 @@ func prepareInterface(c *Config) error {
 }
 
 func createInterface(c *Config) (*water.Interface, error) {
+	// Use deterministic GUID based on interface name, so we
+	// don't flood system with Network Profiles
+	uuid, _ := uuid.FromBytes([]byte(c.InterfaceName))
+	guid, _ := windows.GUIDFromString("{" + uuid.String() + "}")
+	// Create an adapter with deterministic GUID which water will
+	// take via wintun.OpenAdapter()
+	wintun.CreateAdapter(c.InterfaceName, "WaterWintun", &guid)
 	config := water.Config{
 		DeviceType: c.DeviceType,
 		PlatformSpecificParams: water.PlatformSpecificParams{
+			ComponentID: "WaterWintun",
 			InterfaceName: c.InterfaceName,
 		},
 	}
