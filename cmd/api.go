@@ -19,6 +19,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/urfave/cli"
@@ -43,6 +45,10 @@ A simple UI interface is available to display network data.`,
 		),
 		Action: func(c *cli.Context) error {
 			o, _, ll := cliToOpts(c)
+
+			bwc := metrics.NewBandwidthCounter()
+			o = append(o, node.WithLibp2pAdditionalOptions(libp2p.BandwidthReporter(bwc)))
+
 			e, err := node.New(o...)
 			if err != nil {
 				return err
@@ -56,7 +62,7 @@ A simple UI interface is available to display network data.`,
 				return err
 			}
 
-			return api.API(ctx, c.String("listen"), 5*time.Second, 20*time.Second, e, c.Bool("debug"))
+			return api.API(ctx, c.String("listen"), 5*time.Second, 20*time.Second, e, bwc, c.Bool("debug"))
 		},
 	}
 }

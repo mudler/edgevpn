@@ -23,11 +23,15 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	p2pprotocol "github.com/libp2p/go-libp2p-core/protocol"
+
 	"github.com/miekg/dns"
 	apiTypes "github.com/mudler/edgevpn/api/types"
 
@@ -60,10 +64,11 @@ const (
 	FileURL       = "/api/files"
 	NodesURL      = "/api/nodes"
 	DNSURL        = "/api/dns"
+	MetricsURL    = "/api/metrics"
 	PeerstoreURL  = "/api/peerstore"
 )
 
-func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, e *node.Node, debugMode bool) error {
+func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, e *node.Node, bwc metrics.Reporter, debugMode bool) error {
 
 	ledger, _ := e.Ledger()
 
@@ -82,6 +87,23 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		ec.GET("/debug/pprof/*", echo.WrapHandler(http.DefaultServeMux))
 	}
 
+	if bwc != nil {
+		ec.GET(MetricsURL, func(c echo.Context) error {
+			return c.JSON(http.StatusOK, bwc.GetBandwidthTotals())
+		})
+		ec.GET(filepath.Join(MetricsURL, "protocol"), func(c echo.Context) error {
+			return c.JSON(http.StatusOK, bwc.GetBandwidthByProtocol())
+		})
+		ec.GET(filepath.Join(MetricsURL, "peer"), func(c echo.Context) error {
+			return c.JSON(http.StatusOK, bwc.GetBandwidthByPeer())
+		})
+		ec.GET(filepath.Join(MetricsURL, "peer", ":peer"), func(c echo.Context) error {
+			return c.JSON(http.StatusOK, bwc.GetBandwidthForPeer(peer.ID(c.Param("peer"))))
+		})
+		ec.GET(filepath.Join(MetricsURL, "protocol", ":protocol"), func(c echo.Context) error {
+			return c.JSON(http.StatusOK, bwc.GetBandwidthForProtocol(p2pprotocol.ID(c.Param("protocol"))))
+		})
+	}
 	// Get data from ledger
 	ec.GET(FileURL, func(c echo.Context) error {
 		list := []*types.File{}

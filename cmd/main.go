@@ -23,9 +23,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/libp2p/go-libp2p-core/network"
 
 	"github.com/mudler/edgevpn/api"
+	"github.com/mudler/edgevpn/pkg/node"
 	edgevpn "github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/mudler/edgevpn/pkg/vpn"
@@ -208,6 +211,11 @@ func Main() func(c *cli.Context) error {
 				)...)
 		}
 
+		bwc := metrics.NewBandwidthCounter()
+		if c.Bool("api") {
+			o = append(o, node.WithLibp2pAdditionalOptions(libp2p.BandwidthReporter(bwc)))
+		}
+
 		opts, err := vpn.Register(vpnOpts...)
 		if err != nil {
 			return err
@@ -227,7 +235,7 @@ func Main() func(c *cli.Context) error {
 		}
 
 		if c.Bool("api") {
-			go api.API(ctx, c.String("api-listen"), 5*time.Second, 20*time.Second, e, c.Bool("debug"))
+			go api.API(ctx, c.String("api-listen"), 5*time.Second, 20*time.Second, e, bwc, c.Bool("debug"))
 		}
 
 		return e.Start(ctx)

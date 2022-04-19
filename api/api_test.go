@@ -54,7 +54,7 @@ var _ = Describe("API", func() {
 			e.Start(ctx)
 
 			go func() {
-				err := API(ctx, fmt.Sprintf("unix://%s", socket), 10*time.Second, 20*time.Second, e, false)
+				err := API(ctx, fmt.Sprintf("unix://%s", socket), 10*time.Second, 20*time.Second, e, nil, false)
 				Expect(err).ToNot(HaveOccurred())
 			}()
 
