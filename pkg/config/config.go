@@ -27,6 +27,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	rcmgr "github.com/libp2p/go-libp2p-resource-manager"
+	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/crypto"
 	"github.com/mudler/edgevpn/pkg/discovery"
@@ -87,6 +88,7 @@ type Discovery struct {
 type Connection struct {
 	HolePunch      bool
 	AutoRelay      bool
+	RelayV1        bool
 	MaxConnections int
 	MaxStreams     int
 }
@@ -194,7 +196,11 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	libp2pOpts := []libp2p.Option{libp2p.UserAgent("edgevpn")}
 
 	if c.Connection.AutoRelay {
-		libp2pOpts = append(libp2pOpts, libp2p.EnableAutoRelay())
+		relayOpts := []autorelay.Option{}
+		if c.Connection.RelayV1 {
+			relayOpts = append(relayOpts, autorelay.WithCircuitV1Support())
+		}
+		libp2pOpts = append(libp2pOpts, libp2p.EnableAutoRelay(relayOpts...))
 	}
 
 	if c.NAT.RateLimit {
