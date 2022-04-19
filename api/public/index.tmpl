@@ -128,10 +128,9 @@
 
 	<!-- Nodes Container-->
     <div class="container w-full mx-auto pt-20" x-show="page === '#nodes'">
-
         {{ $opts:= dict "text" "Machines API Documentation " "url" "https://mudler.github.io/edgevpn/docs/getting-started/api/#apimachines"}}
         {{ template "readme_badge" $opts}}
-        {{ $opts:= dict "condition" "x-bind:class=\"d.Online ? 'bg-lime-100 dark:bg-lime-800' : 'bg-stone-200 dark:bg-stone-800'\"" "title" "Nodes" "func" "machines" "fields" ( list "Address" "PeerID" "Hostname" "OS" "Architecture" "Version") "struct" (list "d.Address" "d.PeerID" "d.Hostname" "d.OS" "d.Architecture" "d.Version")}}
+        {{ $opts:= dict "condition" "x-bind:class=\"d.Online ? 'bg-lime-100 dark:bg-lime-800' : 'bg-stone-200 dark:bg-stone-800'\"" "title" "Nodes" "func" "machines" "fields" ( list "Address" "PeerID" "Hostname" "OS" "Architecture" "Version") "struct" (list "d.Address" "d.PeerID" "d.Hostname" "d.OS" "d.Arch" "d.Version")}}
         {{ template "table" $opts}}
     </div>  
 	<!--END Node Container-->
