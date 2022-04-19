@@ -27,7 +27,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	mplex "github.com/libp2p/go-libp2p-mplex"
 	rcmgr "github.com/libp2p/go-libp2p-resource-manager"
+	yamux "github.com/libp2p/go-libp2p-yamux"
 	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/crypto"
@@ -91,6 +93,7 @@ type Connection struct {
 	RelayV1      bool
 	StaticRelays []string
 
+	Mplex          bool
 	MaxConnections int
 	MaxStreams     int
 }
@@ -223,7 +226,16 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			relayOpts = append(relayOpts, autorelay.WithStaticRelays(peers2AddrInfo(c.Connection.StaticRelays)))
 		}
 
-		libp2pOpts = append(libp2pOpts, libp2p.EnableAutoRelay(relayOpts...))
+		libp2pOpts = append(libp2pOpts,
+			libp2p.EnableAutoRelay(relayOpts...))
+	}
+
+	if c.Connection.Mplex {
+		libp2pOpts = append(libp2pOpts,
+			libp2p.ChainOptions(
+				libp2p.Muxer("/yamux/1.0.0", yamux.DefaultTransport),
+				libp2p.Muxer("/mplex/6.7.0", mplex.DefaultTransport),
+			))
 	}
 
 	if c.NAT.RateLimit {

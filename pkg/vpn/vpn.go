@@ -218,7 +218,7 @@ func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Nod
 
 	stream, err = n.Host().NewStream(ctx, d, protocol.EdgeVPN.ID())
 	if err != nil {
-		return errors.Wrap(err, "could not open stream")
+		return fmt.Errorf("could not open stream to %s: %w", d.String(), err)
 	}
 
 	if mgr != nil {

@@ -162,6 +162,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Enable low profile. Lowers connections usage",
 		EnvVar: "EDGEVPNLOWPROFILE",
 	},
+	&cli.BoolFlag{
+		Name:   "mplex-multiplexer",
+		Usage:  "Enable mplex multiplexer.",
+		EnvVar: "EDGEVPNMPLEX",
+	},
 	&cli.BoolTFlag{
 		Name:   "low-profile-vpn",
 		Usage:  "Enable low profile on VPN",
@@ -368,6 +373,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			MaxConnections: c.Int("max-connections"),
 			MaxStreams:     c.Int("max-streams"),
 			HolePunch:      c.Bool("holepunch"),
+			Mplex:          c.Bool("mplex-multiplexer"),
 			StaticRelays:   c.StringSlice("autorelay-static-peer"),
 		},
 		Limit: config.ResourceLimit{
