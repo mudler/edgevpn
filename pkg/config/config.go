@@ -25,6 +25,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	connmanager "github.com/libp2p/go-libp2p-connmgr"
 	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	rcmgr "github.com/libp2p/go-libp2p-resource-manager"
 	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
@@ -35,7 +36,6 @@ import (
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/vpn"
 	"github.com/peterbourgon/diskv"
-	"github.com/pkg/errors"
 	"github.com/songgao/water"
 )
 
@@ -86,9 +86,11 @@ type Discovery struct {
 // Connection is the configuration section
 // relative to the connection services
 type Connection struct {
-	HolePunch      bool
-	AutoRelay      bool
-	RelayV1        bool
+	HolePunch    bool
+	AutoRelay    bool
+	RelayV1      bool
+	StaticRelays []string
+
 	MaxConnections int
 	MaxStreams     int
 }
@@ -113,6 +115,25 @@ func (c Config) Validate() error {
 	return nil
 }
 
+func peers2List(peers []string) discovery.AddrList {
+	addrsList := discovery.AddrList{}
+	for _, p := range peers {
+		addrsList.Set(p)
+	}
+	return addrsList
+}
+func peers2AddrInfo(peers []string) []peer.AddrInfo {
+	addrsList := []peer.AddrInfo{}
+	for _, p := range peers {
+		pi, err := peer.AddrInfoFromString(p)
+		if err == nil {
+			addrsList = append(addrsList, *pi)
+		}
+
+	}
+	return addrsList
+}
+
 // ToOpts returns node and vpn options from a configuration
 func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 
@@ -130,7 +151,6 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 
 	ledgerState := c.Ledger.StateDir
 
-	addrsList := discovery.AddrList{}
 	peers := c.Discovery.BootstrapPeers
 
 	lvl, err := log.LevelFromString(logLevel)
@@ -147,11 +167,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 
 	token := c.NetworkToken
 
-	for _, p := range peers {
-		if err := addrsList.Set(p); err != nil {
-			return nil, nil, errors.Wrap(err, "failed reading bootstrap peer list")
-		}
-	}
+	addrsList := peers2List(peers)
 
 	dhtOpts := []dht.Option{}
 
@@ -200,6 +216,13 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		if c.Connection.RelayV1 {
 			relayOpts = append(relayOpts, autorelay.WithCircuitV1Support())
 		}
+
+		if len(c.Connection.StaticRelays) == 0 {
+			relayOpts = append(relayOpts, autorelay.WithDefaultStaticRelays())
+		} else {
+			relayOpts = append(relayOpts, autorelay.WithStaticRelays(peers2AddrInfo(c.Connection.StaticRelays)))
+		}
+
 		libp2pOpts = append(libp2pOpts, libp2p.EnableAutoRelay(relayOpts...))
 	}
 

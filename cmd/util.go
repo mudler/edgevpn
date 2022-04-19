@@ -191,6 +191,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "EDGEVPNBOOTSTRAPPEERS",
 	},
 	&cli.StringSliceFlag{
+		Name:   "autorelay-static-peer",
+		Usage:  "List of autorelay static peers to use",
+		EnvVar: "EDGEVPNAUTORELAYPEERS",
+	},
+	&cli.StringSliceFlag{
 		Name:   "blacklist",
 		Usage:  "List of peers/cidr to gate",
 		EnvVar: "EDGEVPNBLACKLIST",
@@ -363,6 +368,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			MaxConnections: c.Int("max-connections"),
 			MaxStreams:     c.Int("max-streams"),
 			HolePunch:      c.Bool("holepunch"),
+			StaticRelays:   c.StringSlice("autorelay-static-peer"),
 		},
 		Limit: config.ResourceLimit{
 			Enable:      c.Bool("limit-enable"),
