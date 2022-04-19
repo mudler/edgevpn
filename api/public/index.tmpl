@@ -130,7 +130,7 @@
     <div class="container w-full mx-auto pt-20" x-show="page === '#nodes'">
         {{ $opts:= dict "text" "Machines API Documentation " "url" "https://mudler.github.io/edgevpn/docs/getting-started/api/#apimachines"}}
         {{ template "readme_badge" $opts}}
-        {{ $opts:= dict "condition" "x-bind:class=\"d.Online ? 'bg-lime-100 dark:bg-lime-800' : 'bg-stone-200 dark:bg-stone-800'\"" "title" "Nodes" "func" "machines" "fields" ( list "Address" "PeerID" "Hostname" "OS" "Architecture" "Version") "struct" (list "d.Address" "d.PeerID" "d.Hostname" "d.OS" "d.Arch" "d.Version")}}
+        {{ $opts:= dict "delete" "d.Address" "condition" "x-bind:class=\"d.Online ? 'bg-lime-100 dark:bg-lime-800' : 'bg-stone-200 dark:bg-stone-800'\"" "title" "Nodes" "func" "machines" "fields" ( list "Address" "PeerID" "Hostname" "OS" "Architecture" "Version") "struct" (list "d.Address" "d.PeerID" "d.Hostname" "d.OS" "d.Arch" "d.Version")}}
         {{ template "table" $opts}}
     </div>  
 	<!--END Node Container-->
@@ -165,7 +165,7 @@
     <div class="container w-full mx-auto pt-20" x-show="page === '#dns'">
         {{ $opts:= dict "text" "DNS Documentation " "url" "https://mudler.github.io/edgevpn/docs/concepts/overview/dns/"}}
         {{ template "readme_badge" $opts}}
-        {{ $opts:= dict "title" "DNS" "func" "dns" "fields" ( list "Regex" "Records") "struct" (list "d.Regex" "JSON.stringify(d.Records)")}}
+        {{ $opts:= dict "delete" "d.Regex" "title" "DNS" "func" "dns" "fields" ( list "Regex" "Records") "struct" (list "d.Regex" "JSON.stringify(d.Records)")}}
         {{ template "table" $opts}} 
 
     </div>
@@ -343,7 +343,7 @@
         }
      }
 
-    {{ $opts:= dict "endpoint" "machines" "func" "machines" "sort" "Address"}}
+    {{ $opts:= dict "endpoint" "machines" "func" "machines" "sort" "Address" "delete" "machines"}}
     {{ template "table_js" $opts}}
 
     {{ $opts:= dict "endpoint" "peerstore" "func" "peerstore" "sort" "ID"}}
@@ -355,7 +355,7 @@
     {{ $opts:= dict "endpoint" "users" "func" "users" "sort" "ID"}}
     {{ template "table_js" $opts}}
 
-    {{ $opts:= dict "endpoint" "dns" "func" "dns" "sort" "Regex"}}
+    {{ $opts:= dict "endpoint" "dns" "func" "dns" "sort" "Regex" "delete" "dns"}}
     {{ template "table_js" $opts}}
 
     {{ $opts:= dict "endpoint" "services" "func" "services" "sort" "Name"}}
