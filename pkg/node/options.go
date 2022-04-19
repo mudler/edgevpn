@@ -49,7 +49,7 @@ func WithSealer(i Sealer) Option {
 
 func WithLibp2pAdditionalOptions(i ...libp2p.Option) func(cfg *Config) error {
 	return func(cfg *Config) error {
-		cfg.AdditionalOptions = append(cfg.Options, i...)
+		cfg.AdditionalOptions = append(cfg.AdditionalOptions, i...)
 		return nil
 	}
 }
