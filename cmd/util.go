@@ -127,7 +127,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Automatically act as a relay if the node can accept inbound connections",
 		EnvVar: "EDGEVPNAUTORELAY",
 	},
-	&cli.BoolFlag{
+	&cli.BoolTFlag{
 		Name:   "autorelay-v1",
 		Usage:  "Enable autorelay v1 circuits",
 		EnvVar: "EDGEVPNAUTORELAYV1",
