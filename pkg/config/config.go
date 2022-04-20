@@ -36,6 +36,7 @@ import (
 	"github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/mudler/edgevpn/pkg/vpn"
 	"github.com/peterbourgon/diskv"
 	"github.com/songgao/water"
@@ -88,10 +89,12 @@ type Discovery struct {
 // Connection is the configuration section
 // relative to the connection services
 type Connection struct {
-	HolePunch    bool
-	AutoRelay    bool
-	RelayV1      bool
-	StaticRelays []string
+	HolePunch bool
+	AutoRelay bool
+
+	AutoRelayDiscoveryInterval time.Duration
+	RelayV1                    bool
+	StaticRelays               []string
 
 	Mplex          bool
 	MaxConnections int
@@ -214,16 +217,32 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 
 	libp2pOpts := []libp2p.Option{libp2p.UserAgent("edgevpn")}
 
+	// AutoRelay section configuration
 	if c.Connection.AutoRelay {
 		relayOpts := []autorelay.Option{}
 		if c.Connection.RelayV1 {
 			relayOpts = append(relayOpts, autorelay.WithCircuitV1Support())
 		}
 
-		if len(c.Connection.StaticRelays) == 0 {
+		// If no relays are specified and no discovery interval, then just use default static relays (to be deprecated)
+		if len(c.Connection.StaticRelays) == 0 && c.Connection.AutoRelayDiscoveryInterval == 0 {
 			relayOpts = append(relayOpts, autorelay.WithDefaultStaticRelays())
-		} else {
+		} else if len(c.Connection.StaticRelays) > 0 {
 			relayOpts = append(relayOpts, autorelay.WithStaticRelays(peers2AddrInfo(c.Connection.StaticRelays)))
+		} else {
+			peerChan := make(chan peer.AddrInfo)
+			// Add AutoRelayFeederService (needs a DHT Service discovery)
+			opts = append(opts, func(cfg *node.Config) error {
+				for _, sd := range cfg.ServiceDiscovery {
+					switch d := sd.(type) {
+					case *discovery.DHT:
+						llger.Debugf("DHT automatic relay discovery configured every '%s'\n", c.Connection.AutoRelayDiscoveryInterval.String())
+						cfg.NetworkServices = append(cfg.NetworkServices, services.AutoRelayFeederService(llger, peerChan, d, c.Connection.AutoRelayDiscoveryInterval))
+					}
+				}
+				return nil
+			})
+			relayOpts = append(relayOpts, autorelay.WithPeerSource(peerChan))
 		}
 
 		libp2pOpts = append(libp2pOpts,

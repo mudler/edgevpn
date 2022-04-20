@@ -41,8 +41,8 @@ type DHT struct {
 	BootstrapPeers       AddrList
 	latestRendezvous     string
 	RefreshDiscoveryTime time.Duration
-	dht                  *dht.IpfsDHT
-	dhtOptions           []dht.Option
+	*dht.IpfsDHT
+	dhtOptions []dht.Option
 }
 
 func NewDHT(d ...dht.Option) *DHT {
@@ -68,19 +68,19 @@ func (d *DHT) Rendezvous() string {
 }
 
 func (d *DHT) startDHT(ctx context.Context, h host.Host) (*dht.IpfsDHT, error) {
-	if d.dht == nil {
+	if d.IpfsDHT == nil {
 		// Start a DHT, for use in peer discovery. We can't just make a new DHT
 		// client because we want each peer to maintain its own local copy of the
 		// DHT, so that the bootstrapping node of the DHT can go down without
 		// inhibiting future peer discovery.
 		kad, err := dht.New(ctx, h, d.dhtOptions...)
 		if err != nil {
-			return d.dht, err
+			return d.IpfsDHT, err
 		}
-		d.dht = kad
+		d.IpfsDHT = kad
 	}
 
-	return d.dht, nil
+	return d.IpfsDHT, nil
 }
 
 func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) error {

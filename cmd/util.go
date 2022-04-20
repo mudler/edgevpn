@@ -77,6 +77,12 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "EDGEVPNLEDGERINTERVAL",
 		Value:  10,
 	},
+	&cli.StringFlag{
+		Name:   "autorelay-discovery-interval",
+		Usage:  "Autorelay discovery interval (Experimental. 0 to disable)",
+		EnvVar: "EDGEVPNAUTORELAYDISCOVERYINTERVAL",
+		Value:  "0",
+	},
 	&cli.IntFlag{
 		Name:   "ledger-syncronization-interval",
 		Usage:  "Ledger syncronization interval time",
@@ -314,6 +320,11 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 
 	var limitConfig *node.NetLimitConfig
 
+	autorelayInterval, err := time.ParseDuration(c.String("autorelay-discovery-interval"))
+	if err != nil {
+		autorelayInterval = 0
+	}
+
 	if c.Bool("limit-config") {
 		limitConfig = &node.NetLimitConfig{
 			Dynamic:         c.Bool("limit-config-dynamic"),
@@ -368,13 +379,14 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			Interval:       time.Duration(c.Int("discovery-interval")) * time.Second,
 		},
 		Connection: config.Connection{
-			AutoRelay:      c.Bool("autorelay"),
-			RelayV1:        c.Bool("autorelay-v1"),
-			MaxConnections: c.Int("max-connections"),
-			MaxStreams:     c.Int("max-streams"),
-			HolePunch:      c.Bool("holepunch"),
-			Mplex:          c.Bool("mplex-multiplexer"),
-			StaticRelays:   c.StringSlice("autorelay-static-peer"),
+			AutoRelay:                  c.Bool("autorelay"),
+			RelayV1:                    c.Bool("autorelay-v1"),
+			MaxConnections:             c.Int("max-connections"),
+			MaxStreams:                 c.Int("max-streams"),
+			HolePunch:                  c.Bool("holepunch"),
+			Mplex:                      c.Bool("mplex-multiplexer"),
+			StaticRelays:               c.StringSlice("autorelay-static-peer"),
+			AutoRelayDiscoveryInterval: autorelayInterval,
 		},
 		Limit: config.ResourceLimit{
 			Enable:      c.Bool("limit-enable"),
