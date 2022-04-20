@@ -23,6 +23,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
@@ -69,7 +70,12 @@ type Config struct {
 
 	Whitelist, Blacklist []string
 
-	Sealer Sealer
+	Sealer    Sealer
+	PeerGater Gater
+}
+
+type Gater interface {
+	Gate(*Node, peer.ID) bool
 }
 
 type Sealer interface {

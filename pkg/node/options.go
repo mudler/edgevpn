@@ -175,6 +175,13 @@ func MaxMessageSize(i int) func(cfg *Config) error {
 	}
 }
 
+func WithPeerGater(d Gater) Option {
+	return func(cfg *Config) error {
+		cfg.PeerGater = d
+		return nil
+	}
+}
+
 func WithLedgerAnnounceTime(t time.Duration) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.LedgerAnnounceTime = t

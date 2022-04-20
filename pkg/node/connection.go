@@ -138,6 +138,12 @@ func (e *Node) handleEvents(ctx context.Context) {
 			if m == nil {
 				continue
 			}
+
+			if e.config.PeerGater != nil && e.config.PeerGater.Gate(e, peer.ID(m.SenderID)) {
+				e.config.Logger.Warnf("gated message from %s", m.SenderID)
+				continue
+			}
+
 			c := m.Copy()
 			str, err := e.config.Sealer.Unseal(c.Message, e.sealkey())
 			if err != nil {
