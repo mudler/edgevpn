@@ -68,8 +68,6 @@ func connect(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName st
 
 // publishMessage sends a message to the pubsub topic.
 func (cr *room) publishMessage(m *Message) error {
-	m.SenderID = cr.self.Pretty()
-
 	msgBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
@@ -93,6 +91,9 @@ func (cr *room) readLoop(messageChan chan *Message) {
 		if err != nil {
 			continue
 		}
+
+		cm.SenderID = msg.ReceivedFrom.String()
+
 		// send valid messages onto the Messages channel
 		messageChan <- cm
 	}
