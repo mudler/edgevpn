@@ -46,7 +46,7 @@ type Config struct {
 	Insecure bool
 
 	// Handlers are a list of handlers subscribed to messages received by the vpn interface
-	Handlers []Handler
+	Handlers, GenericChannelHandler []Handler
 
 	MaxMessageSize  int
 	SealKeyInterval int
@@ -69,6 +69,9 @@ type Config struct {
 	DiscoveryBootstrapPeers                                         discovery.AddrList
 
 	Whitelist, Blacklist []string
+
+	// GenericHub enables generic hub
+	GenericHub bool
 
 	Sealer    Sealer
 	PeerGater Gater

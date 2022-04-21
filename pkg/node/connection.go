@@ -120,10 +120,10 @@ func (e *Node) sealkey() string {
 	return internalCrypto.MD5(gotp.NewTOTP(e.config.ExchangeKey, e.config.SealKeyLength, e.config.SealKeyInterval, nil).Now())
 }
 
-func (e *Node) handleEvents(ctx context.Context) {
+func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message, h *hub.MessageHub, handlers []Handler, peerGater bool) {
 	for {
 		select {
-		case m := <-e.inputCh:
+		case m := <-inputChannel:
 			if m == nil {
 				continue
 			}
@@ -133,15 +133,21 @@ func (e *Node) handleEvents(ctx context.Context) {
 				e.config.Logger.Warnf("%w from %s", err.Error(), c.SenderID)
 			}
 			c.Message = str
-			e.handleOutgoingMessage(c)
-		case m := <-e.MessageHub.Messages:
+
+			if err := h.PublishMessage(c); err != nil {
+				e.config.Logger.Warnf("publish error: %s", err)
+			}
+
+		case m := <-h.Messages:
 			if m == nil {
 				continue
 			}
 
-			if e.config.PeerGater != nil && e.config.PeerGater.Gate(e, peer.ID(m.SenderID)) {
-				e.config.Logger.Warnf("gated message from %s", m.SenderID)
-				continue
+			if peerGater {
+				if e.config.PeerGater != nil && e.config.PeerGater.Gate(e, peer.ID(m.SenderID)) {
+					e.config.Logger.Warnf("gated message from %s", m.SenderID)
+					continue
+				}
 			}
 
 			c := m.Copy()
@@ -150,24 +156,17 @@ func (e *Node) handleEvents(ctx context.Context) {
 				e.config.Logger.Warnf("%w from %s", err.Error(), c.SenderID)
 			}
 			c.Message = str
-			e.handleReceivedMessage(c)
+			e.handleReceivedMessage(c, handlers)
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (e *Node) handleReceivedMessage(m *hub.Message) {
-	for _, h := range e.config.Handlers {
+func (e *Node) handleReceivedMessage(m *hub.Message, handlers []Handler) {
+	for _, h := range handlers {
 		if err := h(m); err != nil {
 			e.config.Logger.Warnf("handler error: %s", err)
 		}
-	}
-}
-
-func (e *Node) handleOutgoingMessage(m *hub.Message) {
-	err := e.MessageHub.PublishMessage(m)
-	if err != nil {
-		e.config.Logger.Warnf("publish error: %s", err)
 	}
 }

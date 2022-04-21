@@ -17,6 +17,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -37,14 +38,20 @@ import (
 type Node struct {
 	config     Config
 	MessageHub *hub.MessageHub
+	GenericHub *hub.MessageHub
+
 	//HubRoom *hub.Room
-	inputCh chan *hub.Message
-	seed    int64
-	host    host.Host
-	cg      *conngater.BasicConnectionGater
-	ledger  *blockchain.Ledger
+	inputCh      chan *hub.Message
+	genericHubCh chan *hub.Message
+
+	seed   int64
+	host   host.Host
+	cg     *conngater.BasicConnectionGater
+	ledger *blockchain.Ledger
 	sync.Mutex
 }
+
+const defaultChanSize = 3000
 
 var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableNATService(),
@@ -70,9 +77,10 @@ func New(p ...Option) (*Node, error) {
 	}
 
 	return &Node{
-		config:  *c,
-		inputCh: make(chan *hub.Message, 3000),
-		seed:    0,
+		config:       *c,
+		inputCh:      make(chan *hub.Message, defaultChanSize),
+		genericHubCh: make(chan *hub.Message, defaultChanSize),
+		seed:         0,
 	}, nil
 }
 
@@ -174,9 +182,29 @@ func (e *Node) startNetwork(ctx context.Context) error {
 		}
 	}
 
-	go e.handleEvents(ctx)
+	go e.handleEvents(ctx, e.inputCh, e.MessageHub, e.config.Handlers, true)
 	go e.MessageHub.Start(ctx, host)
 
+	// If generic hub is enabled one is created separately with a set of generic channel handlers associated with.
+	// note peergating is disabled in order to freely exchange messages that can be used for authentication or for other public means.
+	if e.config.GenericHub {
+		e.GenericHub = hub.NewHub(fmt.Sprintf("%s-generic", e.config.RoomName), e.config.MaxMessageSize, e.config.SealKeyLength, e.config.SealKeyInterval)
+		go e.handleEvents(ctx, e.genericHubCh, e.GenericHub, e.config.GenericChannelHandler, false)
+		go e.GenericHub.Start(ctx, host)
+	}
+
 	e.config.Logger.Debug("Network started")
+	return nil
+}
+
+// PublishMessage publishes a message to the generic channel (if enabled)
+// See GenericChannelHandlers(..) to attach handlers to receive messages from this channel.
+func (e *Node) PublishMessage(m *hub.Message) error {
+	if !e.config.GenericHub {
+		return fmt.Errorf("generic hub disabled")
+	}
+
+	e.genericHubCh <- m
+
 	return nil
 }

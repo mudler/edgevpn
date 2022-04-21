@@ -96,6 +96,14 @@ func Handlers(h ...Handler) func(cfg *Config) error {
 	}
 }
 
+// GenericChannelHandlers adds a handler to the list that is called on each received message in the generic channel (not the one allocated for the blockchain)
+func GenericChannelHandlers(h ...Handler) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.GenericChannelHandler = append(cfg.GenericChannelHandler, h...)
+		return nil
+	}
+}
+
 // WithStreamHandler adds a handler to the list that is called on each received message
 func WithStreamHandler(id protocol.Protocol, h StreamHandler) func(cfg *Config) error {
 	return func(cfg *Config) error {
@@ -110,6 +118,15 @@ func DiscoveryService(s ...ServiceDiscovery) func(cfg *Config) error {
 		cfg.ServiceDiscovery = append(cfg.ServiceDiscovery, s...)
 		return nil
 	}
+}
+
+// EnableGenericHub enables an additional generic hub between peers.
+// This can be used to exchange messages between peers that are not related to any
+// blockchain event. For instance, messages could be used for authentication, or for other sort
+// of application.
+var EnableGenericHub = func(cfg *Config) error {
+	cfg.GenericHub = true
+	return nil
 }
 
 func ListenAddresses(ss ...string) func(cfg *Config) error {
