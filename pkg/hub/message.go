@@ -20,7 +20,7 @@ type Message struct {
 	Message  string
 	SenderID string
 
-	Annotations map[string]string
+	Annotations map[string]interface{}
 }
 
 type MessageOption func(cfg *Message) error
