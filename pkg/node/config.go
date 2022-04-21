@@ -91,7 +91,7 @@ type NetworkService func(context.Context, Config, *Node, *blockchain.Ledger) err
 
 type StreamHandler func(*Node, *blockchain.Ledger) func(stream network.Stream)
 
-type Handler func(*hub.Message) error
+type Handler func(*blockchain.Ledger, *hub.Message, chan *hub.Message) error
 
 type ServiceDiscovery interface {
 	Run(log.StandardLogger, context.Context, host.Host) error

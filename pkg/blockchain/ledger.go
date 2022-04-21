@@ -108,7 +108,7 @@ func deCompress(b []byte) (*bytes.Buffer, error) {
 }
 
 // Update the blockchain from a message
-func (l *Ledger) Update(h *hub.Message) (err error) {
+func (l *Ledger) Update(f *Ledger, h *hub.Message, c chan *hub.Message) (err error) {
 	//chain := make(Blockchain, 0)
 	block := &Block{}
 

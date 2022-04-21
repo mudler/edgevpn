@@ -156,16 +156,16 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 				e.config.Logger.Warnf("%w from %s", err.Error(), c.SenderID)
 			}
 			c.Message = str
-			e.handleReceivedMessage(c, handlers)
+			e.handleReceivedMessage(c, handlers, inputChannel)
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (e *Node) handleReceivedMessage(m *hub.Message, handlers []Handler) {
+func (e *Node) handleReceivedMessage(m *hub.Message, handlers []Handler, c chan *hub.Message) {
 	for _, h := range handlers {
-		if err := h(m); err != nil {
+		if err := h(e.ledger, m, c); err != nil {
 			e.config.Logger.Warnf("handler error: %s", err)
 		}
 	}
