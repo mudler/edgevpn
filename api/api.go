@@ -66,6 +66,7 @@ const (
 	DNSURL        = "/api/dns"
 	MetricsURL    = "/api/metrics"
 	PeerstoreURL  = "/api/peerstore"
+	PeerGateURL   = "/api/peergate"
 )
 
 func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, e *node.Node, bwc metrics.Reporter, debugMode bool) error {
@@ -114,6 +115,24 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		}
 		return c.JSON(http.StatusOK, list)
 	})
+
+	if e.PeerGater() != nil {
+		ec.PUT(fmt.Sprintf("%s/:state", PeerGateURL), func(c echo.Context) error {
+			state := c.Param("state")
+
+			switch state {
+			case "enable":
+				e.PeerGater().Enable()
+			case "disable":
+				e.PeerGater().Disable()
+			}
+			return c.JSON(http.StatusOK, e.PeerGater().Enabled())
+		})
+
+		ec.GET(PeerGateURL, func(c echo.Context) error {
+			return c.JSON(http.StatusOK, e.PeerGater().Enabled())
+		})
+	}
 
 	ec.GET(SummaryURL, func(c echo.Context) error {
 		files := len(ledger.CurrentData()[protocol.FilesLedgerKey])

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math/bits"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ipfs/go-log"
@@ -37,6 +38,8 @@ import (
 	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/services"
+	"github.com/mudler/edgevpn/pkg/trustzone"
+	"github.com/mudler/edgevpn/pkg/trustzone/authprovider/ecdsa"
 	"github.com/mudler/edgevpn/pkg/vpn"
 	"github.com/peterbourgon/diskv"
 	"github.com/songgao/water"
@@ -60,6 +63,21 @@ type Config struct {
 	Discovery                                  Discovery
 	Ledger                                     Ledger
 	Limit                                      ResourceLimit
+	// PeerGuard (experimental)
+	// enable peerguardian and add specific auth options
+	PeerGuard PeerGuard
+}
+
+type PeerGuard struct {
+	Enable      bool
+	Relaxed     bool
+	Autocleanup bool
+	PeerGate    bool
+	// AuthProviders in the freemap form:
+	// ecdsa:
+	//   private_key: "foo_bar"
+	AuthProviders map[string]map[string]interface{}
+	SyncInterval  time.Duration
 }
 
 type ResourceLimit struct {
@@ -374,7 +392,51 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		opts = append(opts, node.WithStore(&blockchain.MemoryStore{}))
 	}
 
+	if c.PeerGuard.Enable {
+		pg := trustzone.NewPeerGater(c.PeerGuard.Relaxed)
+		dur := c.PeerGuard.SyncInterval
+
+		// Build up the authproviders for the peerguardian
+		aps := []trustzone.AuthProvider{}
+		for ap, providerOpts := range c.PeerGuard.AuthProviders {
+			a, err := authProvider(llger, ap, providerOpts)
+			if err != nil {
+				return opts, vpnOpts, fmt.Errorf("invalid authprovider: %w", err)
+			}
+			aps = append(aps, a)
+		}
+
+		pguardian := trustzone.NewPeerGuardian(llger, aps...)
+
+		opts = append(opts,
+			node.WithNetworkService(
+				pg.UpdaterService(dur),
+				pguardian.Challenger(dur, c.PeerGuard.Autocleanup),
+			),
+			node.EnableGenericHub,
+			node.GenericChannelHandlers(pguardian.ReceiveMessage),
+		)
+		// We always pass a PeerGater such will be registered to the API if necessary
+		opts = append(opts, node.WithPeerGater(pg))
+		// IF it's not enabled, we just disable it right away.
+		if !c.PeerGuard.PeerGate {
+			pg.Disable()
+		}
+	}
+
 	return opts, vpnOpts, nil
+}
+
+func authProvider(ll log.StandardLogger, s string, opts map[string]interface{}) (trustzone.AuthProvider, error) {
+	switch strings.ToLower(s) {
+	case "ecdsa":
+		pk, exists := opts["private_key"]
+		if !exists {
+			return nil, fmt.Errorf("No private key provided")
+		}
+		return ecdsa.ECDSA521Provider(ll, fmt.Sprint(pk))
+	}
+	return nil, fmt.Errorf("not supported")
 }
 
 func logScale(val int) int {

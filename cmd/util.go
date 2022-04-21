@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"runtime"
 	"time"
 
@@ -308,6 +309,38 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "LIMITCONFIGFD",
 		Value:  30,
 	},
+	&cli.BoolFlag{
+		Name:   "peerguard",
+		Usage:  "Enable peerguard. (Experimental)",
+		EnvVar: "PEERGUARD",
+	},
+	&cli.BoolFlag{
+		Name:   "peergate",
+		Usage:  "Enable peergating. (Experimental)",
+		EnvVar: "PEERGATE",
+	},
+	&cli.BoolFlag{
+		Name:   "peergate-autoclean",
+		Usage:  "Enable peergating autoclean. (Experimental)",
+		EnvVar: "PEERGATE_AUTOCLEAN",
+	},
+	&cli.BoolFlag{
+		Name:   "peergate-relaxed",
+		Usage:  "Enable peergating relaxation. (Experimental)",
+		EnvVar: "PEERGATE_RELAXED",
+	},
+	&cli.StringFlag{
+		Name:   "peergate-auth",
+		Usage:  "Peergate auth",
+		EnvVar: "PEERGATE_AUTH",
+		Value:  "",
+	},
+	&cli.IntFlag{
+		Name:   "peergate-interval",
+		Usage:  "Peergater interval time",
+		EnvVar: "EDGEVPNPEERGATEINTERVAL",
+		Value:  120,
+	},
 }
 
 func displayStart(ll *logger.Logger) {
@@ -341,6 +374,11 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			FD:              c.Int("limit-config-fd"),
 		}
 	}
+
+	// Authproviders are supposed to be passed as a json object
+	pa := c.String("peergate-auth")
+	d := map[string]map[string]interface{}{}
+	json.Unmarshal([]byte(pa), &d)
 
 	nc := nodeConfig.Config{
 		NetworkConfig:     c.String("config"),
@@ -394,6 +432,14 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			Scope:       c.String("limit-scope"),
 			MaxConns:    c.Int("max-connections"), // Turn to 0 to use other way of limiting. Files take precedence
 			LimitConfig: limitConfig,
+		},
+		PeerGuard: config.PeerGuard{
+			Enable:        c.Bool("peerguard"),
+			PeerGate:      c.Bool("peergate"),
+			Relaxed:       c.Bool("peergate-relaxed"),
+			Autocleanup:   c.Bool("peergate-autoclean"),
+			SyncInterval:  time.Duration(c.Int("peergate-interval")) * time.Second,
+			AuthProviders: d,
 		},
 	}
 

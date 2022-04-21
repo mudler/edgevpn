@@ -33,26 +33,31 @@ import (
 type MessageHub struct {
 	sync.Mutex
 
-	r         *room
-	otpKey    string
-	maxsize   int
-	keyLength int
-	interval  int
+	blockchain, public *room
+	ps                 *pubsub.PubSub
+	otpKey             string
+	maxsize            int
+	keyLength          int
+	interval           int
+	joinPublic         bool
 
-	ctxCancel context.CancelFunc
-	Messages  chan *Message
+	ctxCancel                context.CancelFunc
+	Messages, PublicMessages chan *Message
 }
 
 // roomBufSize is the number of incoming messages to buffer for each topic.
 const roomBufSize = 128
 
-func NewHub(otp string, maxsize, keyLength, interval int) *MessageHub {
+func NewHub(otp string, maxsize, keyLength, interval int, joinPublic bool) *MessageHub {
 	return &MessageHub{otpKey: otp, maxsize: maxsize, keyLength: keyLength, interval: interval,
-		Messages: make(chan *Message, roomBufSize)}
+		Messages: make(chan *Message, roomBufSize), PublicMessages: make(chan *Message, roomBufSize), joinPublic: joinPublic}
 }
 
-func (m *MessageHub) topicKey() string {
+func (m *MessageHub) topicKey(salts ...string) string {
 	totp := gotp.NewTOTP(strings.ToUpper(m.otpKey), m.keyLength, m.interval, nil)
+	if len(salts) > 0 {
+		return crypto.MD5(totp.Now() + strings.Join(salts, ":"))
+	}
 	return crypto.MD5(totp.Now())
 }
 
@@ -78,7 +83,18 @@ func (m *MessageHub) joinRoom(host host.Host) error {
 	if err != nil {
 		return err
 	}
-	m.r = cr
+
+	m.blockchain = cr
+
+	if m.joinPublic {
+		cr2, err := connect(ctx, ps, host.ID(), m.topicKey("public"), m.PublicMessages)
+		if err != nil {
+			return err
+		}
+		m.public = cr2
+	}
+
+	m.ps = ps
 
 	return nil
 }
@@ -117,8 +133,17 @@ func (m *MessageHub) Start(ctx context.Context, host host.Host) error {
 func (m *MessageHub) PublishMessage(mess *Message) error {
 	m.Lock()
 	defer m.Unlock()
-	if m.r != nil {
-		return m.r.publishMessage(mess)
+	if m.blockchain != nil {
+		return m.blockchain.publishMessage(mess)
+	}
+	return errors.New("no message room available")
+}
+
+func (m *MessageHub) PublishPublicMessage(mess *Message) error {
+	m.Lock()
+	defer m.Unlock()
+	if m.public != nil {
+		return m.public.publishMessage(mess)
 	}
 	return errors.New("no message room available")
 }
@@ -126,8 +151,8 @@ func (m *MessageHub) PublishMessage(mess *Message) error {
 func (m *MessageHub) ListPeers() ([]peer.ID, error) {
 	m.Lock()
 	defer m.Unlock()
-	if m.r != nil {
-		return m.r.Topic.ListPeers(), nil
+	if m.blockchain != nil {
+		return m.blockchain.Topic.ListPeers(), nil
 	}
 	return nil, errors.New("no message room available")
 }

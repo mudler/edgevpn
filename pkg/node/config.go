@@ -79,6 +79,9 @@ type Config struct {
 
 type Gater interface {
 	Gate(*Node, peer.ID) bool
+	Enable()
+	Disable()
+	Enabled() bool
 }
 
 type Sealer interface {

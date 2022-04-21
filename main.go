@@ -45,6 +45,7 @@ func main() {
 			cmd.Proxy(),
 			cmd.FileSend(),
 			cmd.DNS(),
+			cmd.Peergate(),
 		},
 
 		Action: cmd.Main(),

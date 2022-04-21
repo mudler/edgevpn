@@ -120,7 +120,7 @@ func (e *Node) sealkey() string {
 	return internalCrypto.MD5(gotp.NewTOTP(e.config.ExchangeKey, e.config.SealKeyLength, e.config.SealKeyInterval, nil).Now())
 }
 
-func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message, h *hub.MessageHub, handlers []Handler, peerGater bool) {
+func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message, roomMessages chan *hub.Message, pub func(*hub.Message) error, handlers []Handler, peerGater bool) {
 	for {
 		select {
 		case m := <-inputChannel:
@@ -134,11 +134,11 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 			}
 			c.Message = str
 
-			if err := h.PublishMessage(c); err != nil {
+			if err := pub(c); err != nil {
 				e.config.Logger.Warnf("publish error: %s", err)
 			}
 
-		case m := <-h.Messages:
+		case m := <-roomMessages:
 			if m == nil {
 				continue
 			}

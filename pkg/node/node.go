@@ -38,7 +38,6 @@ import (
 type Node struct {
 	config     Config
 	MessageHub *hub.MessageHub
-	GenericHub *hub.MessageHub
 
 	//HubRoom *hub.Room
 	inputCh      chan *hub.Message
@@ -100,6 +99,11 @@ func (e *Node) Ledger() (*blockchain.Ledger, error) {
 
 	e.ledger = blockchain.New(mw, e.config.Store)
 	return e.ledger, nil
+}
+
+// PeerGater returns the node peergater
+func (e *Node) PeerGater() Gater {
+	return e.config.PeerGater
 }
 
 // Start joins the node over the p2p network
@@ -174,7 +178,7 @@ func (e *Node) startNetwork(ctx context.Context) error {
 	// Hub rotates within sealkey interval.
 	// this time length should be enough to make room for few block exchanges. This is ideally on minutes (10, 20, etc. )
 	// it makes sure that if a bruteforce is attempted over the encrypted messages, the real key is not exposed.
-	e.MessageHub = hub.NewHub(e.config.RoomName, e.config.MaxMessageSize, e.config.SealKeyLength, e.config.SealKeyInterval)
+	e.MessageHub = hub.NewHub(e.config.RoomName, e.config.MaxMessageSize, e.config.SealKeyLength, e.config.SealKeyInterval, e.config.GenericHub)
 
 	for _, sd := range e.config.ServiceDiscovery {
 		if err := sd.Run(e.config.Logger, ctx, host); err != nil {
@@ -182,15 +186,13 @@ func (e *Node) startNetwork(ctx context.Context) error {
 		}
 	}
 
-	go e.handleEvents(ctx, e.inputCh, e.MessageHub, e.config.Handlers, true)
+	go e.handleEvents(ctx, e.inputCh, e.MessageHub.Messages, e.MessageHub.PublishMessage, e.config.Handlers, true)
 	go e.MessageHub.Start(ctx, host)
 
 	// If generic hub is enabled one is created separately with a set of generic channel handlers associated with.
 	// note peergating is disabled in order to freely exchange messages that can be used for authentication or for other public means.
 	if e.config.GenericHub {
-		e.GenericHub = hub.NewHub(fmt.Sprintf("%s-generic", e.config.RoomName), e.config.MaxMessageSize, e.config.SealKeyLength, e.config.SealKeyInterval)
-		go e.handleEvents(ctx, e.genericHubCh, e.GenericHub, e.config.GenericChannelHandler, false)
-		go e.GenericHub.Start(ctx, host)
+		go e.handleEvents(ctx, e.genericHubCh, e.MessageHub.PublicMessages, e.MessageHub.PublishPublicMessage, e.config.GenericChannelHandler, false)
 	}
 
 	e.config.Logger.Debug("Network started")
