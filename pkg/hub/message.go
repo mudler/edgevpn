@@ -15,6 +15,8 @@
 
 package hub
 
+import "encoding/json"
+
 // Message gets converted to/from JSON and sent in the body of pubsub messages.
 type Message struct {
 	Message  string
@@ -52,4 +54,12 @@ func (m *Message) WithMessage(s string) *Message {
 	copy := m.Copy()
 	copy.Message = s
 	return copy
+}
+
+func (m *Message) AnnotationsToObj(v interface{}) error {
+	blob, err := json.Marshal(m.Annotations)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(blob, v)
 }
