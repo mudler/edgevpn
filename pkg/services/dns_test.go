@@ -56,7 +56,7 @@ var _ = Describe("DNS service", func() {
 
 			ll, _ := e2.Ledger()
 
-			AnnounceDNSRecord(ctx, ll, 15*time.Second, `test.foo.`, types.DNS{
+			AnnounceDNSRecord(ctx, ll, 60*time.Second, `test.foo.`, types.DNS{
 				dns.Type(dns.TypeA): "2.2.2.2",
 			})
 

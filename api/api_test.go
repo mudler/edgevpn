@@ -53,6 +53,9 @@ var _ = Describe("API", func() {
 			e, _ := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
 			e.Start(ctx)
 
+			e2, _ := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+			e2.Start(ctx)
+
 			go func() {
 				err := API(ctx, fmt.Sprintf("unix://%s", socket), 10*time.Second, 20*time.Second, e, nil, false)
 				Expect(err).ToNot(HaveOccurred())

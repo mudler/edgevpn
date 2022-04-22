@@ -147,7 +147,7 @@ var _ = Describe("trustzone", func() {
 			l, err = e.Ledger()
 			Expect(err).ToNot(HaveOccurred())
 
-			go e.Start(ctx)
+			e.Start(ctx)
 
 			Eventually(func() bool {
 				if e.Host() == nil {

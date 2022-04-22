@@ -74,7 +74,7 @@ var _ = Describe("Alive service", func() {
 	Context("Aliveness Scrub", func() {
 		BeforeEach(func() {
 			opts = append(
-				Alive(5*time.Second, 20*time.Second, 15*time.Minute),
+				Alive(10*time.Second, 30*time.Second, 15*time.Minute),
 				node.WithDiscoveryInterval(10*time.Second),
 				node.FromBase64(true, true, token),
 				l)
@@ -87,6 +87,7 @@ var _ = Describe("Alive service", func() {
 			e1, _ := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
 
 			e1.Start(ctx)
+			time.Sleep(5 * time.Second)
 			e2.Start(ctx)
 
 			ll, _ := e1.Ledger()
@@ -114,7 +115,7 @@ var _ = Describe("Alive service", func() {
 					return []string{}
 				}
 				return AvailableNodes(ll, 15*time.Minute)
-			}, 120*time.Second, 1*time.Second).Should(BeEmpty())
+			}, 360*time.Second, 1*time.Second).Should(BeEmpty())
 
 			Expect(ll.LastBlock().Index).ToNot(Equal(index))
 			index = ll.LastBlock().Index
