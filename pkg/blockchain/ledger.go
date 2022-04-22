@@ -38,6 +38,8 @@ type Ledger struct {
 	channel io.Writer
 
 	onDisk bool
+
+	wantedBlock *Block
 }
 
 type Store interface {
@@ -71,7 +73,12 @@ func (l *Ledger) Syncronizer(ctx context.Context, t time.Duration) {
 			case <-t.C:
 				l.Lock()
 
-				bytes, err := json.Marshal(l.blockchain.Last())
+				b := l.blockchain.Last()
+				if l.wantedBlock != nil && l.wantedBlock.Index > b.Index {
+					b = *l.wantedBlock
+				}
+
+				bytes, err := json.Marshal(b)
 				if err != nil {
 					log.Println(err)
 				}
@@ -352,7 +359,8 @@ func (l *Ledger) writeData(s map[string]map[string]Data) {
 
 	if newBlock.IsValid(l.blockchain.Last()) {
 		l.Lock()
-		l.blockchain.Add(newBlock)
+		l.wantedBlock = &newBlock
+		//l.blockchain.Add(newBlock)
 		l.Unlock()
 	}
 
