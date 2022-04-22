@@ -31,6 +31,9 @@ func (m *MemoryStore) Add(b Block) {
 func (m *MemoryStore) Len() int {
 	m.Lock()
 	defer m.Unlock()
+	if m.block == nil {
+		return 0
+	}
 	return m.block.Index
 }
 

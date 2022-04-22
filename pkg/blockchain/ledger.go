@@ -49,7 +49,9 @@ type Store interface {
 // New returns a new ledger which writes to the writer
 func New(w io.Writer, s Store) *Ledger {
 	c := &Ledger{channel: w, blockchain: s}
-	c.newGenesis()
+	if s.Len() == 0 {
+		c.newGenesis()
+	}
 	return c
 }
 
