@@ -100,7 +100,7 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
     </item>
     
     <item>
-      <title>Docs: webUI and API</title>
+      <title>Docs: WebUI and API</title>
       <link>https://mudler.github.io/edgevpn/docs/getting-started/api/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -175,10 +175,18 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
 &lt;p&gt;Returns the current data in the ledger inside the &lt;code&gt;:bucket&lt;/code&gt;&lt;/p&gt;
 &lt;h4 id=&#34;apiledgerbucketkey&#34;&gt;&lt;code&gt;/api/ledger/:bucket/:key&lt;/code&gt;&lt;/h4&gt;
 &lt;p&gt;Returns the current data in the ledger inside the &lt;code&gt;:bucket&lt;/code&gt; at given &lt;code&gt;:key&lt;/code&gt;&lt;/p&gt;
+&lt;h4 id=&#34;apipeergate&#34;&gt;&lt;code&gt;/api/peergate&lt;/code&gt;&lt;/h4&gt;
+&lt;p&gt;Returns peergater status&lt;/p&gt;
 &lt;h3 id=&#34;put&#34;&gt;PUT&lt;/h3&gt;
 &lt;h4 id=&#34;apiledgerbucketkeyvalue&#34;&gt;&lt;code&gt;/api/ledger/:bucket/:key/:value&lt;/code&gt;&lt;/h4&gt;
 &lt;p&gt;Puts &lt;code&gt;:value&lt;/code&gt; in the ledger inside the &lt;code&gt;:bucket&lt;/code&gt; at given &lt;code&gt;:key&lt;/code&gt;&lt;/p&gt;
-&lt;h3 id=&#34;post&#34;&gt;POST&lt;/h3&gt;
+&lt;h4 id=&#34;apipeergatestate&#34;&gt;&lt;code&gt;/api/peergate/:state&lt;/code&gt;&lt;/h4&gt;
+&lt;p&gt;Enables/disables peergating:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# enable&lt;/span&gt;
+$ curl -X PUT &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;http://localhost:8080/api/peergate/enable&amp;#39;&lt;/span&gt;
+&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# disable&lt;/span&gt;
+$ curl -X PUT &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;http://localhost:8080/api/peergate/disable&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;post&#34;&gt;POST&lt;/h3&gt;
 &lt;h4 id=&#34;apidns-1&#34;&gt;&lt;code&gt;/api/dns&lt;/code&gt;&lt;/h4&gt;
 &lt;p&gt;The endpoint accept a JSON payload of the following form:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;{&lt;/span&gt; &lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;&amp;#34;Regex&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;&amp;lt;regex&amp;gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;,&lt;/span&gt; 
@@ -196,7 +204,12 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
 &lt;p&gt;Deletes the &lt;code&gt;:key&lt;/code&gt; into &lt;code&gt;:bucket&lt;/code&gt; inside the ledger&lt;/p&gt;
 &lt;h4 id=&#34;apiledgerbucket-1&#34;&gt;&lt;code&gt;/api/ledger/:bucket&lt;/code&gt;&lt;/h4&gt;
 &lt;p&gt;Deletes the &lt;code&gt;:bucket&lt;/code&gt; from the ledger&lt;/p&gt;
-
+&lt;h2 id=&#34;binding-to-a-socket&#34;&gt;Binding to a socket&lt;/h2&gt;
+&lt;p&gt;The API can also be bound to a socket, for instance:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn api --listen &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;unix://&amp;lt;path/to/socket&amp;gt;&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;or as well while running the vpn:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn api --api-listen &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;unix://&amp;lt;path/to/socket&amp;gt;&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
       </description>
     </item>
     

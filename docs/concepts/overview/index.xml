@@ -45,8 +45,14 @@
       <description>
         
         
-        &lt;h2 id=&#34;dns-server&#34;&gt;DNS Server&lt;/h2&gt;
-&lt;p&gt;Note: Experimental feature!&lt;/p&gt;
+        
+
+&lt;div class=&#34;pageinfo pageinfo-warning&#34;&gt;
+&lt;p&gt;Experimental feature!&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;h2 id=&#34;dns-server&#34;&gt;DNS Server&lt;/h2&gt;
 &lt;p&gt;A DNS Server is available but disabled by default.&lt;/p&gt;
 &lt;p&gt;The DNS server will resolve DNS queries using the blockchain as a record and will forward unknown domains by default.&lt;/p&gt;
 &lt;p&gt;It can be enabled by specifying a listening address with &lt;code&gt;--dns&lt;/code&gt;. For example, to bind to default &lt;code&gt;53&lt;/code&gt; port locally, run in the console:&lt;/p&gt;
@@ -89,6 +95,72 @@
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;receiving&#34;&gt;Receiving&lt;/h3&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn file-receive &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;unique-id&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;/dst/path&amp;#39;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Peerguardian</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/peerguardian/</link>
+      <pubDate>Wed, 05 Jan 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/peerguardian/</guid>
+      <description>
+        
+        
+        
+
+&lt;div class=&#34;pageinfo pageinfo-warning&#34;&gt;
+&lt;p&gt;Experimental feature!&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;h2 id=&#34;peerguardian&#34;&gt;Peerguardian&lt;/h2&gt;
+&lt;p&gt;PeerGuardian is a mechanism to prevent unauthorized access to the network if tokens are leaked or either revoke network access.&lt;/p&gt;
+&lt;p&gt;In order to enable it, start edgevpn nodes adding the &lt;code&gt;--peerguradian&lt;/code&gt; flag.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;edgevpn --peerguardian
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To turn on peer gating, specify also &lt;code&gt;--peergate&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Peerguardian and peergating has several options:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;   --peerguard                                   Enable peerguard. (Experimental) [$PEERGUARD]
+   --peergate                                    Enable peergating. (Experimental) [$PEERGATE]
+   --peergate-autoclean                          Enable peergating autoclean. (Experimental) [$PEERGATE_AUTOCLEAN]
+   --peergate-relaxed                            Enable peergating relaxation. (Experimental) [$PEERGATE_RELAXED]
+   --peergate-auth value                         Peergate auth [$PEERGATE_AUTH]
+   --peergate-interval value                     Peergater interval time (default: 120) [$EDGEVPNPEERGATEINTERVAL]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;When the PeerGuardian and Peergater are enabled, a VPN node will only accepts blocks from authorized nodes.&lt;/p&gt;
+&lt;p&gt;Peerguardian is extensible to support different mechanisms of authentication, we will see below specific implementations.&lt;/p&gt;
+&lt;h2 id=&#34;ecdsa-auth&#34;&gt;ECDSA auth&lt;/h2&gt;
+&lt;p&gt;The ECDSA authentication mechanism is used to verify peers in the blockchain using ECDSA keys.&lt;/p&gt;
+&lt;p&gt;To generate a new ECDSA keypair use &lt;code&gt;edgevpn peergater ecdsa-genkey&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn peergater ecdsa-genkey
+Private key: &lt;span style=&#34;color:#000&#34;&gt;LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1JSGNBZ0VCQkVJQkhUZnRSTVZSRmlvaWZrdllhZEE2NXVRQXlSZTJSZHM0MW1UTGZlNlRIT3FBTTdkZW9sak0KZXVPbTk2V0hacEpzNlJiVU1tL3BCWnZZcElSZ0UwZDJjdUdnQndZRks0RUVBQ09oZ1lrRGdZWUFCQUdVWStMNQptUzcvVWVoSjg0b3JieGo3ZmZUMHBYZ09MSzNZWEZLMWVrSTlEWnR6YnZWOUdwMHl6OTB3aVZxajdpMDFVRnhVCnRKbU1lWURIRzBTQkNuVWpDZ0FGT3ByUURpTXBFR2xYTmZ4LzIvdEVySDIzZDNwSytraFdJbUIza01QL2tRNEIKZzJmYnk2cXJpY1dHd3B4TXBXNWxKZVZXUGlkeWJmMSs0cVhPTWdQbmRnPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo&lt;/span&gt;&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;
+Public key: &lt;span style=&#34;color:#000&#34;&gt;LS0tLS1CRUdJTiBFQyBQVUJMSUMgS0VZLS0tLS0KTUlHYk1CQUdCeXFHU000OUFnRUdCU3VCQkFBakE0R0dBQVFCbEdQaStaa3UvMUhvU2ZPS0syOFkrMzMwOUtWNApEaXl0MkZ4U3RYcENQUTJiYzI3MWZScWRNcy9kTUlsYW8rNHROVkJjVkxTWmpIbUF4eHRFZ1FwMUl3b0FCVHFhCjBBNGpLUkJwVnpYOGY5djdSS3g5dDNkNlN2cElWaUpnZDVERC81RU9BWU5uMjh1cXE0bkZoc0tjVEtWdVpTWGwKVmo0bmNtMzlmdUtsempJRDUzWT0KLS0tLS1FTkQgRUMgUFVCTElDIEtFWS0tLS0tCg&lt;/span&gt;&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;==&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;For example, to add a ECDSA public key, use the API as such from a node which is already trusted by PeerGuardian:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ curl -X PUT &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;http://localhost:8080/api/ledger/trustzoneAuth/ecdsa_1/LS0tLS1CRUdJTiBFQyBQVUJMSUMgS0VZLS0tLS0KTUlHYk1CQUdCeXFHU000OUFnRUdCU3VCQkFBakE0R0dBQVFBL09TTjhsUU9Wa3FHOHNHbGJiellWamZkdVVvUAplMEpsWUVzOFAyU3o1TDlzVUtDYi9kQWkrVFVONXU0ZVk2REpGeU50dWZjK2p0THNVTTlPb0xXVnBXb0E0eEVDCk9VdDFmRVNaRzUxckc4MEdFVjBuQTlBRGFvOW1XK3p4dmkvQnd0ZFVvSTNjTDB0VTdlUGEvSGM4Z1FLMmVOdE0KeDdBSmNYcWpPNXZXWGxZZ2NkOD0KLS0tLS1FTkQgRUMgUFVCTElDIEtFWS0tLS0tCg==&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now the private key can be used while starting new nodes:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;color:#000&#34;&gt;PEERGATE_AUTH&lt;/span&gt;&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;{ &amp;#39;ecdsa&amp;#39; : { &amp;#39;private_key&amp;#39;: &amp;#39;LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1JSGNBZ0VCQkVJQkhUZnRSTVZSRmlvaWZrdllhZEE2NXVRQXlSZTJSZHM0MW1UTGZlNlRIT3FBTTdkZW9sak0KZXVPbTk2V0hacEpzNlJiVU1tL3BCWnZZcElSZ0UwZDJjdUdnQndZRks0RUVBQ09oZ1lrRGdZWUFCQUdVWStMNQptUzcvVWVoSjg0b3JieGo3ZmZUMHBYZ09MSzNZWEZLMWVrSTlEWnR6YnZWOUdwMHl6OTB3aVZxajdpMDFVRnhVCnRKbU1lWURIRzBTQkNuVWpDZ0FGT3ByUURpTXBFR2xYTmZ4LzIvdEVySDIzZDNwSytraFdJbUIza01QL2tRNEIKZzJmYnk2cXJpY1dHd3B4TXBXNWxKZVZXUGlkeWJmMSs0cVhPTWdQbmRnPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=&amp;#39; } }&amp;#34;&lt;/span&gt;
+$ edgevpn --peerguardian --peergate
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;enablingdisabling-peergating-in-runtime&#34;&gt;Enabling/Disabling peergating in runtime&lt;/h2&gt;
+&lt;p&gt;Peergating can be disabled in runtime by leveraging the api:&lt;/p&gt;
+&lt;h3 id=&#34;query-status&#34;&gt;Query status&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ curl -X GET &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;http://localhost:8080/api/peergate&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;enable-peergating&#34;&gt;Enable peergating&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ curl -X PUT &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;http://localhost:8080/api/peergate/enable&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;disable-peergating&#34;&gt;Disable peergating&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ curl -X PUT &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;http://localhost:8080/api/peergate/disable&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;starting-a-new-network&#34;&gt;Starting a new network&lt;/h2&gt;
+&lt;p&gt;To init a new Trusted network, start nodes with &lt;code&gt;--peergate-relaxed&lt;/code&gt; and add the neccessary auth keys:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn --peerguardian --peergate --peergate-relaxed
+$ curl -X PUT &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;http://localhost:8080/api/ledger/trustzoneAuth/keytype_1/XXX&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;div class=&#34;alert alert-primary&#34; role=&#34;alert&#34;&gt;
+&lt;h4 class=&#34;alert-heading&#34;&gt;Note&lt;/h4&gt;
+
+    It is strongly suggested to use a local store for the blockchain with PeerGuardian. In this way nodes persist locally auth keys and you can avoid starting nodes with `&amp;ndash;peergate-relaxed&#39;
+
+&lt;/div&gt;
+
+
       </description>
     </item>
     
