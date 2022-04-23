@@ -7,9 +7,11 @@ description: >
   Embedded DNS server documentation
 ---
 
-## DNS Server
+{{% pageinfo color="warning"%}}
+Experimental feature!
+{{% /pageinfo %}}
 
-Note: Experimental feature!
+## DNS Server
 
 A DNS Server is available but disabled by default. 
 

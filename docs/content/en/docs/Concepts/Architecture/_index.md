@@ -3,7 +3,7 @@ title: "Architecture"
 linkTitle: "Architecture"
 weight: 2
 description: >
-  EdgeVPN overview
+  EdgeVPN internal architecture
 resources:
 - src: "**edgevpn_*.png"
 ---

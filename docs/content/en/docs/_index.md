@@ -30,6 +30,6 @@ It can:
 Check out the docs below for further example and reference, have a look at our [getting started guide]({{< relref "/docs">}}/getting-started), the [cli interface]({{< relref "/docs">}}/getting-started/cli), [gui desktop app]({{< relref "/docs">}}/getting-started/gui), and the embedde [WebUI/API]({{< relref "/docs">}}/getting-started/api/).
 
 
-| WebUI            | [Desktop](https://github.com/mudler/edgevpn-gui)                                          |
+| [WebUI]({{< relref "/docs">}}/getting-started/api)            | [Desktop](https://github.com/mudler/edgevpn-gui)                                          |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | ![img](https://user-images.githubusercontent.com/2420543/163020448-8e9238c1-3b6d-435d-9b25-7729d8779ebd.png) | ![](https://user-images.githubusercontent.com/2420543/147854909-a223a7c1-5caa-4e90-b0ac-0ae04dc0949d.png) |

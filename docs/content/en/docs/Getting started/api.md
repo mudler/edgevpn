@@ -1,6 +1,6 @@
 ---
-title: "webUI and API"
-linkTitle: "webUI and API"
+title: "WebUI and API"
+linkTitle: "WebUI and API"
 weight: 1
 description: >
   Query the network status and operate the ledger with the built-in API
@@ -72,11 +72,26 @@ Returns the current data in the ledger inside the `:bucket`
 
 Returns the current data in the ledger inside the `:bucket` at given `:key`
 
+#### `/api/peergate`
+
+Returns peergater status
+
 ### PUT
 
 #### `/api/ledger/:bucket/:key/:value`
 
 Puts `:value` in the ledger inside the `:bucket` at given `:key`
+
+#### `/api/peergate/:state`
+
+Enables/disables peergating:
+
+```bash
+# enable
+$ curl -X PUT 'http://localhost:8080/api/peergate/enable'
+# disable
+$ curl -X PUT 'http://localhost:8080/api/peergate/disable'
+```
 
 ### POST
 
@@ -112,3 +127,17 @@ Deletes the `:key` into `:bucket` inside the ledger
 #### `/api/ledger/:bucket`
 
 Deletes the `:bucket` from the ledger
+
+## Binding to a socket
+
+The API can also be bound to a socket, for instance:
+
+```bash
+$ edgevpn api --listen "unix://<path/to/socket>"
+```
+
+or as well while running the vpn:
+
+```bash
+$ edgevpn api --api-listen "unix://<path/to/socket>"
+```

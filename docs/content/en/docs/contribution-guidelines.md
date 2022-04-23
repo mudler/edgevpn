@@ -3,7 +3,8 @@
 title: "Contributing"
 linkTitle: "Contribution guidelines"
 weight: 159
-
+description: >
+  See how to contribute to EdgeVPN
 ---
 
 ## Contributing to EdgeVPN
@@ -45,7 +46,7 @@ updates:
 
 1. Fork the [the repo](https://github.com/mudler/edgevpn) on GitHub.
 2. Make your changes, if are related to docs
-   to see the preview cd into `docs` and run `make serve`, then browse to [localhost:1313](http://localhost:1313)
+   to see the preview run `make serve` from the `docs` dir, then browse to [localhost:1313](http://localhost:1313)
 3. If you're not yet ready for a review, add "WIP" to the PR name to indicate 
   it's a work in progress.
 4. Continue updating your doc and pushing your changes until you're happy with 
