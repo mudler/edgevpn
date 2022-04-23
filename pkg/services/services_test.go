@@ -60,11 +60,6 @@ var _ = Describe("Expose services", func() {
 	l := node.Logger(logg)
 	serviceUUID := "test"
 
-	e2, _ := node.New(
-		node.WithNetworkService(ConnectNetworkService(5*time.Second, serviceUUID, "127.0.0.1:9999")),
-		node.WithDiscoveryInterval(10*time.Second),
-		node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
-
 	Context("Service sharing", func() {
 		It("expose services and can connect to them", func() {
 			ctx, cancel := context.WithCancel(context.Background())
@@ -79,7 +74,14 @@ var _ = Describe("Expose services", func() {
 
 			e.Start(ctx)
 
-			go e2.Start(ctx)
+			go func() {
+				e2, _ := node.New(
+					node.WithNetworkService(ConnectNetworkService(5*time.Second, serviceUUID, "127.0.0.1:9999")),
+					node.WithDiscoveryInterval(10*time.Second),
+					node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+
+				e2.Start(ctx)
+			}()
 
 			Eventually(func() string {
 				return get("http://127.0.0.1:9999")
