@@ -85,7 +85,7 @@ var _ = Describe("Expose services", func() {
 
 			Eventually(func() string {
 				return get("http://127.0.0.1:9999")
-			}, 60*time.Second, 1*time.Second).Should(ContainSubstring("The document has moved"))
+			}, 360*time.Second, 1*time.Second).Should(ContainSubstring("The document has moved"))
 		})
 	})
 })
