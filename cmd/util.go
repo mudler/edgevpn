@@ -82,7 +82,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "autorelay-discovery-interval",
 		Usage:  "Autorelay discovery interval (Experimental. 0 to disable)",
 		EnvVar: "EDGEVPNAUTORELAYDISCOVERYINTERVAL",
-		Value:  "0",
+		Value:  "20s",
 	},
 	&cli.IntFlag{
 		Name:   "ledger-syncronization-interval",
