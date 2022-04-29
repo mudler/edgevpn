@@ -28,6 +28,7 @@ import (
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"golang.zx2c4.com/wireguard/tun"
 
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
@@ -39,8 +40,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/songgao/packets/ethernet"
-	"github.com/songgao/water"
 	"golang.org/x/net/ipv4"
+	"golang.org/x/net/ipv6"
 )
 
 type streamManager interface {
@@ -128,7 +129,7 @@ func Register(p ...Option) ([]node.Option, error) {
 	return []node.Option{node.WithNetworkService(VPNNetworkService(p...))}, nil
 }
 
-func streamHandler(l *blockchain.Ledger, ifce *water.Interface, c *Config) func(stream network.Stream) {
+func streamHandler(l *blockchain.Ledger, ifce tun.Device, c *Config) func(stream network.Stream) {
 	return func(stream network.Stream) {
 		if !l.Exists(protocol.MachinesLedgerKey,
 			func(d blockchain.Data) bool {
@@ -139,7 +140,8 @@ func streamHandler(l *blockchain.Ledger, ifce *water.Interface, c *Config) func(
 			stream.Reset()
 			return
 		}
-		_, err := io.Copy(ifce.ReadWriteCloser, stream)
+
+		_, err := io.Copy(newtunWriter(ifce, TUN_OFFSET_BYTES), stream)
 		if err != nil {
 			stream.Reset()
 		}
@@ -162,12 +164,15 @@ func newBlockChainData(n *node.Node, address string) types.Machine {
 	}
 }
 
-func getFrame(ifce *water.Interface, c *Config) (ethernet.Frame, error) {
+const TUN_OFFSET_BYTES = 4
+
+func getFrame(ifce tun.Device, c *Config) (ethernet.Frame, error) {
 	var frame ethernet.Frame
 	frame.Resize(c.MTU)
 
-	n, err := ifce.Read([]byte(frame))
-	if err != nil {
+	n, err := ifce.Read([]byte(frame), TUN_OFFSET_BYTES)
+	if n <= TUN_OFFSET_BYTES || err != nil {
+		ifce.Flush()
 		return frame, errors.Wrap(err, "could not read from interface")
 	}
 
@@ -175,16 +180,23 @@ func getFrame(ifce *water.Interface, c *Config) (ethernet.Frame, error) {
 	return frame, nil
 }
 
-func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce *water.Interface) error {
+func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce tun.Device) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
 	defer cancel()
 
+	var dst string
+
 	header, err := ipv4.ParseHeader(frame)
 	if err != nil {
-		return errors.Wrap(err, "could not parse ipv4 header from frame")
+		header, err2 := ipv6.ParseHeader(frame)
+		if err2 != nil {
+			return errors.Wrap(errors.Wrap(err, err2.Error()), "could not parse ipv4 and ipv6 header from frame")
+		}
+		dst = header.Dst.String()
+	} else {
+		dst = header.Dst.String()
 	}
 
-	dst := header.Dst.String()
 	if c.RouterAddress != "" && header.Src.Equal(ip) {
 		dst = c.RouterAddress
 	}
@@ -240,7 +252,7 @@ func connectionWorker(
 	ip net.IP,
 	wg *sync.WaitGroup,
 	ledger *blockchain.Ledger,
-	ifce *water.Interface) {
+	ifce tun.Device) {
 	defer wg.Done()
 	for f := range p {
 		if err := handleFrame(mgr, f, c, n, ip, ledger, ifce); err != nil {
@@ -250,7 +262,7 @@ func connectionWorker(
 }
 
 // redirects packets from the interface to the node using the routing table in the blockchain
-func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce *water.Interface) error {
+func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce tun.Device) error {
 	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
 		return err

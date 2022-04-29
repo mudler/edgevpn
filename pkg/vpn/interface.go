@@ -19,27 +19,48 @@
 package vpn
 
 import (
-	"github.com/songgao/water"
+	"fmt"
+	"io"
+
 	"github.com/vishvananda/netlink"
+	"golang.zx2c4.com/wireguard/tun"
 )
 
-func createInterface(c *Config) (*water.Interface, error) {
-	config := water.Config{
-		DeviceType:             c.DeviceType,
-		PlatformSpecificParams: water.PlatformSpecificParams{Persist: !c.NetLinkBootstrap},
-	}
-	config.Name = c.InterfaceName
+type tunWriter struct {
+	tun.Device
+	offset int
+}
 
-	return water.New(config)
+func newtunWriter(t tun.Device, offset int) io.WriteCloser {
+	return tunWriter{Device: t, offset: offset}
+}
+
+func (t tunWriter) Write(b []byte) (int, error) {
+	return t.Device.Write(b, t.offset)
+}
+
+func createInterface(c *Config) (tun.Device, error) {
+	ifname := c.InterfaceName
+	if ifname == "auto" {
+		ifname = "\000"
+	}
+	return tun.CreateTUN(ifname, c.InterfaceMTU)
 }
 
 func prepareInterface(c *Config) error {
+	fmt.Println("Preparing interface")
+
 	link, err := netlink.LinkByName(c.InterfaceName)
 	if err != nil {
+		fmt.Println("link", err)
+
 		return err
 	}
+
 	addr, err := netlink.ParseAddr(c.InterfaceAddress)
 	if err != nil {
+		fmt.Println("parse addr", err)
+
 		return err
 	}
 
@@ -48,8 +69,11 @@ func prepareInterface(c *Config) error {
 		return err
 	}
 
+	fmt.Println(addr)
 	err = netlink.AddrAdd(link, addr)
 	if err != nil {
+		fmt.Println("add addr", err)
+
 		return err
 	}
 
@@ -57,5 +81,7 @@ func prepareInterface(c *Config) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("done Preparing interface")
+
 	return nil
 }
