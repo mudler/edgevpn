@@ -24,6 +24,7 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/utils"
 )
 
 // AutoRelayFeederService is a service responsible to returning periodically peers to
@@ -33,7 +34,7 @@ func AutoRelayFeederService(ll log.StandardLogger, peerChan chan peer.AddrInfo, 
 		ll.Debug("[relay discovery] Service starts")
 		ctx, cancel := context.WithCancel(ctx)
 		go func() {
-			t := time.NewTicker(duration)
+			t := utils.NewBackoffTicker(utils.BackoffMaxInterval(duration))
 			defer t.Stop()
 			defer cancel()
 			for {

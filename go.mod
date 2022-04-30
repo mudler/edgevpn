@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/benbjohnson/clock v1.3.0
 	github.com/c-robinson/iplib v1.0.3
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/gookit/color v1.5.0 // indirect

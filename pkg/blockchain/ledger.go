@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/mudler/edgevpn/pkg/hub"
+	"github.com/mudler/edgevpn/pkg/utils"
 
 	"github.com/pkg/errors"
 )
@@ -66,7 +67,7 @@ func (l *Ledger) newGenesis() {
 // writes the blockchain to the  periodically
 func (l *Ledger) Syncronizer(ctx context.Context, t time.Duration) {
 	go func() {
-		t := time.NewTicker(t)
+		t := utils.NewBackoffTicker(utils.BackoffMaxInterval(t))
 		defer t.Stop()
 		for {
 			select {
@@ -139,9 +140,10 @@ func (l *Ledger) Update(f *Ledger, h *hub.Message, c chan *hub.Message) (err err
 // Sends a broadcast at the specified interval
 // by making sure the async retrieved value is written to the
 // blockchain
-func (l *Ledger) Announce(ctx context.Context, t time.Duration, async func()) {
+func (l *Ledger) Announce(ctx context.Context, d time.Duration, async func()) {
 	go func() {
-		t := time.NewTicker(t)
+		//t := time.NewTicker(t)
+		t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d))
 		defer t.Stop()
 		for {
 			select {
