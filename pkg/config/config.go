@@ -113,6 +113,7 @@ type Connection struct {
 	AutoRelayDiscoveryInterval time.Duration
 	RelayV1                    bool
 	StaticRelays               []string
+	OnlyStaticRelays           bool
 
 	Mplex          bool
 	MaxConnections int
@@ -243,12 +244,26 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		}
 
 		// If no relays are specified and no discovery interval, then just use default static relays (to be deprecated)
-		if len(c.Connection.StaticRelays) == 0 && c.Connection.AutoRelayDiscoveryInterval == 0 {
-			relayOpts = append(relayOpts, autorelay.WithDefaultStaticRelays())
-		} else if len(c.Connection.StaticRelays) > 0 {
+		if len(c.Connection.StaticRelays) > 0 && c.Connection.OnlyStaticRelays {
 			relayOpts = append(relayOpts, autorelay.WithStaticRelays(peers2AddrInfo(c.Connection.StaticRelays)))
 		} else {
 			peerChan := make(chan peer.AddrInfo)
+
+			if c.Connection.AutoRelayDiscoveryInterval == 0 {
+				c.Connection.AutoRelayDiscoveryInterval = 5 * time.Minute
+			}
+
+			staticRelays := append(autorelay.DefaultRelays, c.Connection.StaticRelays...)
+			if len(staticRelays) > 0 {
+				opts = append(opts, node.WithNetworkService(
+					services.AutoRelayStaticFeederService(
+						llger, peerChan, append(autorelay.DefaultRelays, c.Connection.StaticRelays...),
+						c.Connection.AutoRelayDiscoveryInterval,
+						false,
+					),
+				))
+			}
+
 			// Add AutoRelayFeederService (needs a DHT Service discovery)
 			opts = append(opts, func(cfg *node.Config) error {
 				for _, sd := range cfg.ServiceDiscovery {

@@ -27,6 +27,45 @@ import (
 	"github.com/mudler/edgevpn/pkg/utils"
 )
 
+// AutoRelayStaticFeederService is a service responsible to discover relays from static peers
+func AutoRelayStaticFeederService(ll log.StandardLogger, peerChan chan peer.AddrInfo, relays []string, duration time.Duration, bootstrapOnly bool) node.NetworkService {
+	queue := func() {
+		for _, r := range relays {
+			pi, err := peer.AddrInfoFromString(r)
+			if err == nil {
+				ll.Debug("[static relay discovery] scanning ", pi.ID)
+				peerChan <- peer.AddrInfo{ID: pi.ID, Addrs: pi.Addrs}
+			}
+		}
+	}
+
+	return func(ctx context.Context, c node.Config, n *node.Node, l *blockchain.Ledger) error {
+		ctx, cancel := context.WithCancel(ctx)
+
+		go func() {
+			if bootstrapOnly {
+				queue()
+				return
+			}
+
+			t := utils.NewBackoffTicker(utils.BackoffMaxInterval(duration))
+			defer t.Stop()
+			defer cancel()
+			for {
+				select {
+				case <-t.C:
+				case <-ctx.Done():
+					ll.Debug("[static relay discovery] stopped")
+					return
+				}
+				queue()
+			}
+		}()
+
+		return nil
+	}
+}
+
 // AutoRelayFeederService is a service responsible to returning periodically peers to
 // scan for relays from a DHT discovery service
 func AutoRelayFeederService(ll log.StandardLogger, peerChan chan peer.AddrInfo, dht *discovery.DHT, duration time.Duration) node.NetworkService {

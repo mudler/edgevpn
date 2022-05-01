@@ -80,9 +80,14 @@ var CommonFlags []cli.Flag = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:   "autorelay-discovery-interval",
-		Usage:  "Autorelay discovery interval (Experimental. 0 to disable)",
+		Usage:  "Autorelay discovery interval",
 		EnvVar: "EDGEVPNAUTORELAYDISCOVERYINTERVAL",
-		Value:  "0",
+		Value:  "5m",
+	},
+	&cli.BoolFlag{
+		Name:   "autorelay-static-only",
+		Usage:  "Use only defined static relays",
+		EnvVar: "EDGEVPNAUTORELAYSTATICONLY",
 	},
 	&cli.IntFlag{
 		Name:   "ledger-syncronization-interval",
@@ -425,6 +430,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			Mplex:                      c.Bool("mplex-multiplexer"),
 			StaticRelays:               c.StringSlice("autorelay-static-peer"),
 			AutoRelayDiscoveryInterval: autorelayInterval,
+			OnlyStaticRelays:           c.Bool("autorelay-static-only"),
 		},
 		Limit: config.ResourceLimit{
 			Enable:      c.Bool("limit-enable"),
