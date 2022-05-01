@@ -60,7 +60,7 @@ var defaultLibp2pOptions = []libp2p.Option{
 
 func New(p ...Option) (*Node, error) {
 	c := &Config{
-		DiscoveryInterval:        120 * time.Second,
+		DiscoveryInterval:        5 * time.Minute,
 		StreamHandlers:           make(map[protocol.Protocol]StreamHandler),
 		LedgerAnnounceTime:       5 * time.Second,
 		LedgerSyncronizationTime: 5 * time.Second,

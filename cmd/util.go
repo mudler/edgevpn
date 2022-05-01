@@ -70,7 +70,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "discovery-interval",
 		Usage:  "DHT discovery interval time",
 		EnvVar: "EDGEVPNDHTINTERVAL",
-		Value:  120,
+		Value:  720,
 	},
 	&cli.IntFlag{
 		Name:   "ledger-announce-interval",

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	internalCrypto "github.com/mudler/edgevpn/pkg/crypto"
+	"github.com/mudler/edgevpn/pkg/utils"
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
@@ -119,18 +120,14 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 
 	go func() {
 		connect()
+		t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d.RefreshDiscoveryTime))
+		defer t.Stop()
 		for {
-			// We don't want a ticker here but a timer
-			// this is less "talkative" as a DHT connect() can take up
-			// long time and can exceed d.RefreshdiscoveryTime.
-			// In this way we ensure we wait at least timeout to fire a connect()
-			timer := time.NewTimer(d.RefreshDiscoveryTime)
 			select {
-			case <-ctx.Done():
-				timer.Stop()
-				return
-			case <-timer.C:
+			case <-t.C:
 				connect()
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
