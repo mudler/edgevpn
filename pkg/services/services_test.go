@@ -61,7 +61,7 @@ var _ = Describe("Expose services", func() {
 	serviceUUID := "test"
 
 	Context("Service sharing", func() {
-		It("expose services and can connect to them", func() {
+		PIt("expose services and can connect to them", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
