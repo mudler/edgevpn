@@ -15,11 +15,6 @@ builds:
       - arm
       - 386
       - arm64
-    ignore:
-      - goos: darwin
-        goarch: arm64
-      - goos: darwin
-        goarch: amd64
 source:
   enabled: true
   name_template: '{{ .ProjectName }}-{{ .Tag }}-source'

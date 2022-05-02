@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math/bits"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -311,7 +312,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
 	}
 
-	if !c.Limit.Enable {
+	if !c.Limit.Enable || runtime.GOOS == "darwin" {
 		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(network.NullResourceManager))
 	} else {
 		var limiter *rcmgr.BasicLimiter

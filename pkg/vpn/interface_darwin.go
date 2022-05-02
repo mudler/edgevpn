@@ -1,5 +1,5 @@
-//go:build !windows && !darwin
-// +build !windows,!darwin
+//go:build darwin
+// +build darwin
 
 // Copyright © 2021 Ettore Di Giacinto <mudler@mocaccino.org>
 //
@@ -25,8 +25,7 @@ import (
 
 func createInterface(c *Config) (*water.Interface, error) {
 	config := water.Config{
-		DeviceType:             c.DeviceType,
-		PlatformSpecificParams: water.PlatformSpecificParams{Persist: !c.NetLinkBootstrap},
+		DeviceType: c.DeviceType,
 	}
 	config.Name = c.InterfaceName
 
