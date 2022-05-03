@@ -3,7 +3,7 @@ package utils
 import (
 	"time"
 
-	"github.com/cenkalti/backoff"
+	backoff "github.com/cenkalti/backoff/v4"
 )
 
 type expBackoffOpt func(e *backoff.ExponentialBackOff)
@@ -43,6 +43,7 @@ func newExpBackoff(o ...expBackoffOpt) backoff.BackOff {
 		Multiplier:          2,
 		MaxInterval:         2 * time.Minute,
 		MaxElapsedTime:      0,
+		Stop:                backoff.Stop,
 		Clock:               backoff.SystemClock,
 	}
 	for _, opt := range o {
