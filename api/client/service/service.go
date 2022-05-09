@@ -74,7 +74,7 @@ func (c Client) AdvertizingNodes() (active []string, err error) {
 		}
 		res.Unmarshal(&d)
 
-		if d.Time.Add(2 * time.Minute).After(time.Now().UTC()) {
+		if d.Time.Add(15 * time.Minute).After(time.Now().UTC()) {
 			active = append(active, u)
 		}
 	}
