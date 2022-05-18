@@ -29,6 +29,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/logger"
@@ -40,7 +42,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/songgao/packets/ethernet"
 	"github.com/songgao/water"
-	"golang.org/x/net/ipv4"
 )
 
 type streamManager interface {
@@ -179,13 +180,23 @@ func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Nod
 	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
 	defer cancel()
 
-	header, err := ipv4.ParseHeader(frame)
-	if err != nil {
-		return errors.Wrap(err, "could not parse ipv4 header from frame")
+	var dstIP, srcIP net.IP
+	var packet layers.IPv4
+	if err := packet.DecodeFromBytes(frame, gopacket.NilDecodeFeedback); err != nil {
+		var packet layers.IPv6
+		if err := packet.DecodeFromBytes(frame, gopacket.NilDecodeFeedback); err != nil {
+			return errors.Wrap(err, "could not parse header from frame")
+		} else {
+			dstIP = packet.DstIP
+			srcIP = packet.SrcIP
+		}
+	} else {
+		dstIP = packet.DstIP
+		srcIP = packet.SrcIP
 	}
 
-	dst := header.Dst.String()
-	if c.RouterAddress != "" && header.Src.Equal(ip) {
+	dst := dstIP.String()
+	if c.RouterAddress != "" && srcIP.Equal(ip) {
 		dst = c.RouterAddress
 	}
 

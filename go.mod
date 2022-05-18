@@ -9,6 +9,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/google/btree v1.0.1 // indirect
+	github.com/google/gopacket v1.1.19
 	github.com/gookit/color v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4
@@ -41,7 +42,6 @@ require (
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
 	github.com/xlzd/gotp v0.0.0-20220110052318-fab697c03c2c
-	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
 	gopkg.in/yaml.v2 v2.4.0
 )
 
