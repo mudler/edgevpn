@@ -38,6 +38,7 @@ func prepareInterface(c *Config) error {
 	if err != nil {
 		return err
 	}
+
 	addr, err := netlink.ParseAddr(c.InterfaceAddress)
 	if err != nil {
 		return err

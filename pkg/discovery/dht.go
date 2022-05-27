@@ -29,8 +29,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
-	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	discovery "github.com/libp2p/go-libp2p/p2p/discovery/routing"
 	"github.com/xlzd/gotp"
 )
 
@@ -159,7 +159,7 @@ func (d *DHT) bootstrapPeers(c log.StandardLogger, ctx context.Context, host hos
 func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kademliaDHT *dht.IpfsDHT, host host.Host, rv string) error {
 	l.Debug("Announcing ourselves...")
 	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
-	discovery.Advertise(ctx, routingDiscovery, rv)
+	routingDiscovery.Advertise(ctx, rv)
 	l.Debug("Successfully announced!")
 	// Now, look for others who have announced
 	// This is like your friend telling you the location to meet you.

@@ -37,8 +37,6 @@ type Ledger struct {
 	blockchain Store
 
 	channel io.Writer
-
-	onDisk bool
 }
 
 type Store interface {

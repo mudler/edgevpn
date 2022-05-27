@@ -22,7 +22,7 @@ import (
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
-	connmanager "github.com/libp2p/go-libp2p-connmgr"
+	connmanager "github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
