@@ -27,9 +27,9 @@ require (
 	github.com/klauspost/compress v1.15.5 // indirect
 	github.com/koron/go-ssdp v0.0.3 // indirect
 	github.com/labstack/echo/v4 v4.7.2
-	github.com/libp2p/go-libp2p v0.20.0
+	github.com/libp2p/go-libp2p v0.20.1
 	github.com/libp2p/go-libp2p-blankhost v0.4.0 // indirect
-	github.com/libp2p/go-libp2p-connmgr v0.4.0
+	github.com/libp2p/go-libp2p-connmgr v0.4.0 // indirect
 	github.com/libp2p/go-libp2p-core v0.16.1
 	github.com/libp2p/go-libp2p-discovery v0.7.0 // indirect
 	github.com/libp2p/go-libp2p-kad-dht v0.15.0
