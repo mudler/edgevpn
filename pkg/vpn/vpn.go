@@ -197,7 +197,9 @@ func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Nod
 
 	dst := dstIP.String()
 	if c.RouterAddress != "" && srcIP.Equal(ip) {
-		dst = c.RouterAddress
+		if _, found := ledger.GetKey(protocol.MachinesLedgerKey, dst); !found {
+			dst = c.RouterAddress
+		}
 	}
 
 	// Query the routing table
