@@ -125,24 +125,6 @@ func MainFlags() []cli.Flag {
 			EnvVar: "DNSCACHESIZE",
 			Value:  200,
 		},
-		&cli.IntFlag{
-			Name:   "aliveness-healthcheck-interval",
-			Usage:  "Healthcheck interval",
-			EnvVar: "HEALTHCHECKINTERVAL",
-			Value:  120,
-		},
-		&cli.IntFlag{
-			Name:   "aliveness-healthcheck-scrub-interval",
-			Usage:  "Healthcheck scrub interval",
-			EnvVar: "HEALTHCHECKSCRUBINTERVAL",
-			Value:  600,
-		},
-		&cli.IntFlag{
-			Name:   "aliveness-healthcheck-max-interval",
-			Usage:  "Healthcheck max interval. Threshold after a node is determined offline",
-			EnvVar: "HEALTHCHECKMAXINTERVAL",
-			Value:  900,
-		},
 		&cli.StringSliceFlag{
 			Name:   "dns-forward-server",
 			Usage:  "List of DNS forward server, e.g. 8.8.8.8:53, 192.168.1.1:53 ...",

@@ -72,6 +72,13 @@ This is also the ID used to refer when receiving it.`,
 			}
 			o, _, ll := cliToOpts(c)
 
+			// Needed to unblock connections with low activity
+			o = append(o,
+				services.Alive(
+					time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second,
+					time.Duration(c.Int("aliveness-healthcheck-scrub-interval"))*time.Second,
+					time.Duration(c.Int("aliveness-healthcheck-max-interval"))*time.Second)...)
+
 			opts, err := services.ShareFile(ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, path)
 			if err != nil {
 				return err
@@ -120,6 +127,12 @@ func FileReceive() cli.Command {
 				return err
 			}
 			o, _, ll := cliToOpts(c)
+			// Needed to unblock connections with low activity
+			o = append(o,
+				services.Alive(
+					time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second,
+					time.Duration(c.Int("aliveness-healthcheck-scrub-interval"))*time.Second,
+					time.Duration(c.Int("aliveness-healthcheck-max-interval"))*time.Second)...)
 			e, err := node.New(o...)
 			if err != nil {
 				return err

@@ -190,6 +190,24 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Value:  100,
 		EnvVar: "EDGEVPNMAXSTREAMS",
 	},
+	&cli.IntFlag{
+		Name:   "aliveness-healthcheck-interval",
+		Usage:  "Healthcheck interval",
+		EnvVar: "HEALTHCHECKINTERVAL",
+		Value:  120,
+	},
+	&cli.IntFlag{
+		Name:   "aliveness-healthcheck-scrub-interval",
+		Usage:  "Healthcheck scrub interval",
+		EnvVar: "HEALTHCHECKSCRUBINTERVAL",
+		Value:  600,
+	},
+	&cli.IntFlag{
+		Name:   "aliveness-healthcheck-max-interval",
+		Usage:  "Healthcheck max interval. Threshold after a node is determined offline",
+		EnvVar: "HEALTHCHECKMAXINTERVAL",
+		Value:  900,
+	},
 	&cli.StringFlag{
 		Name:   "log-level",
 		Usage:  "Specify loglevel",

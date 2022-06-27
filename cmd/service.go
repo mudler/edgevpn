@@ -71,6 +71,13 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 			}
 			o, _, ll := cliToOpts(c)
 
+			// Needed to unblock connections with low activity
+			o = append(o,
+				services.Alive(
+					time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second,
+					time.Duration(c.Int("aliveness-healthcheck-scrub-interval"))*time.Second,
+					time.Duration(c.Int("aliveness-healthcheck-max-interval"))*time.Second)...)
+
 			o = append(o, services.RegisterService(ll, time.Duration(c.Int("ledger-announce-interval"))*time.Second, name, address)...)
 
 			e, err := node.New(o...)
@@ -118,6 +125,14 @@ to the service over the network`,
 				return err
 			}
 			o, _, ll := cliToOpts(c)
+
+			// Needed to unblock connections with low activity
+			o = append(o,
+				services.Alive(
+					time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second,
+					time.Duration(c.Int("aliveness-healthcheck-scrub-interval"))*time.Second,
+					time.Duration(c.Int("aliveness-healthcheck-max-interval"))*time.Second)...)
+
 			e, err := node.New(
 				append(o,
 					node.WithNetworkService(
