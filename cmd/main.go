@@ -219,7 +219,7 @@ func Main() func(c *cli.Context) error {
 		if c.Bool("api") {
 			go api.API(ctx, c.String("api-listen"), 5*time.Second, 20*time.Second, e, bwc, c.Bool("debug"))
 		}
-
+		go handleStopSignals()
 		return e.Start(ctx)
 	}
 }

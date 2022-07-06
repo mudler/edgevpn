@@ -73,6 +73,7 @@ func DNS() cli.Command {
 			}
 
 			displayStart(ll)
+			go handleStopSignals()
 
 			ctx := context.Background()
 			// Start the node to the network, using our ledger

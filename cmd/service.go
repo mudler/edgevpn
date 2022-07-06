@@ -86,6 +86,7 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 			}
 
 			displayStart(ll)
+			go handleStopSignals()
 
 			// Join the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {
@@ -148,6 +149,7 @@ to the service over the network`,
 				return err
 			}
 			displayStart(ll)
+			go handleStopSignals()
 
 			// starts the node
 			return e.Start(context.Background())

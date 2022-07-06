@@ -74,6 +74,8 @@ func Proxy() cli.Command {
 
 			displayStart(ll)
 
+			go handleStopSignals()
+
 			ctx := context.Background()
 			// Start the node to the network, using our ledger
 			if err := e.Start(ctx); err != nil {

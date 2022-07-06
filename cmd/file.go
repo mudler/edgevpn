@@ -91,6 +91,7 @@ This is also the ID used to refer when receiving it.`,
 			}
 
 			displayStart(ll)
+			go handleStopSignals()
 
 			// Start the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {
@@ -139,6 +140,7 @@ func FileReceive() cli.Command {
 			}
 
 			displayStart(ll)
+			go handleStopSignals()
 
 			// Start the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {

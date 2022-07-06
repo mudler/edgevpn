@@ -17,7 +17,10 @@ package cmd
 
 import (
 	"encoding/json"
+	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/ipfs/go-log"
@@ -479,4 +482,13 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 	}
 
 	return nodeOpts, vpnOpts, llger
+}
+
+func handleStopSignals() {
+	s := make(chan os.Signal, 10)
+	signal.Notify(s, os.Interrupt, syscall.SIGTERM)
+
+	for range s {
+		os.Exit(0)
+	}
 }

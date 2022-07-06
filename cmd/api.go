@@ -57,6 +57,8 @@ A simple UI interface is available to display network data.`,
 			displayStart(ll)
 
 			ctx := context.Background()
+			go handleStopSignals()
+
 			// Start the node to the network, using our ledger
 			if err := e.Start(ctx); err != nil {
 				return err

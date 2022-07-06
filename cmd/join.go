@@ -38,6 +38,7 @@ Useful for setting up relays or hop nodes to improve the network connectivity.`,
 			}
 
 			displayStart(ll)
+			go handleStopSignals()
 
 			// Start the node to the network, using our ledger
 			if err := e.Start(context.Background()); err != nil {
