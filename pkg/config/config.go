@@ -83,7 +83,7 @@ type PeerGuard struct {
 
 type ResourceLimit struct {
 	FileLimit   string
-	LimitConfig *node.NetLimitConfig
+	LimitConfig *rcmgr.LimitConfig
 	Scope       string
 	MaxConns    int
 	StaticMin   int64
@@ -315,7 +315,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	if !c.Limit.Enable || runtime.GOOS == "darwin" {
 		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(network.NullResourceManager))
 	} else {
-		var limiter *rcmgr.BasicLimiter
+		var limiter rcmgr.Limiter
 
 		if c.Limit.FileLimit != "" {
 			limitFile, err := os.Open(c.Limit.FileLimit)
@@ -324,10 +324,12 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			}
 			defer limitFile.Close()
 
-			limiter, err = rcmgr.NewDefaultLimiterFromJSON(limitFile)
+			l, err := rcmgr.NewDefaultLimiterFromJSON(limitFile)
 			if err != nil {
 				return opts, vpnOpts, err
 			}
+
+			limiter = l
 		} else if c.Limit.MaxConns != 0 {
 			min := int64(1 << 30)
 			max := int64(4 << 30)
@@ -337,39 +339,19 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			if c.Limit.StaticMax != 0 {
 				max = c.Limit.StaticMax
 			}
-
-			defaultLimits := rcmgr.DefaultLimits.WithSystemMemory(.125, min, max)
-
 			maxconns := int(c.Limit.MaxConns)
-			if 2*maxconns > defaultLimits.SystemBaseLimit.ConnsInbound {
-				// adjust conns to 2x to allow for two conns per peer (TCP+QUIC)
-				defaultLimits.SystemBaseLimit.ConnsInbound = logScale(2 * maxconns)
-				defaultLimits.SystemBaseLimit.ConnsOutbound = logScale(2 * maxconns)
-				defaultLimits.SystemBaseLimit.Conns = logScale(4 * maxconns)
 
-				defaultLimits.SystemBaseLimit.StreamsInbound = logScale(16 * maxconns)
-				defaultLimits.SystemBaseLimit.StreamsOutbound = logScale(64 * maxconns)
-				defaultLimits.SystemBaseLimit.Streams = logScale(64 * maxconns)
+			defaultLimits := rcmgr.DefaultLimits.Scale(min+max/2, logScale(2*maxconns))
 
-				if 2*maxconns > defaultLimits.SystemBaseLimit.FD {
-					defaultLimits.SystemBaseLimit.FD = logScale(2 * maxconns)
-				}
-
-				defaultLimits.ServiceBaseLimit.StreamsInbound = logScale(8 * maxconns)
-				defaultLimits.ServiceBaseLimit.StreamsOutbound = logScale(32 * maxconns)
-				defaultLimits.ServiceBaseLimit.Streams = logScale(32 * maxconns)
-
-				defaultLimits.ProtocolBaseLimit.StreamsInbound = logScale(8 * maxconns)
-				defaultLimits.ProtocolBaseLimit.StreamsOutbound = logScale(32 * maxconns)
-				defaultLimits.ProtocolBaseLimit.Streams = logScale(32 * maxconns)
-			}
-			limiter = rcmgr.NewStaticLimiter(defaultLimits)
+			limiter = rcmgr.NewFixedLimiter(defaultLimits)
 
 		} else {
-			limiter = rcmgr.NewDefaultLimiter()
-		}
+			defaults := rcmgr.DefaultLimits
+			def := &defaults
 
-		libp2p.SetDefaultServiceLimits(limiter)
+			libp2p.SetDefaultServiceLimits(def)
+			limiter = rcmgr.NewFixedLimiter(def.AutoScale())
+		}
 
 		rc, err := rcmgr.NewResourceManager(limiter)
 		if err != nil {
@@ -377,7 +359,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		}
 
 		if c.Limit.LimitConfig != nil {
-			if err := node.NetSetLimit(rc, c.Limit.Scope, *c.Limit.LimitConfig); err != nil {
+			if err := node.NetSetLimit(rc, c.Limit.Scope, &c.Limit.LimitConfig.System); err != nil {
 				return opts, vpnOpts, err
 			}
 		}

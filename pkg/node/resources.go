@@ -25,61 +25,14 @@ import (
 	rcmgr "github.com/libp2p/go-libp2p-resource-manager"
 )
 
-type NetLimitConfig struct {
-	Dynamic bool `json:",omitempty"`
-	// set if Dynamic is false
-	Memory int64 `json:",omitempty"`
-	// set if Dynamic is true
-	MemoryFraction float64 `json:",omitempty"`
-	MinMemory      int64   `json:",omitempty"`
-	MaxMemory      int64   `json:",omitempty"`
-
-	Streams, StreamsInbound, StreamsOutbound int
-	Conns, ConnsInbound, ConnsOutbound       int
-	FD                                       int
-}
-
-func NetSetLimit(mgr network.ResourceManager, scope string, limit NetLimitConfig) error {
+func NetSetLimit(mgr network.ResourceManager, scope string, limit rcmgr.Limit) error {
 	setLimit := func(s network.ResourceScope) error {
 		limiter, ok := s.(rcmgr.ResourceScopeLimiter)
 		if !ok {
 			return fmt.Errorf("resource scope doesn't implement ResourceScopeLimiter interface")
 		}
 
-		var newLimit rcmgr.Limit
-		if limit.Dynamic {
-			newLimit = &rcmgr.DynamicLimit{
-				MemoryLimit: rcmgr.MemoryLimit{
-					MemoryFraction: limit.MemoryFraction,
-					MinMemory:      limit.MinMemory,
-					MaxMemory:      limit.MaxMemory,
-				},
-				BaseLimit: rcmgr.BaseLimit{
-					Streams:         limit.Streams,
-					StreamsInbound:  limit.StreamsInbound,
-					StreamsOutbound: limit.StreamsOutbound,
-					Conns:           limit.Conns,
-					ConnsInbound:    limit.ConnsInbound,
-					ConnsOutbound:   limit.ConnsOutbound,
-					FD:              limit.FD,
-				},
-			}
-		} else {
-			newLimit = &rcmgr.StaticLimit{
-				Memory: limit.Memory,
-				BaseLimit: rcmgr.BaseLimit{
-					Streams:         limit.Streams,
-					StreamsInbound:  limit.StreamsInbound,
-					StreamsOutbound: limit.StreamsOutbound,
-					Conns:           limit.Conns,
-					ConnsInbound:    limit.ConnsInbound,
-					ConnsOutbound:   limit.ConnsOutbound,
-					FD:              limit.FD,
-				},
-			}
-		}
-
-		limiter.SetLimit(newLimit)
+		limiter.SetLimit(limit)
 		return nil
 	}
 

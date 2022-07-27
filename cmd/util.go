@@ -18,12 +18,14 @@ package cmd
 import (
 	"encoding/json"
 	"os"
+
 	"os/signal"
 	"runtime"
 	"syscall"
 	"time"
 
 	"github.com/ipfs/go-log"
+	rcmgr "github.com/libp2p/go-libp2p-resource-manager"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/config"
 	nodeConfig "github.com/mudler/edgevpn/pkg/config"
@@ -264,35 +266,6 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Enable resource manager. (Experimental) All options prefixed with limit requires resource manager to be enabled",
 		EnvVar: "LIMITENABLE",
 	},
-	&cli.BoolFlag{
-		Name:   "limit-config-dynamic",
-		Usage:  "Enable dynamic resource limit configuration",
-		EnvVar: "LIMITCONFIGDYNAMIC",
-	},
-	&cli.Int64Flag{
-		Name:   "limit-config-memory",
-		Usage:  "Memory resource limit configuration",
-		EnvVar: "LIMITCONFIGMEMORY",
-		Value:  128,
-	},
-	&cli.Float64Flag{
-		Name:   "limit-config-memory-fraction",
-		Usage:  "Fraction memory resource limit configuration (dynamic)",
-		EnvVar: "LIMITCONFIGMEMORYFRACTION",
-		Value:  10,
-	},
-	&cli.Int64Flag{
-		Name:   "limit-config-min-memory",
-		Usage:  "Minimum memory resource limit configuration (dynamic)",
-		EnvVar: "LIMITCONFIGMINMEMORY",
-		Value:  10,
-	},
-	&cli.Int64Flag{
-		Name:   "limit-config-max-memory",
-		Usage:  "Maximum memory resource limit configuration (dynamic)",
-		EnvVar: "LIMITCONFIGMAXMEMORY",
-		Value:  200,
-	},
 	&cli.IntFlag{
 		Name:   "limit-config-streams",
 		Usage:  "Streams resource limit configuration",
@@ -377,7 +350,7 @@ func displayStart(ll *logger.Logger) {
 
 func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 
-	var limitConfig *node.NetLimitConfig
+	var limitConfig *rcmgr.LimitConfig
 
 	autorelayInterval, err := time.ParseDuration(c.String("autorelay-discovery-interval"))
 	if err != nil {
@@ -385,19 +358,18 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 	}
 
 	if c.Bool("limit-config") {
-		limitConfig = &node.NetLimitConfig{
-			Dynamic:         c.Bool("limit-config-dynamic"),
-			Memory:          c.Int64("limit-config-memory"),
-			MinMemory:       c.Int64("limit-config-min-memory"),
-			MaxMemory:       c.Int64("limit-config-max-memory"),
-			MemoryFraction:  c.Float64("limit-config-memory-fraction"),
-			Streams:         c.Int("limit-config-streams"),
-			StreamsInbound:  c.Int("limit-config-streams-inbound"),
-			StreamsOutbound: c.Int("limit-config-streams-outbound"),
-			Conns:           c.Int("limit-config-conn"),
-			ConnsInbound:    c.Int("limit-config-conn-inbound"),
-			ConnsOutbound:   c.Int("limit-config-conn-outbound"),
-			FD:              c.Int("limit-config-fd"),
+		limitConfig = &rcmgr.LimitConfig{
+
+			System: rcmgr.BaseLimit{
+				Streams:         c.Int("limit-config-streams"),
+				StreamsInbound:  c.Int("limit-config-streams-inbound"),
+				StreamsOutbound: c.Int("limit-config-streams-outbound"),
+				Conns:           c.Int("limit-config-conn"),
+				ConnsInbound:    c.Int("limit-config-conn-inbound"),
+				ConnsOutbound:   c.Int("limit-config-conn-outbound"),
+				FD:              c.Int("limit-config-fd"),
+				Memory:          c.Int64("limit-config-memory"),
+			},
 		}
 	}
 
