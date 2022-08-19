@@ -25,11 +25,11 @@ import (
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	rcmgr "github.com/libp2p/go-libp2p-resource-manager"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
+	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	mplex "github.com/libp2p/go-libp2p/p2p/muxer/mplex"
 	yamux "github.com/libp2p/go-libp2p/p2p/muxer/yamux"
 	connmanager "github.com/libp2p/go-libp2p/p2p/net/connmgr"
@@ -38,7 +38,6 @@ import (
 	"github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/mudler/edgevpn/pkg/node"
-	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/mudler/edgevpn/pkg/trustzone"
 	"github.com/mudler/edgevpn/pkg/trustzone/authprovider/ecdsa"
 	"github.com/mudler/edgevpn/pkg/vpn"
@@ -200,6 +199,8 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	if c.LowProfile {
 		dhtOpts = append(dhtOpts, dht.BucketSize(20))
 	}
+	d := discovery.NewDHT(dhtOpts...)
+	m := &discovery.MDNS{}
 
 	opts := []node.Option{
 		node.WithDiscoveryInterval(c.Discovery.Interval),
@@ -211,8 +212,8 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		node.LibP2PLogLevel(libp2plvl),
 		node.WithInterfaceAddress(address),
 		node.WithSealer(&crypto.AESSealer{}),
-		node.FromBase64(mDNS, dhtE, token, dhtOpts...),
-		node.FromYaml(mDNS, dhtE, config, dhtOpts...),
+		node.FromBase64(mDNS, dhtE, token, d, m),
+		node.FromYaml(mDNS, dhtE, config, d, m),
 	}
 
 	vpnOpts := []vpn.Option{
@@ -248,35 +249,13 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		if len(c.Connection.StaticRelays) > 0 && c.Connection.OnlyStaticRelays {
 			relayOpts = append(relayOpts, autorelay.WithStaticRelays(peers2AddrInfo(c.Connection.StaticRelays)))
 		} else {
-			peerChan := make(chan peer.AddrInfo)
 
 			if c.Connection.AutoRelayDiscoveryInterval == 0 {
 				c.Connection.AutoRelayDiscoveryInterval = 5 * time.Minute
 			}
 
 			staticRelays := append(autorelay.DefaultRelays, c.Connection.StaticRelays...)
-			if len(staticRelays) > 0 {
-				opts = append(opts, node.WithNetworkService(
-					services.AutoRelayStaticFeederService(
-						llger, peerChan, append(autorelay.DefaultRelays, c.Connection.StaticRelays...),
-						c.Connection.AutoRelayDiscoveryInterval,
-						false,
-					),
-				))
-			}
-
-			// Add AutoRelayFeederService (needs a DHT Service discovery)
-			opts = append(opts, func(cfg *node.Config) error {
-				for _, sd := range cfg.ServiceDiscovery {
-					switch d := sd.(type) {
-					case *discovery.DHT:
-						llger.Debugf("DHT automatic relay discovery configured every '%s'\n", c.Connection.AutoRelayDiscoveryInterval.String())
-						cfg.NetworkServices = append(cfg.NetworkServices, services.AutoRelayFeederService(llger, peerChan, d, c.Connection.AutoRelayDiscoveryInterval))
-					}
-				}
-				return nil
-			})
-			relayOpts = append(relayOpts, autorelay.WithPeerSource(peerChan))
+			relayOpts = append(relayOpts, autorelay.WithPeerSource(d.FindClosePeers(llger, staticRelays...), c.Connection.AutoRelayDiscoveryInterval))
 		}
 
 		libp2pOpts = append(libp2pOpts,

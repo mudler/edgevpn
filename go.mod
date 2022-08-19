@@ -17,7 +17,7 @@ require (
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/klauspost/compress v1.15.5 // indirect
 	github.com/labstack/echo/v4 v4.7.2
-	github.com/libp2p/go-libp2p v0.21.0
+	github.com/libp2p/go-libp2p v0.22.0
 	github.com/libp2p/go-libp2p-blankhost v0.4.0 // indirect
 	github.com/libp2p/go-libp2p-connmgr v0.4.0 // indirect
 	github.com/libp2p/go-libp2p-core v0.19.1
@@ -46,7 +46,6 @@ require (
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
 	github.com/xlzd/gotp v0.0.0-20220110052318-fab697c03c2c
-	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29 // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )

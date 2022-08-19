@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 

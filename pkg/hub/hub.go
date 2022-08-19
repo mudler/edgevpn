@@ -25,9 +25,9 @@ import (
 	"github.com/mudler/edgevpn/pkg/crypto"
 	"github.com/xlzd/gotp"
 
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 type MessageHub struct {

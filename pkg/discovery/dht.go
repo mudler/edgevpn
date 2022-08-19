@@ -25,11 +25,11 @@ import (
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/routing"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/routing"
 	discovery "github.com/libp2p/go-libp2p/p2p/discovery/routing"
 	"github.com/xlzd/gotp"
 )
@@ -155,6 +155,50 @@ func (d *DHT) bootstrapPeers(c log.StandardLogger, ctx context.Context, host hos
 		}()
 	}
 	wg.Wait()
+}
+
+func (d *DHT) FindClosePeers(ll log.StandardLogger, static ...string) func(numPeers int) <-chan peer.AddrInfo {
+	return func(numPeers int) <-chan peer.AddrInfo {
+		peerChan := make(chan peer.AddrInfo)
+		go func() {
+			ctx := context.Background()
+			closestPeers, err := d.GetClosestPeers(ctx, d.PeerID().String())
+			if err != nil {
+				close(peerChan)
+			}
+
+			toStream := []peer.AddrInfo{}
+
+			for _, p := range closestPeers {
+				addrs := d.Host().Peerstore().Addrs(p)
+				if len(addrs) == 0 {
+					continue
+				}
+				ll.Debugf("[relay discovery] Found close peer '%s'", p.Pretty())
+				toStream = append(toStream, peer.AddrInfo{ID: p, Addrs: addrs})
+			}
+
+			for _, r := range static {
+				pi, err := peer.AddrInfoFromString(r)
+				if err == nil {
+					ll.Debug("[static relay discovery] scanning ", pi.ID)
+					toStream = append(toStream, peer.AddrInfo{ID: pi.ID, Addrs: pi.Addrs})
+				}
+			}
+
+			if len(toStream) > numPeers {
+				toStream = toStream[0 : numPeers-1]
+			}
+
+			for _, t := range toStream {
+				peerChan <- t
+			}
+
+			close(peerChan)
+		}()
+
+		return peerChan
+	}
 }
 
 func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kademliaDHT *dht.IpfsDHT, host host.Host, rv string) error {

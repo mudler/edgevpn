@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/node"
 	protocol "github.com/mudler/edgevpn/pkg/protocol"

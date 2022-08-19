@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
-	rcmgr "github.com/libp2p/go-libp2p-resource-manager"
+	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/config"
 	nodeConfig "github.com/mudler/edgevpn/pkg/config"

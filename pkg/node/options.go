@@ -22,7 +22,6 @@ import (
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/protocol"
@@ -259,8 +258,7 @@ func (y YAMLConnectionConfig) YAML() string {
 	return string(bytesData)
 }
 
-func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config, opts ...dht.Option) {
-	d := discovery.NewDHT(opts...)
+func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config, d *discovery.DHT, m *discovery.MDNS) {
 	d.RefreshDiscoveryTime = cfg.DiscoveryInterval
 	d.OTPInterval = y.OTP.DHT.Interval
 	d.OTPKey = y.OTP.DHT.Key
@@ -268,7 +266,7 @@ func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config, opts ...dht.Opti
 	d.RendezvousString = y.Rendezvous
 	d.BootstrapPeers = cfg.DiscoveryBootstrapPeers
 
-	m := &discovery.MDNS{DiscoveryServiceTag: y.MDNS}
+	m.DiscoveryServiceTag = y.MDNS
 	cfg.ExchangeKey = y.OTP.Crypto.Key
 	cfg.RoomName = y.RoomName
 	cfg.SealKeyInterval = y.OTP.Crypto.Interval
@@ -315,7 +313,7 @@ func GenerateNewConnectionData(i ...int) *YAMLConnectionConfig {
 	}
 }
 
-func FromYaml(enablemDNS, enableDHT bool, path string, d ...dht.Option) func(cfg *Config) error {
+func FromYaml(enablemDNS, enableDHT bool, path string,d *discovery.DHT, m *discovery.MDNS) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		if len(path) == 0 {
 			return nil
@@ -331,12 +329,12 @@ func FromYaml(enablemDNS, enableDHT bool, path string, d ...dht.Option) func(cfg
 			return errors.Wrap(err, "parsing yaml")
 		}
 
-		t.copy(enablemDNS, enableDHT, cfg, d...)
+		t.copy(enablemDNS, enableDHT, cfg, d,m)
 		return nil
 	}
 }
 
-func FromBase64(enablemDNS, enableDHT bool, bb string, d ...dht.Option) func(cfg *Config) error {
+func FromBase64(enablemDNS, enableDHT bool, bb string,d *discovery.DHT, m *discovery.MDNS) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		if len(bb) == 0 {
 			return nil
@@ -350,7 +348,7 @@ func FromBase64(enablemDNS, enableDHT bool, bb string, d ...dht.Option) func(cfg
 		if err := yaml.Unmarshal(configDec, &t); err != nil {
 			return errors.Wrap(err, "parsing yaml")
 		}
-		t.copy(enablemDNS, enableDHT, cfg, d...)
+		t.copy(enablemDNS, enableDHT, cfg, d,m)
 		return nil
 	}
 }

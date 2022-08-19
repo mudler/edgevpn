@@ -27,10 +27,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/libp2p/go-libp2p-core/metrics"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
-	p2pprotocol "github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/metrics"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
+	p2pprotocol "github.com/libp2p/go-libp2p/core/protocol"
 
 	"github.com/miekg/dns"
 	apiTypes "github.com/mudler/edgevpn/api/types"
