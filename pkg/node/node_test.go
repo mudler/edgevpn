@@ -37,9 +37,9 @@ var _ = Describe("Node", func() {
 
 	Context("Configuration", func() {
 		It("fails if is not valid", func() {
-			_, err := New(FromBase64(true, true, "  "), WithStore(&blockchain.MemoryStore{}), l)
+			_, err := New(FromBase64(true, true, "  ", nil, nil), WithStore(&blockchain.MemoryStore{}), l)
 			Expect(err).To(HaveOccurred())
-			_, err = New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			_, err = New(FromBase64(true, true, token, nil, nil), WithStore(&blockchain.MemoryStore{}), l)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -49,8 +49,8 @@ var _ = Describe("Node", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			e, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
-			e2, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), l)
+			e, _ := New(FromBase64(true, true, token, nil, nil), WithStore(&blockchain.MemoryStore{}), l)
+			e2, _ := New(FromBase64(true, true, token, nil, nil), WithStore(&blockchain.MemoryStore{}), l)
 
 			e.Start(ctx)
 			e2.Start(ctx)
@@ -64,8 +64,8 @@ var _ = Describe("Node", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			e, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), WithDiscoveryInterval(10*time.Second), l)
-			e2, _ := New(FromBase64(true, true, token), WithStore(&blockchain.MemoryStore{}), WithDiscoveryInterval(10*time.Second), l)
+			e, _ := New(FromBase64(true, true, token, nil, nil), WithStore(&blockchain.MemoryStore{}), WithDiscoveryInterval(10*time.Second), l)
+			e2, _ := New(FromBase64(true, true, token, nil, nil), WithStore(&blockchain.MemoryStore{}), WithDiscoveryInterval(10*time.Second), l)
 
 			e.Start(ctx)
 			e2.Start(ctx)
@@ -94,7 +94,7 @@ var _ = Describe("Node", func() {
 			defer cancel()
 			e, _ := New(
 				WithBlacklist("1.1.1.1/32", "1.1.1.0/24"),
-				FromBase64(true, true, token),
+				FromBase64(true, true, token, nil, nil),
 				WithStore(&blockchain.MemoryStore{}),
 				l,
 			)

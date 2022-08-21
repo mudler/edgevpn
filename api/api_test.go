@@ -50,10 +50,10 @@ var _ = Describe("API", func() {
 
 			l := node.Logger(logger.New(log.LevelFatal))
 
-			e, _ := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+			e, _ := node.New(node.FromBase64(true, true, token, nil, nil), node.WithStore(&blockchain.MemoryStore{}), l)
 			e.Start(ctx)
 
-			e2, _ := node.New(node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+			e2, _ := node.New(node.FromBase64(true, true, token, nil, nil), node.WithStore(&blockchain.MemoryStore{}), l)
 			e2.Start(ctx)
 
 			go func() {

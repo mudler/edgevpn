@@ -66,7 +66,7 @@ var _ = Describe("Expose services", func() {
 			defer cancel()
 
 			opts := RegisterService(logg, 5*time.Second, serviceUUID, "142.250.184.35:80")
-			opts = append(opts, node.FromBase64(true, true, token), node.WithDiscoveryInterval(10*time.Second), node.WithStore(&blockchain.MemoryStore{}), l)
+			opts = append(opts, node.FromBase64(true, true, token, nil, nil), node.WithDiscoveryInterval(10*time.Second), node.WithStore(&blockchain.MemoryStore{}), l)
 			e, _ := node.New(opts...)
 
 			// First node expose a service
@@ -78,7 +78,7 @@ var _ = Describe("Expose services", func() {
 				e2, _ := node.New(
 					node.WithNetworkService(ConnectNetworkService(5*time.Second, serviceUUID, "127.0.0.1:9999")),
 					node.WithDiscoveryInterval(10*time.Second),
-					node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+					node.FromBase64(true, true, token, nil, nil), node.WithStore(&blockchain.MemoryStore{}), l)
 
 				e2.Start(ctx)
 			}()

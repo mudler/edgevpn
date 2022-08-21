@@ -38,7 +38,7 @@ var _ = Describe("Alive service", func() {
 	opts := append(
 		Alive(5*time.Second, 100*time.Second, 15*time.Minute),
 		node.WithDiscoveryInterval(10*time.Second),
-		node.FromBase64(true, true, token),
+		node.FromBase64(true, true, token, nil, nil),
 		l)
 
 	Context("Aliveness check", func() {
@@ -76,7 +76,7 @@ var _ = Describe("Alive service", func() {
 			opts = append(
 				Alive(10*time.Second, 30*time.Second, 15*time.Minute),
 				node.WithDiscoveryInterval(10*time.Second),
-				node.FromBase64(true, true, token),
+				node.FromBase64(true, true, token, nil, nil),
 				l)
 		})
 

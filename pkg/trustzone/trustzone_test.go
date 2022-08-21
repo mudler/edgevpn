@@ -77,7 +77,7 @@ var _ = Describe("trustzone", func() {
 				node.GenericChannelHandlers(pguardian.ReceiveMessage),
 				//	node.WithPeerGater(pg),
 				node.WithDiscoveryInterval(10*time.Second),
-				node.FromBase64(true, true, token), node.WithStore(permStore), ll)
+				node.FromBase64(true, true, token, nil, nil), node.WithStore(permStore), ll)
 
 			pguardian2 := trustzone.NewPeerGuardian(logg, aps...)
 
@@ -92,7 +92,7 @@ var _ = Describe("trustzone", func() {
 				node.GenericChannelHandlers(pguardian2.ReceiveMessage),
 				//	node.WithPeerGater(pg),
 				node.WithDiscoveryInterval(10*time.Second),
-				node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), ll)
+				node.FromBase64(true, true, token, nil, nil), node.WithStore(&blockchain.MemoryStore{}), ll)
 
 			l, err := e.Ledger()
 			Expect(err).ToNot(HaveOccurred())
@@ -140,7 +140,7 @@ var _ = Describe("trustzone", func() {
 				node.GenericChannelHandlers(pguardian.ReceiveMessage),
 				node.WithPeerGater(pg),
 				node.WithDiscoveryInterval(10*time.Second),
-				node.FromBase64(true, true, token), node.WithStore(permStore), ll)
+				node.FromBase64(true, true, token, nil, nil), node.WithStore(permStore), ll)
 
 			Expect(err).ToNot(HaveOccurred())
 

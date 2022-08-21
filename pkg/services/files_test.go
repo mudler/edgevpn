@@ -41,7 +41,7 @@ var _ = Describe("File services", func() {
 	e2, _ := node.New(
 		node.WithDiscoveryInterval(10*time.Second),
 		node.WithNetworkService(AliveNetworkService(2*time.Second, 4*time.Second, 15*time.Minute)),
-		node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+		node.FromBase64(true, true, token, nil, nil), node.WithStore(&blockchain.MemoryStore{}), l)
 
 	Context("File sharing", func() {
 		It("sends and receive files between two nodes", func() {
@@ -61,7 +61,7 @@ var _ = Describe("File services", func() {
 			opts, err := ShareFile(logg, 10*time.Second, fileUUID, f.Name())
 			Expect(err).ToNot(HaveOccurred())
 
-			opts = append(opts, node.FromBase64(true, true, token), node.WithStore(&blockchain.MemoryStore{}), l)
+			opts = append(opts, node.FromBase64(true, true, token, nil, nil), node.WithStore(&blockchain.MemoryStore{}), l)
 			e, _ := node.New(opts...)
 
 			e.Start(ctx)
