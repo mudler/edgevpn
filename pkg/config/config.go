@@ -245,18 +245,16 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			relayOpts = append(relayOpts, autorelay.WithCircuitV1Support())
 		}
 
-		// If no relays are specified and no discovery interval, then just use default static relays (to be deprecated)
-		if len(c.Connection.StaticRelays) > 0 && c.Connection.OnlyStaticRelays {
-			relayOpts = append(relayOpts, autorelay.WithStaticRelays(peers2AddrInfo(c.Connection.StaticRelays)))
-		} else {
-
-			if c.Connection.AutoRelayDiscoveryInterval == 0 {
-				c.Connection.AutoRelayDiscoveryInterval = 5 * time.Minute
-			}
-
-			staticRelays := append(autorelay.DefaultRelays, c.Connection.StaticRelays...)
-			relayOpts = append(relayOpts, autorelay.WithPeerSource(d.FindClosePeers(llger, staticRelays...), c.Connection.AutoRelayDiscoveryInterval))
+		staticRelays := c.Connection.StaticRelays
+		if len(staticRelays) == 0 {
+			staticRelays = autorelay.DefaultRelays
 		}
+		if c.Connection.AutoRelayDiscoveryInterval == 0 {
+			c.Connection.AutoRelayDiscoveryInterval = 5 * time.Minute
+		}
+		// If no relays are specified and no discovery interval, then just use default static relays (to be deprecated)
+
+		relayOpts = append(relayOpts, autorelay.WithPeerSource(d.FindClosePeers(llger, c.Connection.OnlyStaticRelays, staticRelays...), c.Connection.AutoRelayDiscoveryInterval))
 
 		libp2pOpts = append(libp2pOpts,
 			libp2p.EnableAutoRelay(relayOpts...))
