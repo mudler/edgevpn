@@ -262,7 +262,7 @@ sysctl -w net.core.rmem_max=2500000
 
 # :notebook: LICENSE
 
-GNU GPLv3.
+Apache License v2.
 
 ```
 edgevpn  Copyright (C) 2021 Ettore Di Giacinto
