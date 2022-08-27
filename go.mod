@@ -21,7 +21,7 @@ require (
 	github.com/ipld/go-ipld-prime v0.16.0 // indirect
 	github.com/klauspost/compress v1.15.5 // indirect
 	github.com/labstack/echo/v4 v4.7.2
-	github.com/libp2p/go-libp2p v0.22.0
+	github.com/libp2p/go-libp2p v0.22.1-0.20220827030600-752baa7992cb
 	github.com/libp2p/go-libp2p-blankhost v0.4.0 // indirect
 	github.com/libp2p/go-libp2p-connmgr v0.4.0 // indirect
 	github.com/libp2p/go-libp2p-core v0.20.0
