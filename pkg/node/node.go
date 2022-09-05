@@ -53,7 +53,6 @@ const defaultChanSize = 3000
 var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableNATService(),
 	libp2p.NATPortMap(),
-	libp2p.EnableAutoRelay(),
 }
 
 func New(p ...Option) (*Node, error) {
