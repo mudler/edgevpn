@@ -36,7 +36,6 @@ type config struct {
 	gracePeriod   time.Duration
 	silencePeriod time.Duration
 	decayer       *DecayerCfg
-	emergencyTrim bool
 }
 
 // Option represents an option for the basic connection manager.

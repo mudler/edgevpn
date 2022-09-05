@@ -14,7 +14,7 @@ limitations under the License.
 package protocol
 
 import (
-	p2pprotocol "github.com/libp2p/go-libp2p-core/protocol"
+	p2pprotocol "github.com/libp2p/go-libp2p/core/protocol"
 )
 
 const (

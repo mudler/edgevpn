@@ -33,7 +33,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/libp2p/go-libp2p-core/connmgr"
+	"github.com/libp2p/go-libp2p/core/connmgr"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 
@@ -501,7 +501,7 @@ func (cm *Manager) HasStream(n network.Network, pid peer.ID) (network.Stream, er
 		return nil, errors.New("no stream available for pid")
 	}
 
-	for c, _ := range pinfo.conns {
+	for c := range pinfo.conns {
 		pinfo.conns[c] = time.Now()
 		return c, nil
 	}
