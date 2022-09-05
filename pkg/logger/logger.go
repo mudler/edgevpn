@@ -15,28 +15,46 @@ package logger
 
 import (
 	"fmt"
-	"os"
 
-	terminal "github.com/mudler/go-isterminal"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/ipfs/go-log"
-	"github.com/pterm/pterm"
 )
 
 var _ log.StandardLogger = &Logger{}
 
 type Logger struct {
 	level log.LogLevel
+	zap   *zap.SugaredLogger
 }
 
 func New(lvl log.LogLevel) *Logger {
-	if !terminal.IsTerminal(os.Stdout) {
-		pterm.DisableColor()
+	cfg := zap.Config{
+
+		Encoding:         "json",
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+		Level:            zap.NewAtomicLevelAt(zapcore.Level(lvl)),
+		EncoderConfig: zapcore.EncoderConfig{
+			MessageKey:   "message",
+			LevelKey:     "level",
+			EncodeLevel:  zapcore.CapitalLevelEncoder,
+			TimeKey:      "time",
+			EncodeTime:   zapcore.ISO8601TimeEncoder,
+			CallerKey:    "caller",
+			EncodeCaller: zapcore.ShortCallerEncoder,
+		},
 	}
-	if lvl == log.LevelDebug {
-		pterm.EnableDebugMessages()
+	logger, err := cfg.Build(zap.AddCallerSkip(1))
+	if err != nil {
+		panic(err)
 	}
-	return &Logger{level: lvl}
+	defer logger.Sync()
+
+	sugar := logger.Sugar()
+
+	return &Logger{level: lvl, zap: sugar}
 }
 
 func joinMsg(args ...interface{}) (message string) {
@@ -46,56 +64,36 @@ func joinMsg(args ...interface{}) (message string) {
 	return
 }
 
-func (l Logger) enabled(lvl log.LogLevel) bool {
-	return lvl >= l.level
-}
-
 func (l Logger) Debug(args ...interface{}) {
-	if l.enabled(log.LevelDebug) {
-		pterm.Debug.Println(joinMsg(args...))
-	}
+	l.zap.Debug(joinMsg(args...))
 }
 
 func (l Logger) Debugf(f string, args ...interface{}) {
-	if l.enabled(log.LevelDebug) {
-		pterm.Debug.Printfln(f, args...)
-	}
+	l.zap.Debugf(f+"\n", args...)
 }
 
 func (l Logger) Error(args ...interface{}) {
-	if l.enabled(log.LevelError) {
-		pterm.Error.Println(pterm.LightRed(joinMsg(args...)))
-	}
+	l.zap.Error(joinMsg(args...))
 }
 
 func (l Logger) Errorf(f string, args ...interface{}) {
-	if l.enabled(log.LevelError) {
-		pterm.Error.Printfln(pterm.LightRed(f), args...)
-	}
+	l.zap.Errorf(f+"\n", args...)
 }
 
 func (l Logger) Fatal(args ...interface{}) {
-	if l.enabled(log.LevelFatal) {
-		pterm.Fatal.Println(pterm.Red(joinMsg(args...)))
-	}
+	l.zap.Fatal(joinMsg(args...))
 }
 
 func (l Logger) Fatalf(f string, args ...interface{}) {
-	if l.enabled(log.LevelFatal) {
-		pterm.Fatal.Printfln(pterm.Red(f), args...)
-	}
+	l.zap.Fatalf(f+"\n", args...)
 }
 
 func (l Logger) Info(args ...interface{}) {
-	if l.enabled(log.LevelInfo) {
-		pterm.Info.Println(pterm.LightBlue(joinMsg(args...)))
-	}
+	l.zap.Info(joinMsg(args...))
 }
 
 func (l Logger) Infof(f string, args ...interface{}) {
-	if l.enabled(log.LevelInfo) {
-		pterm.Info.Printfln(pterm.LightBlue(f), args...)
-	}
+	l.zap.Infof(f+"\n", args...)
 }
 
 func (l Logger) Panic(args ...interface{}) {
@@ -107,15 +105,11 @@ func (l Logger) Panicf(f string, args ...interface{}) {
 }
 
 func (l Logger) Warn(args ...interface{}) {
-	if l.enabled(log.LevelWarn) {
-		pterm.Warning.Println(pterm.LightYellow(joinMsg(args...)))
-	}
+	l.zap.Warn(joinMsg(args...))
 }
 
 func (l Logger) Warnf(f string, args ...interface{}) {
-	if l.enabled(log.LevelWarn) {
-		pterm.Warning.Printfln(pterm.LightYellow(f), args...)
-	}
+	l.zap.Warnf(f+"\n", args...)
 }
 
 func (l Logger) Warning(args ...interface{}) {
