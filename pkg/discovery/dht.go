@@ -155,15 +155,14 @@ func (d *DHT) bootstrapPeers(c log.StandardLogger, ctx context.Context, host hos
 	wg.Wait()
 }
 
-func (d *DHT) FindClosePeers(ll log.StandardLogger, onlyStaticRelays bool, static ...string) func(numPeers int) <-chan peer.AddrInfo {
-	return func(numPeers int) <-chan peer.AddrInfo {
+func (d *DHT) FindClosePeers(ll log.StandardLogger, onlyStaticRelays bool, static ...string) func(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
+	return func(ctx context.Context, numPeers int) <-chan peer.AddrInfo {
 		peerChan := make(chan peer.AddrInfo, numPeers)
 		go func() {
 
 			toStream := []peer.AddrInfo{}
 
 			if !onlyStaticRelays {
-				ctx := context.Background()
 				closestPeers, err := d.GetClosestPeers(ctx, d.PeerID().String())
 				if err != nil {
 					close(peerChan)
