@@ -1,5 +1,5 @@
-//go:build !windows && !darwin && !freebsd
-// +build !windows,!darwin,!freebsd
+//go:build freebsd
+// +build freebsd
 
 /*
 Copyright © 2021-2022 Ettore Di Giacinto <mudler@mocaccino.org>
@@ -18,13 +18,11 @@ package vpn
 
 import (
 	"github.com/mudler/water"
-	"github.com/vishvananda/netlink"
 )
 
 func createInterface(c *Config) (*water.Interface, error) {
 	config := water.Config{
-		DeviceType:             c.DeviceType,
-		PlatformSpecificParams: water.PlatformSpecificParams{Persist: !c.NetLinkBootstrap},
+		DeviceType: c.DeviceType,
 	}
 	config.Name = c.InterfaceName
 
@@ -32,29 +30,7 @@ func createInterface(c *Config) (*water.Interface, error) {
 }
 
 func prepareInterface(c *Config) error {
-	link, err := netlink.LinkByName(c.InterfaceName)
-	if err != nil {
-		return err
-	}
-
-	addr, err := netlink.ParseAddr(c.InterfaceAddress)
-	if err != nil {
-		return err
-	}
-
-	err = netlink.LinkSetMTU(link, c.InterfaceMTU)
-	if err != nil {
-		return err
-	}
-
-	err = netlink.AddrAdd(link, addr)
-	if err != nil {
-		return err
-	}
-
-	err = netlink.LinkSetUp(link)
-	if err != nil {
-		return err
-	}
+	// no-op
+	//
 	return nil
 }
