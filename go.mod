@@ -25,6 +25,7 @@ require (
 	github.com/miekg/dns v1.1.50
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mudler/go-processmanager v0.0.0-20220724164624-c45b5c61312d
+	github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0
 	github.com/multiformats/go-multiaddr v0.7.0
 	github.com/onsi/ginkgo/v2 v2.1.1
 	github.com/onsi/gomega v1.17.0
@@ -32,7 +33,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
-	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/urfave/cli v1.22.10
 	github.com/vishvananda/netlink v1.1.0

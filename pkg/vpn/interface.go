@@ -17,7 +17,7 @@ limitations under the License.
 package vpn
 
 import (
-	"github.com/songgao/water"
+	"github.com/mudler/water"
 	"github.com/vishvananda/netlink"
 )
 

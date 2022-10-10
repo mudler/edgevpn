@@ -22,7 +22,7 @@ import (
 	"net"
 	"os/exec"
 
-	"github.com/songgao/water"
+	"github.com/mudler/water"
 )
 
 func prepareInterface(c *Config) error {

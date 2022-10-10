@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
-	"github.com/songgao/water"
+	"github.com/mudler/water"
 )
 
 type Config struct {
