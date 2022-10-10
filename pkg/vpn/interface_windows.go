@@ -21,12 +21,10 @@ import (
 	"log"
 	"os/exec"
 
-
-	"github.com/mudler/water"
-	"github.com/fumiama/water"
 	"github.com/fumiama/wintun"
-	"golang.org/x/sys/windows"
 	"github.com/google/uuid"
+	"github.com/mudler/water"
+	"golang.org/x/sys/windows"
 )
 
 func prepareInterface(c *Config) error {
@@ -51,12 +49,8 @@ func createInterface(c *Config) (*water.Interface, error) {
 	wintun.CreateAdapter(c.InterfaceName, "WaterWintun", &guid)
 	config := water.Config{
 		DeviceType: c.DeviceType,
-		PlatformSpecificParams: water.PlatformSpecificParams{
-			ComponentID: "WaterWintun",
-			InterfaceName: c.InterfaceName,
-		},
 	}
-
+	config.Name = c.InterfaceName
 	return water.New(config)
 }
 
