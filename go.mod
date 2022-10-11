@@ -8,10 +8,8 @@ require (
 	github.com/c-robinson/iplib v1.0.3
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/fumiama/wintun v0.0.0-20211229152851-8bc97c8034c0
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/gopacket v1.1.19
-	github.com/google/uuid v1.3.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/huandu/xstrings v1.3.2 // indirect
@@ -43,7 +41,7 @@ require (
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
-	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261
+	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
 
