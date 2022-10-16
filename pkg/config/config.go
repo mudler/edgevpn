@@ -39,8 +39,8 @@ import (
 	"github.com/mudler/edgevpn/pkg/trustzone"
 	"github.com/mudler/edgevpn/pkg/trustzone/authprovider/ecdsa"
 	"github.com/mudler/edgevpn/pkg/vpn"
+	"github.com/mudler/water"
 	"github.com/peterbourgon/diskv"
-	"github.com/songgao/water"
 )
 
 // Config is the config struct for the node and the default EdgeVPN services

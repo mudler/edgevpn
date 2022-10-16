@@ -1,5 +1,5 @@
-//go:build !windows && !darwin && !freebsd
-// +build !windows,!darwin,!freebsd
+//go:build freebsd
+// +build freebsd
 
 /*
 Copyright © 2021-2022 Ettore Di Giacinto <mudler@mocaccino.org>
@@ -17,14 +17,14 @@ limitations under the License.
 package vpn
 
 import (
+	"fmt"
 	"github.com/mudler/water"
-	"github.com/vishvananda/netlink"
+	"os/exec"
 )
 
 func createInterface(c *Config) (*water.Interface, error) {
 	config := water.Config{
-		DeviceType:             c.DeviceType,
-		PlatformSpecificParams: water.PlatformSpecificParams{Persist: !c.NetLinkBootstrap},
+		DeviceType: c.DeviceType,
 	}
 	config.Name = c.InterfaceName
 
@@ -32,29 +32,18 @@ func createInterface(c *Config) (*water.Interface, error) {
 }
 
 func prepareInterface(c *Config) error {
-	link, err := netlink.LinkByName(c.InterfaceName)
+	err := sh(fmt.Sprintf("ifconfig %s create", c.InterfaceName))
 	if err != nil {
 		return err
 	}
+	err = sh(fmt.Sprintf("ifconfig %s inet %s %s netmask %s", c.InterfaceName, c.InterfaceAddress, c.InterfaceAddress, "255.255.255.0"))
+	if err != nil {
+		return err
+	}
+	return sh(fmt.Sprintf("ifconfig %s up", c.InterfaceName))
+}
 
-	addr, err := netlink.ParseAddr(c.InterfaceAddress)
-	if err != nil {
-		return err
-	}
-
-	err = netlink.LinkSetMTU(link, c.InterfaceMTU)
-	if err != nil {
-		return err
-	}
-
-	err = netlink.AddrAdd(link, addr)
-	if err != nil {
-		return err
-	}
-
-	err = netlink.LinkSetUp(link)
-	if err != nil {
-		return err
-	}
-	return nil
+func sh(c string) (err error) {
+	_, err = exec.Command("/bin/sh", "-c", c).CombinedOutput()
+	return
 }
