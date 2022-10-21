@@ -169,7 +169,6 @@ If you are not really interested in network performance (again, that's for devel
 
 We have used flannel here, but other CNI should work as well.
 
-Don't miss out [c3os](https://github.com/mudler/c3os) which is a Linux derivative built on top of k3s and EdgeVPN for automatic node discovery!
 
 # :notebook: As a library
 
@@ -213,6 +212,11 @@ e := edgevpn.New(append(o, opts...)...)
 
 e.Start(ctx)
 ```
+
+# 🧑‍💻 Projects using EdgeVPN
+
+- [Kairos](https://github.com/kairos-io/kairos) - creates Kubernetes clusters with K3s automatically using EdgeVPN networks
+
 
 # 🐜 Contribution
 
