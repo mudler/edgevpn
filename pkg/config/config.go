@@ -51,7 +51,7 @@ type Config struct {
 	Router                                     string
 	Interface                                  string
 	Libp2pLogLevel, LogLevel                   string
-	LowProfile, VPNLowProfile, BootstrapIface  bool
+	LowProfile, BootstrapIface                 bool
 	Blacklist                                  []string
 	Concurrency                                int
 	FrameTimeout                               string
@@ -115,7 +115,6 @@ type Connection struct {
 
 	Mplex          bool
 	MaxConnections int
-	MaxStreams     int
 }
 
 // NAT is the structure relative to NAT configuration settings
@@ -227,11 +226,6 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		vpn.WithPacketMTU(c.PacketMTU),
 		vpn.WithRouterAddress(router),
 		vpn.WithInterfaceName(iface),
-		vpn.WithMaxStreams(c.Connection.MaxStreams),
-	}
-
-	if c.VPNLowProfile {
-		vpnOpts = append(vpnOpts, vpn.LowProfile)
 	}
 
 	libp2pOpts := []libp2p.Option{libp2p.UserAgent("edgevpn")}

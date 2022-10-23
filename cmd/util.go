@@ -125,7 +125,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "max-connections",
 		Usage:  "Max connections",
 		EnvVar: "EDGEVPNMAXCONNS",
-		Value:  100,
+		Value:  0,
 	},
 	&cli.StringFlag{
 		Name:   "ledger-state",
@@ -142,7 +142,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Automatically act as a relay if the node can accept inbound connections",
 		EnvVar: "EDGEVPNAUTORELAY",
 	},
-	&cli.BoolTFlag{
+	&cli.BoolFlag{
 		Name:   "autorelay-v1",
 		Usage:  "Enable autorelay v1 circuits",
 		EnvVar: "EDGEVPNAUTORELAYV1",
@@ -181,17 +181,6 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Name:   "mplex-multiplexer",
 		Usage:  "Enable mplex multiplexer.",
 		EnvVar: "EDGEVPNMPLEX",
-	},
-	&cli.BoolTFlag{
-		Name:   "low-profile-vpn",
-		Usage:  "Enable low profile on VPN",
-		EnvVar: "EDGEVPNLOWPROFILEVPN",
-	},
-	&cli.IntFlag{
-		Name:   "max-streams",
-		Usage:  "Number of concurrent streams",
-		Value:  100,
-		EnvVar: "EDGEVPNMAXSTREAMS",
 	},
 	&cli.IntFlag{
 		Name:   "aliveness-healthcheck-interval",
@@ -385,7 +374,6 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		Libp2pLogLevel:    c.String("libp2p-log-level"),
 		LogLevel:          c.String("log-level"),
 		LowProfile:        c.Bool("low-profile"),
-		VPNLowProfile:     c.Bool("low-profile-vpn"),
 		Blacklist:         c.StringSlice("blacklist"),
 		Concurrency:       c.Int("concurrency"),
 		FrameTimeout:      c.String("timeout"),
@@ -416,7 +404,6 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			AutoRelay:                  c.Bool("autorelay"),
 			RelayV1:                    c.Bool("autorelay-v1"),
 			MaxConnections:             c.Int("max-connections"),
-			MaxStreams:                 c.Int("max-streams"),
 			HolePunch:                  c.Bool("holepunch"),
 			Mplex:                      c.Bool("mplex-multiplexer"),
 			StaticRelays:               c.StringSlice("autorelay-static-peer"),
