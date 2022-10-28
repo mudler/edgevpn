@@ -61,7 +61,7 @@ func New(p ...Option) (*Node, error) {
 		StreamHandlers:           make(map[protocol.Protocol]StreamHandler),
 		LedgerAnnounceTime:       5 * time.Second,
 		LedgerSyncronizationTime: 5 * time.Second,
-		SealKeyLength:            12,
+		SealKeyLength:            defaultKeyLength,
 		Options:                  defaultLibp2pOptions,
 		Logger:                   logger.New(log.LevelDebug),
 		Sealer:                   &crypto.AESSealer{},

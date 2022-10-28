@@ -8,6 +8,7 @@ require (
 	github.com/c-robinson/iplib v1.0.3
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/creachadair/otp v0.3.2
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/gopacket v1.1.19
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -37,7 +38,6 @@ require (
 	github.com/urfave/cli v1.22.10
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
-	github.com/xlzd/gotp v0.0.0-20220817083547-a63b9d03d72f
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
@@ -46,3 +46,5 @@ require (
 )
 
 replace github.com/elastic/gosigar => github.com/mudler/gosigar v0.14.3-0.20220502202347-34be910bdaaf
+
+replace github.com/creachadair/otp => github.com/mudler/otp v0.0.0-20221028140802-168056309dfc

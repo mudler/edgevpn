@@ -1,5 +1,5 @@
 /*
-Copyright © 2021-2022 Ettore Di Giacinto <mudler@mocaccino.org>
+Copyright © 2022 Ettore Di Giacinto <mudler@mocaccino.org>
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -11,16 +11,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package crypto
 
-import "math/rand"
+import (
+	"hash"
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+	"github.com/creachadair/otp"
+)
 
-func RandStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+func TOTP(f func() hash.Hash, digits int, t int, key string) string {
+	cfg := otp.Config{
+		Hash:     f,      // default is sha1.New
+		Digits:   digits, // default is 6
+		TimeStep: otp.TimeWindow(t),
+		Key:      key,
+		NoTrunc:  true,
 	}
-	return string(b)
+	return cfg.TOTP()
 }

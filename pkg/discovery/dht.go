@@ -15,6 +15,7 @@ package discovery
 
 import (
 	"context"
+	"crypto/sha256"
 	"sync"
 	"time"
 
@@ -29,7 +30,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/routing"
 	discovery "github.com/libp2p/go-libp2p/p2p/discovery/routing"
-	"github.com/xlzd/gotp"
 )
 
 type DHT struct {
@@ -56,10 +56,9 @@ func (d *DHT) Option(ctx context.Context) func(c *libp2p.Config) error {
 }
 func (d *DHT) Rendezvous() string {
 	if d.OTPKey != "" {
-		totp := gotp.NewTOTP(d.OTPKey, d.KeyLength, d.OTPInterval, nil)
+		totp := internalCrypto.TOTP(sha256.New, d.KeyLength, d.OTPInterval, d.OTPKey)
 
-		//totp := gotp.NewDefaultTOTP(d.OTPKey)
-		rv := internalCrypto.MD5(totp.Now())
+		rv := internalCrypto.MD5(totp)
 		d.latestRendezvous = rv
 		return rv
 	}

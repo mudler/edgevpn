@@ -25,7 +25,6 @@ import (
 	"github.com/mudler/edgevpn/pkg/protocol"
 	"github.com/mudler/edgevpn/pkg/utils"
 	"github.com/pkg/errors"
-	"github.com/xlzd/gotp"
 	"gopkg.in/yaml.v2"
 )
 
@@ -286,12 +285,18 @@ func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config, d *discovery.DHT
 	cfg.MaxMessageSize = y.MaxMessageSize
 }
 
-const defaultKeyLength = 32
+const defaultKeyLength = 43
 
 func GenerateNewConnectionData(i ...int) *YAMLConnectionConfig {
 	defaultInterval := 9000
 	maxMessSize := 20 << 20 // 20MB
-	if len(i) >= 2 {
+	keyLength := defaultKeyLength
+
+	if len(i) >= 3 {
+		keyLength = i[2]
+		defaultInterval = i[0]
+		maxMessSize = i[1]
+	} else if len(i) >= 2 {
 		defaultInterval = i[0]
 		maxMessSize = i[1]
 	} else if len(i) == 1 {
@@ -300,17 +305,17 @@ func GenerateNewConnectionData(i ...int) *YAMLConnectionConfig {
 
 	return &YAMLConnectionConfig{
 		MaxMessageSize: maxMessSize,
-		RoomName:       gotp.RandomSecret(defaultKeyLength),
-		Rendezvous:     utils.RandStringRunes(defaultKeyLength),
-		MDNS:           utils.RandStringRunes(defaultKeyLength),
+		RoomName:       utils.RandStringRunes(keyLength),
+		Rendezvous:     utils.RandStringRunes(keyLength),
+		MDNS:           utils.RandStringRunes(keyLength),
 		OTP: OTP{
 			DHT: OTPConfig{
-				Key:      gotp.RandomSecret(defaultKeyLength),
+				Key:      utils.RandStringRunes(keyLength),
 				Interval: defaultInterval,
 				Length:   defaultKeyLength,
 			},
 			Crypto: OTPConfig{
-				Key:      gotp.RandomSecret(defaultKeyLength),
+				Key:      utils.RandStringRunes(keyLength),
 				Interval: defaultInterval,
 				Length:   defaultKeyLength,
 			},
