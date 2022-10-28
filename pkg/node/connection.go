@@ -16,6 +16,7 @@ package node
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"io"
 	mrand "math/rand"
 	"net"
@@ -29,7 +30,6 @@ import (
 	conngater "github.com/libp2p/go-libp2p/p2p/net/conngater"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	multiaddr "github.com/multiformats/go-multiaddr"
-	"github.com/xlzd/gotp"
 )
 
 // Host returns the libp2p peer host
@@ -115,7 +115,7 @@ func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 }
 
 func (e *Node) sealkey() string {
-	return internalCrypto.MD5(gotp.NewTOTP(e.config.ExchangeKey, e.config.SealKeyLength, e.config.SealKeyInterval, nil).Now())
+	return internalCrypto.MD5(internalCrypto.TOTP(sha256.New, e.config.SealKeyLength, e.config.SealKeyInterval, e.config.ExchangeKey))
 }
 
 func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message, roomMessages chan *hub.Message, pub func(*hub.Message) error, handlers []Handler, peerGater bool) {

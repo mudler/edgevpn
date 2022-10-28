@@ -17,13 +17,13 @@ package hub
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/mudler/edgevpn/pkg/crypto"
-	"github.com/xlzd/gotp"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -54,11 +54,11 @@ func NewHub(otp string, maxsize, keyLength, interval int, joinPublic bool) *Mess
 }
 
 func (m *MessageHub) topicKey(salts ...string) string {
-	totp := gotp.NewTOTP(strings.ToUpper(m.otpKey), m.keyLength, m.interval, nil)
+	totp := crypto.TOTP(sha256.New, m.keyLength, m.interval, m.otpKey)
 	if len(salts) > 0 {
-		return crypto.MD5(totp.Now() + strings.Join(salts, ":"))
+		return crypto.MD5(totp + strings.Join(salts, ":"))
 	}
-	return crypto.MD5(totp.Now())
+	return crypto.MD5(totp)
 }
 
 func (m *MessageHub) joinRoom(host host.Host) error {
