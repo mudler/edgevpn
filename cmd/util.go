@@ -172,7 +172,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Enable DHT for peer discovery",
 		EnvVar: "EDGEVPNDHT",
 	},
-	&cli.BoolTFlag{
+	&cli.BoolFlag{
 		Name:   "low-profile",
 		Usage:  "Enable low profile. Lowers connections usage",
 		EnvVar: "EDGEVPNLOWPROFILE",
