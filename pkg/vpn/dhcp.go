@@ -96,6 +96,11 @@ func DHCPNetworkService(ip chan string, l log.StandardLogger, maxTime time.Durat
 				continue
 			}
 
+			if len(nodesWithNoIP) == 0 {
+				l.Debug("not enough nodes waiting for IP being announced, sleeping")
+				continue
+			}
+
 			shouldBeLeader := utils.Leader(nodesWithNoIP)
 
 			var lead string
