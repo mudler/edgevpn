@@ -42,6 +42,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
 	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
+	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
 
