@@ -21,6 +21,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/urfave/cli"
 )
 
@@ -32,6 +33,9 @@ func API() cli.Command {
 A simple UI interface is available to display network data.`,
 		UsageText: "edgevpn api",
 		Flags: append(CommonFlags,
+			&cli.BoolFlag{
+				Name: "healthchecks",
+			},
 			&cli.BoolFlag{
 				Name: "debug",
 			},
@@ -46,6 +50,13 @@ A simple UI interface is available to display network data.`,
 
 			bwc := metrics.NewBandwidthCounter()
 			o = append(o, node.WithLibp2pAdditionalOptions(libp2p.BandwidthReporter(bwc)))
+			if c.Bool("enable-healthchecks") {
+				o = append(o,
+					services.Alive(
+						time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second,
+						time.Duration(c.Int("aliveness-healthcheck-scrub-interval"))*time.Second,
+						time.Duration(c.Int("aliveness-healthcheck-max-interval"))*time.Second)...)
+			}
 
 			e, err := node.New(o...)
 			if err != nil {
