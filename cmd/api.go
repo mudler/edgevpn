@@ -34,7 +34,8 @@ A simple UI interface is available to display network data.`,
 		UsageText: "edgevpn api",
 		Flags: append(CommonFlags,
 			&cli.BoolFlag{
-				Name: "enable-healthchecks",
+				Name:   "enable-healthchecks",
+				EnvVar: "ENABLE_HEALTHCHECKS",
 			},
 			&cli.BoolFlag{
 				Name: "debug",
