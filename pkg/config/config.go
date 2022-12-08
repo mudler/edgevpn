@@ -238,9 +238,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		}
 
 		staticRelays := c.Connection.StaticRelays
-		if len(staticRelays) == 0 {
-			staticRelays = autorelay.DefaultRelays
-		}
+
 		if c.Connection.AutoRelayDiscoveryInterval == 0 {
 			c.Connection.AutoRelayDiscoveryInterval = 5 * time.Minute
 		}
