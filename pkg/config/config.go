@@ -238,9 +238,6 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		}
 
 		staticRelays := c.Connection.StaticRelays
-		if len(staticRelays) == 0 {
-			staticRelays = autorelay.DefaultRelays
-		}
 		if c.Connection.AutoRelayDiscoveryInterval == 0 {
 			c.Connection.AutoRelayDiscoveryInterval = 5 * time.Minute
 		}
@@ -282,7 +279,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	}
 
 	if !c.Limit.Enable || runtime.GOOS == "darwin" {
-		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(network.NullResourceManager))
+		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(&network.NullResourceManager{}))
 	} else {
 		var limiter rcmgr.Limiter
 
