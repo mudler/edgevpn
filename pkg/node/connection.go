@@ -53,15 +53,19 @@ func (e *Node) BlockSubnet(cidr string) error {
 	return e.ConnectionGater().BlockSubnet(n)
 }
 
-func (e *Node) genHost(ctx context.Context) (host.Host, error) {
+func GenPrivKey(seed int64) (crypto.PrivKey, error) {
 	var r io.Reader
-	var prvKey crypto.PrivKey
-
-	if e.seed == 0 {
+	if seed == 0 {
 		r = rand.Reader
 	} else {
-		r = mrand.New(mrand.NewSource(e.seed))
+		r = mrand.New(mrand.NewSource(seed))
 	}
+	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.Ed25519, 4096, r)
+	return prvKey, err
+}
+
+func (e *Node) genHost(ctx context.Context) (host.Host, error) {
+	var prvKey crypto.PrivKey
 
 	opts := e.config.Options
 
@@ -91,7 +95,7 @@ func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 	if len(e.config.PrivateKey) > 0 {
 		prvKey, err = crypto.UnmarshalPrivateKey(e.config.PrivateKey)
 	} else {
-		prvKey, _, err = crypto.GenerateKeyPairWithReader(crypto.Ed25519, 4096, r)
+		prvKey, err = GenPrivKey(e.seed)
 	}
 
 	if err != nil {

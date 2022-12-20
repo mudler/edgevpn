@@ -15,7 +15,10 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"os/signal"
 	"runtime"
@@ -23,6 +26,8 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/config"
@@ -301,6 +306,22 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "PEERGUARD",
 	},
 	&cli.BoolFlag{
+		Name:   "privkey-cache",
+		Usage:  "Enable privkey caching. (Experimental)",
+		EnvVar: "EDGEVPNPRIVKEYCACHE",
+	},
+	&cli.StringFlag{
+		Name:   "privkey-cache-dir",
+		Usage:  "Specify a directory used to store the generated privkey",
+		EnvVar: "EDGEVPNPRIVKEYCACHEDIR",
+		Value:  stateDir(),
+	},
+	&cli.StringSliceFlag{
+		Name:   "static-peertable",
+		Usage:  "List of static peers to use (in `ip:peerid` format)",
+		EnvVar: "EDGEVPNSTATICPEERTABLE",
+	},
+	&cli.BoolFlag{
 		Name:   "peergate",
 		Usage:  "Enable peergating. (Experimental)",
 		EnvVar: "PEERGATE",
@@ -327,6 +348,17 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVar: "EDGEVPNPEERGATEINTERVAL",
 		Value:  120,
 	},
+}
+
+func stateDir() string {
+	baseDir := ".edgevpn"
+	home, _ := os.UserHomeDir()
+	if home != "" {
+		return filepath.Join(home, baseDir)
+	}
+
+	dir, _ := os.Getwd()
+	return filepath.Join(dir, baseDir)
 }
 
 func displayStart(ll *logger.Logger) {
@@ -432,6 +464,52 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		lvl = log.LevelError
 	}
 	llger := logger.New(lvl)
+
+	checkErr := func(e error) {
+		if err != nil {
+			llger.Fatal(err.Error())
+		}
+	}
+
+	// Check if we have any privkey identity cached already
+	if c.Bool("privkey-cache") {
+		keyFile := filepath.Join(c.String("privkey-cache-dir"), "privkey")
+		dat, err := os.ReadFile(keyFile)
+		if err == nil && len(dat) > 0 {
+			llger.Info("Reading key from", keyFile)
+
+			nc.Privkey = dat
+		} else {
+			// generate, write
+			llger.Info("Generating private key and saving it locally for later use in", keyFile)
+
+			privkey, err := node.GenPrivKey(0)
+			checkErr(err)
+
+			r, err := crypto.MarshalPrivateKey(privkey)
+			checkErr(err)
+
+			err = os.MkdirAll(c.String("privkey-cache-dir"), 0600)
+			checkErr(err)
+
+			err = os.WriteFile(keyFile, r, 0600)
+			checkErr(err)
+
+			nc.Privkey = r
+		}
+	}
+
+	for _, pt := range c.StringSlice("static-peertable") {
+		dat := strings.Split(pt, ":")
+		if len(dat) != 2 {
+			checkErr(fmt.Errorf("wrong format for peertable entries. Want a list of ip/peerid separated by `:`. e.g. 10.1.0.1:... "))
+		}
+		if nc.Connection.PeerTable == nil {
+			nc.Connection.PeerTable = make(map[string]peer.ID)
+		}
+
+		nc.Connection.PeerTable[dat[0]] = peer.ID(dat[1])
+	}
 
 	nodeOpts, vpnOpts, err := nc.ToOpts(llger)
 	if err != nil {

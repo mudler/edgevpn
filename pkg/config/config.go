@@ -61,6 +61,7 @@ type Config struct {
 	Discovery                                  Discovery
 	Ledger                                     Ledger
 	Limit                                      ResourceLimit
+	Privkey                                    []byte
 	// PeerGuard (experimental)
 	// enable peerguardian and add specific auth options
 	PeerGuard PeerGuard
@@ -112,6 +113,8 @@ type Connection struct {
 	RelayV1                    bool
 	StaticRelays               []string
 	OnlyStaticRelays           bool
+
+	PeerTable map[string]peer.ID
 
 	Mplex          bool
 	MaxConnections int
@@ -211,6 +214,14 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		node.WithSealer(&crypto.AESSealer{}),
 		node.FromBase64(mDNS, dhtE, token, d, m),
 		node.FromYaml(mDNS, dhtE, config, d, m),
+	}
+
+	for ip, peer := range c.Connection.PeerTable {
+		opts = append(opts, node.WithStaticPeer(ip, peer))
+	}
+
+	if len(c.Privkey) > 0 {
+		opts = append(opts, node.WithPrivKey(c.Privkey))
 	}
 
 	vpnOpts := []vpn.Option{
