@@ -20,6 +20,7 @@ import (
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	discovery "github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/protocol"
@@ -219,6 +220,23 @@ func WithDiscoveryInterval(t time.Duration) func(cfg *Config) error {
 func WithDiscoveryBootstrapPeers(a discovery.AddrList) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.DiscoveryBootstrapPeers = a
+		return nil
+	}
+}
+
+func WithPrivKey(b []byte) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.PrivateKey = b
+		return nil
+	}
+}
+
+func WithStaticPeer(ip string, p peer.ID) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		if cfg.PeerTable == nil {
+			cfg.PeerTable = make(map[string]peer.ID)
+		}
+		cfg.PeerTable[ip] = p
 		return nil
 	}
 }

@@ -84,7 +84,7 @@ func VPNNetworkService(p ...Option) node.NetworkService {
 		}
 
 		// Set stream handler during runtime
-		n.Host().SetStreamHandler(protocol.EdgeVPN.ID(), streamHandler(b, ifce, c))
+		n.Host().SetStreamHandler(protocol.EdgeVPN.ID(), streamHandler(b, ifce, c, nc))
 
 		// Announce our IP
 		ip, _, err := net.ParseCIDR(c.InterfaceAddress)
@@ -117,7 +117,7 @@ func VPNNetworkService(p ...Option) node.NetworkService {
 		}
 
 		// read packets from the interface
-		return readPackets(ctx, mgr, c, n, b, ifce)
+		return readPackets(ctx, mgr, c, n, b, ifce, nc)
 	}
 }
 
@@ -127,9 +127,9 @@ func Register(p ...Option) ([]node.Option, error) {
 	return []node.Option{node.WithNetworkService(VPNNetworkService(p...))}, nil
 }
 
-func streamHandler(l *blockchain.Ledger, ifce *water.Interface, c *Config) func(stream network.Stream) {
+func streamHandler(l *blockchain.Ledger, ifce *water.Interface, c *Config, nc node.Config) func(stream network.Stream) {
 	return func(stream network.Stream) {
-		if !l.Exists(protocol.MachinesLedgerKey,
+		if len(nc.PeerTable) == 0 && !l.Exists(protocol.MachinesLedgerKey,
 			func(d blockchain.Data) bool {
 				machine := &types.Machine{}
 				d.Unmarshal(machine)
@@ -137,6 +137,18 @@ func streamHandler(l *blockchain.Ledger, ifce *water.Interface, c *Config) func(
 			}) {
 			stream.Reset()
 			return
+		}
+		if len(nc.PeerTable) > 0 {
+			found := false
+			for _, p := range nc.PeerTable {
+				if p.String() == stream.Conn().RemotePeer().String() {
+					found = true
+				}
+			}
+			if !found {
+				stream.Reset()
+				return
+			}
 		}
 		_, err := io.Copy(ifce.ReadWriteCloser, stream)
 		if err != nil {
@@ -174,7 +186,7 @@ func getFrame(ifce *water.Interface, c *Config) (ethernet.Frame, error) {
 	return frame, nil
 }
 
-func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce *water.Interface) error {
+func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce *water.Interface, nc node.Config) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
 	defer cancel()
 
@@ -200,16 +212,33 @@ func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Nod
 		}
 	}
 
-	// Query the routing table
-	value, found := ledger.GetKey(protocol.MachinesLedgerKey, dst)
-	if !found {
-		return fmt.Errorf("'%s' not found in the routing table", dst)
-	}
-	machine := &types.Machine{}
-	value.Unmarshal(machine)
+	var d peer.ID
+	var err error
+	notFoundErr := fmt.Errorf("'%s' not found in the routing table", dst)
+	if len(nc.PeerTable) > 0 {
+		found := false
+		for ip, p := range nc.PeerTable {
+			if ip == dst {
+				found = true
+				d = peer.ID(p)
+			}
+		}
+		if !found {
+			return notFoundErr
+		}
+	} else {
+		// Query the routing table
+		value, found := ledger.GetKey(protocol.MachinesLedgerKey, dst)
+		if !found {
+			return notFoundErr
+		}
+		machine := &types.Machine{}
+		value.Unmarshal(machine)
 
-	// Decode the Peer
-	d, err := peer.Decode(machine.PeerID)
+		// Decode the Peer
+		d, err = peer.Decode(machine.PeerID)
+	}
+
 	if err != nil {
 		return errors.Wrap(err, "could not decode peer")
 	}
@@ -251,17 +280,18 @@ func connectionWorker(
 	ip net.IP,
 	wg *sync.WaitGroup,
 	ledger *blockchain.Ledger,
-	ifce *water.Interface) {
+	ifce *water.Interface,
+	nc node.Config) {
 	defer wg.Done()
 	for f := range p {
-		if err := handleFrame(mgr, f, c, n, ip, ledger, ifce); err != nil {
+		if err := handleFrame(mgr, f, c, n, ip, ledger, ifce, nc); err != nil {
 			c.Logger.Debugf("could not handle frame: %s", err.Error())
 		}
 	}
 }
 
 // redirects packets from the interface to the node using the routing table in the blockchain
-func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce *water.Interface) error {
+func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce *water.Interface, nc node.Config) error {
 	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
 		return err
@@ -278,7 +308,7 @@ func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node
 
 	for i := 0; i < c.Concurrency; i++ {
 		wg.Add(1)
-		go connectionWorker(packets, mgr, c, n, ip, wg, ledger, ifce)
+		go connectionWorker(packets, mgr, c, n, ip, wg, ledger, ifce, nc)
 	}
 
 	for {

@@ -71,6 +71,9 @@ type Config struct {
 	// GenericHub enables generic hub
 	GenericHub bool
 
+	PrivateKey []byte
+	PeerTable  map[string]peer.ID
+
 	Sealer    Sealer
 	PeerGater Gater
 }

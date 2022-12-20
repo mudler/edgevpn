@@ -55,15 +55,12 @@ func (e *Node) BlockSubnet(cidr string) error {
 
 func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 	var r io.Reader
+	var prvKey crypto.PrivKey
+
 	if e.seed == 0 {
 		r = rand.Reader
 	} else {
 		r = mrand.New(mrand.NewSource(e.seed))
-	}
-
-	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.Ed25519, 4096, r)
-	if err != nil {
-		return nil, err
 	}
 
 	opts := e.config.Options
@@ -88,6 +85,17 @@ func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 		if net != nil {
 			cg.BlockSubnet(net)
 		}
+	}
+
+	// generate privkey if not specified
+	if len(e.config.PrivateKey) > 0 {
+		prvKey, err = crypto.UnmarshalPrivateKey(e.config.PrivateKey)
+	} else {
+		prvKey, _, err = crypto.GenerateKeyPairWithReader(crypto.Ed25519, 4096, r)
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	opts = append(opts, libp2p.ConnectionGater(cg), libp2p.Identity(prvKey))
@@ -144,6 +152,18 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 			if peerGater {
 				if e.config.PeerGater != nil && e.config.PeerGater.Gate(e, peer.ID(m.SenderID)) {
 					e.config.Logger.Warnf("gated message from %s", m.SenderID)
+					continue
+				}
+			}
+			if len(e.config.PeerTable) > 0 {
+				found := false
+				for _, p := range e.config.PeerTable {
+					if p.String() == peer.ID(m.SenderID).String() {
+						found = true
+					}
+				}
+				if !found {
+					e.config.Logger.Warnf("gated message from %s - not present in peertable", m.SenderID)
 					continue
 				}
 			}
