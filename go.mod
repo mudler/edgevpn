@@ -14,8 +14,8 @@ require (
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/labstack/echo/v4 v4.9.0
 	github.com/libp2p/go-libp2p v0.23.4
-	github.com/libp2p/go-libp2p-kad-dht v0.18.0
-	github.com/libp2p/go-libp2p-pubsub v0.8.0
+	github.com/libp2p/go-libp2p-kad-dht v0.20.0
+	github.com/libp2p/go-libp2p-pubsub v0.8.2
 	github.com/miekg/dns v1.1.50
 	github.com/mudler/go-processmanager v0.0.0-20220724164624-c45b5c61312d
 	github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0
@@ -78,8 +78,7 @@ require (
 	github.com/libp2p/go-cidranger v1.1.0 // indirect
 	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
 	github.com/libp2p/go-libp2p-asn-util v0.2.0 // indirect
-	github.com/libp2p/go-libp2p-core v0.20.0 // indirect
-	github.com/libp2p/go-libp2p-kbucket v0.4.7 // indirect
+	github.com/libp2p/go-libp2p-kbucket v0.5.0 // indirect
 	github.com/libp2p/go-libp2p-record v0.2.0 // indirect
 	github.com/libp2p/go-mplex v0.7.0 // indirect
 	github.com/libp2p/go-msgio v0.2.0 // indirect
