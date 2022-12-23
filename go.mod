@@ -7,7 +7,7 @@ require (
 	github.com/benbjohnson/clock v1.3.0
 	github.com/c-robinson/iplib v1.0.3
 	github.com/cenkalti/backoff/v4 v4.1.3
-	github.com/creachadair/otp v0.3.2
+	github.com/creachadair/otp v0.4.0
 	github.com/google/gopacket v1.1.19
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/ipfs/go-log v1.0.5
@@ -151,5 +151,3 @@ require (
 )
 
 replace github.com/elastic/gosigar => github.com/mudler/gosigar v0.14.3-0.20220502202347-34be910bdaaf
-
-replace github.com/creachadair/otp => github.com/mudler/otp v0.0.0-20221028140802-168056309dfc
