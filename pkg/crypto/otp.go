@@ -14,6 +14,7 @@ limitations under the License.
 package crypto
 
 import (
+	"encoding/base64"
 	"hash"
 
 	"github.com/creachadair/otp"
@@ -25,7 +26,9 @@ func TOTP(f func() hash.Hash, digits int, t int, key string) string {
 		Digits:   digits, // default is 6
 		TimeStep: otp.TimeWindow(t),
 		Key:      key,
-		NoTrunc:  true,
+		Format: func(hash []byte, nb int) string {
+			return base64.StdEncoding.EncodeToString(hash)[:nb]
+		},
 	}
 	return cfg.TOTP()
 }

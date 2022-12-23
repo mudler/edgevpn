@@ -44,6 +44,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:ma
 github.com/cpuguy83/go-md2man/v2 v2.0.0/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/cpuguy83/go-md2man/v2 v2.0.2 h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
+github.com/creachadair/otp v0.4.0 h1:3PBnESxegU3hQ0D447D75lSnTtTVfw6Eny8GviOXcqM=
+github.com/creachadair/otp v0.4.0/go.mod h1:mDkCUSoWN8zqxFoDMw20Boe6xeDd1jJuy6pNQQ4lCy4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -222,8 +224,6 @@ github.com/libp2p/go-libp2p v0.24.1 h1:+lS4fqj7RF9egcPq9Yo3iqdRTcDMApzoBbQMhxtwO
 github.com/libp2p/go-libp2p v0.24.1/go.mod h1:5LJqbrqFsUzWrq70JHCYqjATlX4ey8Klpct3OEe8hSI=
 github.com/libp2p/go-libp2p-asn-util v0.2.0 h1:rg3+Os8jbnO5DxkC7K/Utdi+DkY3q/d1/1q+8WeNAsw=
 github.com/libp2p/go-libp2p-asn-util v0.2.0/go.mod h1:WoaWxbHKBymSN41hWSq/lGKJEca7TNm58+gGJi2WsLI=
-github.com/libp2p/go-libp2p-core v0.20.1 h1:fQz4BJyIFmSZAiTbKV8qoYhEH5Dtv/cVhZbG3Ib/+Cw=
-github.com/libp2p/go-libp2p-core v0.20.1/go.mod h1:6zR8H7CvQWgYLsbG4on6oLNSGcyKaYFSEYyDt51+bIY=
 github.com/libp2p/go-libp2p-kad-dht v0.20.0 h1:1bcMa74JFwExCHZMFEmjtHzxX5DovhJ07EtR6UOTEpc=
 github.com/libp2p/go-libp2p-kad-dht v0.20.0/go.mod h1:qPIXdiZsLczhV4/+4EO1jE8ae0YCW4ZOogc4WVIyTEU=
 github.com/libp2p/go-libp2p-kbucket v0.5.0 h1:g/7tVm8ACHDxH29BGrpsQlnNeu+6OF1A9bno/4/U1oA=
@@ -305,8 +305,6 @@ github.com/mudler/go-processmanager v0.0.0-20220724164624-c45b5c61312d h1:/lAg9v
 github.com/mudler/go-processmanager v0.0.0-20220724164624-c45b5c61312d/go.mod h1:HGGAOJhipApckwNV8ZTliRJqxctUv3xRY+zbQEwuytc=
 github.com/mudler/gosigar v0.14.3-0.20220502202347-34be910bdaaf h1:hNa6C3a7+14a2qwMkYZbq94ddebYc8CloF2KOVytf+A=
 github.com/mudler/gosigar v0.14.3-0.20220502202347-34be910bdaaf/go.mod h1:iXRIGg2tLnu7LBdpqzyQfGDEidKCfWcCMS0WKyPWoMs=
-github.com/mudler/otp v0.0.0-20221028140802-168056309dfc h1:J7yENI2ZTlOOg+8Bkxd1jkgXJkwSgDWh1PkBBfYJkOI=
-github.com/mudler/otp v0.0.0-20221028140802-168056309dfc/go.mod h1:mDkCUSoWN8zqxFoDMw20Boe6xeDd1jJuy6pNQQ4lCy4=
 github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0 h1:Qh6ghkMgTu6siFbTf7L3IszJmshMhXxNL4V+t7IIA6w=
 github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0/go.mod h1:nViSE8jcOcraZwhi34joEqn7HYFISgs0M8/YujzY5Xk=
 github.com/multiformats/go-base32 v0.1.0 h1:pVx9xoSPqEIQG8o+UbAe7DNi51oej1NtK+aGkbLYxPE=
