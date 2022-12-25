@@ -179,7 +179,7 @@ func (e *Node) startNetwork(ctx context.Context) error {
 
 	for _, sd := range e.config.ServiceDiscovery {
 		if err := sd.Run(e.config.Logger, ctx, host); err != nil {
-			e.config.Logger.Fatal(err)
+			e.config.Logger.Fatal(fmt.Errorf("while starting service discovery %+v: '%w", sd, err))
 		}
 	}
 
