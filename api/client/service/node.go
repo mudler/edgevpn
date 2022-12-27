@@ -45,6 +45,7 @@ type Node struct {
 	networkToken                             string
 	apiAddress                               string
 	defaultRoles, persistentRoles, stopRoles string
+	minNode                                  int
 
 	assets []string
 	fs     embed.FS
@@ -62,6 +63,13 @@ func WithRoles(k ...RoleKey) Option {
 			m[kk.Role] = kk.RoleHandler
 		}
 		mm.roles = m
+		return nil
+	}
+}
+
+func WithMinNodes(i int) Option {
+	return func(k *Node) error {
+		k.minNode = i
 		return nil
 	}
 }
@@ -311,6 +319,11 @@ func (k *Node) Start(ctx context.Context) error {
 
 	k.client.Advertize(k.uuid)
 
+	minNode := 2
+	if k.minNode != 0 {
+		minNode = k.minNode
+	}
+
 	i := 0
 	for {
 		select {
@@ -340,8 +353,8 @@ func (k *Node) Start(ctx context.Context) error {
 			}
 
 			// Not enough nodes
-			if len(uuids) <= 1 {
-				k.logger.Info("not enough nodes available, sleeping...")
+			if len(uuids) < minNode {
+				k.logger.Infof("not enough nodes available, sleeping... needed: %d, available: %d", minNode, len(uuids))
 				continue
 			}
 
