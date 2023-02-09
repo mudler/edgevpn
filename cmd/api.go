@@ -42,7 +42,7 @@ A simple UI interface is available to display network data.`,
 			},
 			&cli.StringFlag{
 				Name:  "listen",
-				Value: ":8080",
+				Value: "127.0.0.1:8080",
 				Usage: "Listening address. To listen to a socket, prefix with unix://, e.g. unix:///socket.path",
 			},
 		),

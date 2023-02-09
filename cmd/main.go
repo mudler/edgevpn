@@ -69,7 +69,7 @@ func MainFlags() []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:   "api-listen",
-			Value:  ":8080",
+			Value:  "127.0.0.1:8080",
 			Usage:  "API listening port",
 			EnvVar: "APILISTEN",
 		},
