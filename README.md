@@ -99,7 +99,7 @@ Note, tokens are config merely encoded in base64, so this is equivalent:
 $ EDGEVPNTOKEN=$(edgevpn -g | tee config.yaml | base64 -w0)
 ```
 
-All edgevpn commands emplies that you either specify a `EDGEVPNTOKEN` (or `--token` as parameter) or a `EDGEVPNCONFIG` as this is the way for `edgevpn` to establish a network between the nodes. 
+All edgevpn commands implies that you either specify a `EDGEVPNTOKEN` (or `--token` as parameter) or a `EDGEVPNCONFIG` as this is the way for `edgevpn` to establish a network between the nodes. 
 
 The configuration file is the network definition and allows you to connect over to your peers securely.
 
@@ -130,11 +130,11 @@ $ EDGEVPNTOKEN=.. edgevpn --address 10.1.0.13/24
 
 EdgeVPN makes VPN decentralization a first strong requirement. 
 
-Its mainly use is for edge and low-end devices and especially for development.
+Its main use is for edge and low-end devices and especially for development.
 
 The decentralized approach has few cons:
 
-- The underlaying network is chatty. It uses a Gossip protocol for syncronizing the routing table and p2p. Every blockchain message is broadcasted to all peers, while the traffic is to the host only.
+- The underlying network is chatty. It uses a Gossip protocol for synchronizing the routing table and p2p. Every blockchain message is broadcasted to all peers, while the traffic is to the host only.
 - Might be not suited for low latency workload.
 
 Keep that in mind before using it for your prod networks!
@@ -147,7 +147,7 @@ First of all it's my first experiment with libp2p. Second, I always wanted a mor
 
 # :warning: Warning!
 
-I'm not a security expert, and this software didn't went through a full security audit, so don't use and rely it for sensible traffic and not even for production environment! I did this mostly for fun while I was experimenting with libp2p. 
+I'm not a security expert, and this software didn't went through a full security audit, so don't use and rely on it for sensible traffic and not even for production environment! I did this mostly for fun while I was experimenting with libp2p. 
 
 ## Example use case: network-decentralized [k3s](https://github.com/k3s-io/k3s) test cluster
 
