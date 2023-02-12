@@ -27,7 +27,7 @@ It can:
 - **Be used as a library**
   - Plug a distributed p2p ledger easily in your golang code!
 
-Check out the docs below for further example and reference, have a look at our [getting started guide]({{< relref "/docs">}}/getting-started), the [cli interface]({{< relref "/docs">}}/getting-started/cli), [gui desktop app]({{< relref "/docs">}}/getting-started/gui), and the embedde [WebUI/API]({{< relref "/docs">}}/getting-started/api/).
+Check out the docs below for further example and reference, have a look at our [getting started guide]({{< relref "/docs">}}/getting-started), the [cli interface]({{< relref "/docs">}}/getting-started/cli), [gui desktop app]({{< relref "/docs">}}/getting-started/gui), and the embedded [WebUI/API]({{< relref "/docs">}}/getting-started/api/).
 
 
 | [WebUI]({{< relref "/docs">}}/getting-started/api)            | [Desktop](https://github.com/mudler/edgevpn-gui)                                          |
