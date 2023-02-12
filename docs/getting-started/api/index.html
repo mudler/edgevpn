@@ -27,12 +27,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://mudler.github.io/edgevpn/docs/getting-started/api/" /><meta property="article:section" content="docs" />
 
-<meta property="article:modified_time" content="2023-02-12T14:42:17+01:00" /><meta property="og:site_name" content="EdgeVPN" />
+<meta property="article:modified_time" content="2023-02-12T18:28:27+01:00" /><meta property="og:site_name" content="EdgeVPN" />
 
 <meta itemprop="name" content="WebUI and API">
 <meta itemprop="description" content="Query the network status and operate the ledger with the built-in API
 ">
-<meta itemprop="dateModified" content="2023-02-12T14:42:17+01:00" />
+<meta itemprop="dateModified" content="2023-02-12T18:28:27+01:00" />
 <meta itemprop="wordCount" content="328">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="WebUI and API"/>
@@ -122,7 +122,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="/edgevpn/offline-search-index.38026b52b930f9604e0fa1ab425d9ac3.json"
+  data-offline-search-index-json-src="/edgevpn/offline-search-index.086d03c51455a64ed0858b9f238a5724.json"
   data-offline-search-base-href="/"
   data-offline-search-max-results="10"
 >
@@ -144,7 +144,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="/edgevpn/offline-search-index.38026b52b930f9604e0fa1ab425d9ac3.json"
+  data-offline-search-index-json-src="/edgevpn/offline-search-index.086d03c51455a64ed0858b9f238a5724.json"
   data-offline-search-base-href="/"
   data-offline-search-max-results="10"
 >
@@ -362,7 +362,7 @@ $ curl -X PUT <span style="color:#4e9a06">&#39;http://localhost:8080/api/peergat
      <span style="color:#204a87;font-weight:bold">&#34;AAAA&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;...&#34;</span><span style="color:#000;font-weight:bold">,</span>
   <span style="color:#000;font-weight:bold">},</span>
 <span style="color:#000;font-weight:bold">}</span>
-</code></pre></div><p>Takes a regex and a set of records and registers then to the blockchain.</p>
+</code></pre></div><p>Takes a regex and a set of records and registers them to the blockchain.</p>
 <p>The DNS table in the ledger will be used by the embedded DNS server to handle requests locally.</p>
 <p>To create a new entry, for example:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ curl -X POST http://localhost:8080/api/dns --header <span style="color:#4e9a06">&#34;Content-Type: application/json&#34;</span> -d <span style="color:#4e9a06">&#39;{ &#34;Regex&#34;: &#34;foo.bar&#34;, &#34;Records&#34;: { &#34;A&#34;: &#34;2.2.2.2&#34; } }&#39;</span>
@@ -442,7 +442,7 @@ $ curl -X PUT <span style="color:#4e9a06">&#39;http://localhost:8080/api/peergat
 	
 	
 	<div class="text-muted mt-5 pt-3 border-top">
-  Last modified February 12, 2023: <a href="https://github.com/mudler/edgevpn/commit/1c4b64f17a1d2033ef2197bcb67dd266c98fb790">Merge pull request #51 from mudler/bump_libp2p (1c4b64f)</a>
+  Last modified February 12, 2023: <a href="https://github.com/mudler/edgevpn/commit/14e36cd9b469aa0e73b2aa0c786baf77f95948fa">Merge pull request #52 from omahs/patch-1 (14e36cd)</a>
 </div>
 
 </div>

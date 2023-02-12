@@ -195,7 +195,7 @@ $ curl -X PUT &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;http://localhos
      &lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;&amp;#34;AAAA&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;...&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;,&lt;/span&gt;
   &lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;},&lt;/span&gt;
 &lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Takes a regex and a set of records and registers then to the blockchain.&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Takes a regex and a set of records and registers them to the blockchain.&lt;/p&gt;
 &lt;p&gt;The DNS table in the ledger will be used by the embedded DNS server to handle requests locally.&lt;/p&gt;
 &lt;p&gt;To create a new entry, for example:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ curl -X POST http://localhost:8080/api/dns --header &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;Content-Type: application/json&amp;#34;&lt;/span&gt; -d &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;{ &amp;#34;Regex&amp;#34;: &amp;#34;foo.bar&amp;#34;, &amp;#34;Records&amp;#34;: { &amp;#34;A&amp;#34;: &amp;#34;2.2.2.2&amp;#34; } }&amp;#39;&lt;/span&gt;
