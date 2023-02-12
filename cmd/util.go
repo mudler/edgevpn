@@ -26,12 +26,13 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/peer"
 	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/config"
 	nodeConfig "github.com/mudler/edgevpn/pkg/config"
+	"github.com/multiformats/go-multiaddr"
 
 	"github.com/mudler/edgevpn/pkg/logger"
 	node "github.com/mudler/edgevpn/pkg/node"
@@ -239,7 +240,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:   "limit-file",
-		Usage:  "Specify an limit config (json)",
+		Usage:  "Specify a resource limit config (json)",
 		EnvVar: "LIMITFILE",
 	},
 	&cli.StringFlag{
@@ -249,12 +250,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Value:  "system",
 	},
 	&cli.BoolFlag{
-		Name:   "limit-config",
-		Usage:  "Enable inline resource limit configuration",
-		EnvVar: "LIMITCONFIG",
-	},
-	&cli.BoolFlag{
-		Name:   "limit-enable",
+		Name:   "resource-limit",
 		Usage:  "Enable resource manager. (Experimental) All options prefixed with limit requires resource manager to be enabled",
 		EnvVar: "LIMITENABLE",
 	},
@@ -321,6 +317,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "List of static peers to use (in `ip:peerid` format)",
 		EnvVar: "EDGEVPNSTATICPEERTABLE",
 	},
+	&cli.StringSliceFlag{
+		Name:   "whitelist",
+		Usage:  "List of peers in the whitelist",
+		EnvVar: "EDGEVPNWHITELIST",
+	},
 	&cli.BoolFlag{
 		Name:   "peergate",
 		Usage:  "Enable peergating. (Experimental)",
@@ -367,29 +368,25 @@ func displayStart(ll *logger.Logger) {
 	ll.Infof("Version: %s commit: %s", internal.Version, internal.Commit)
 }
 
+func stringsToMultiAddr(peers []string) []multiaddr.Multiaddr {
+	res := []multiaddr.Multiaddr{}
+	for _, p := range peers {
+		addr, err := multiaddr.NewMultiaddr(p)
+		if err != nil {
+			continue
+		}
+		res = append(res, addr)
+	}
+	return res
+}
+
 func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 
-	var limitConfig *rcmgr.LimitConfig
+	var limitConfig *rcmgr.PartialLimitConfig
 
 	autorelayInterval, err := time.ParseDuration(c.String("autorelay-discovery-interval"))
 	if err != nil {
 		autorelayInterval = 0
-	}
-
-	if c.Bool("limit-config") {
-		limitConfig = &rcmgr.LimitConfig{
-
-			System: rcmgr.BaseLimit{
-				Streams:         c.Int("limit-config-streams"),
-				StreamsInbound:  c.Int("limit-config-streams-inbound"),
-				StreamsOutbound: c.Int("limit-config-streams-outbound"),
-				Conns:           c.Int("limit-config-conn"),
-				ConnsInbound:    c.Int("limit-config-conn-inbound"),
-				ConnsOutbound:   c.Int("limit-config-conn-outbound"),
-				FD:              c.Int("limit-config-fd"),
-				Memory:          c.Int64("limit-config-memory"),
-			},
-		}
 	}
 
 	// Authproviders are supposed to be passed as a json object
@@ -413,6 +410,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		InterfaceMTU:      c.Int("mtu"),
 		PacketMTU:         c.Int("packet-mtu"),
 		BootstrapIface:    c.Bool("bootstrap-iface"),
+		Whitelist:         stringsToMultiAddr(c.StringSlice("whitelist")),
 		Ledger: config.Ledger{
 			StateDir:         c.String("ledger-state"),
 			AnnounceInterval: time.Duration(c.Int("ledger-announce-interval")) * time.Second,

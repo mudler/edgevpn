@@ -40,6 +40,7 @@ import (
 	"github.com/mudler/edgevpn/pkg/trustzone/authprovider/ecdsa"
 	"github.com/mudler/edgevpn/pkg/vpn"
 	"github.com/mudler/water"
+	"github.com/multiformats/go-multiaddr"
 	"github.com/peterbourgon/diskv"
 )
 
@@ -65,6 +66,8 @@ type Config struct {
 	// PeerGuard (experimental)
 	// enable peerguardian and add specific auth options
 	PeerGuard PeerGuard
+
+	Whitelist []multiaddr.Multiaddr
 }
 
 type PeerGuard struct {
@@ -81,7 +84,7 @@ type PeerGuard struct {
 
 type ResourceLimit struct {
 	FileLimit   string
-	LimitConfig *rcmgr.LimitConfig
+	LimitConfig *rcmgr.PartialLimitConfig
 	Scope       string
 	MaxConns    int
 	StaticMin   int64
@@ -147,6 +150,7 @@ func peers2List(peers []string) discovery.AddrList {
 	}
 	return addrsList
 }
+
 func peers2AddrInfo(peers []string) []peer.AddrInfo {
 	addrsList := []peer.AddrInfo{}
 	for _, p := range peers {
@@ -255,7 +259,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		}
 		// If no relays are specified and no discovery interval, then just use default static relays (to be deprecated)
 
-		relayOpts = append(relayOpts, autorelay.WithPeerSource(d.FindClosePeers(llger, c.Connection.OnlyStaticRelays, staticRelays...), c.Connection.AutoRelayDiscoveryInterval))
+		relayOpts = append(relayOpts, autorelay.WithPeerSource(d.FindClosePeers(llger, c.Connection.OnlyStaticRelays, staticRelays...)))
 
 		libp2pOpts = append(libp2pOpts,
 			libp2p.EnableAutoRelay(relayOpts...))
@@ -291,7 +295,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	}
 
 	if !c.Limit.Enable || runtime.GOOS == "darwin" {
-		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(network.NullResourceManager))
+		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(&network.NullResourceManager{}))
 	} else {
 		var limiter rcmgr.Limiter
 
@@ -322,7 +326,6 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			defaultLimits := rcmgr.DefaultLimits.Scale(min+max/2, logScale(2*maxconns))
 
 			limiter = rcmgr.NewFixedLimiter(defaultLimits)
-
 		} else {
 			defaults := rcmgr.DefaultLimits
 			def := &defaults
@@ -331,15 +334,9 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			limiter = rcmgr.NewFixedLimiter(def.AutoScale())
 		}
 
-		rc, err := rcmgr.NewResourceManager(limiter)
+		rc, err := rcmgr.NewResourceManager(limiter, rcmgr.WithAllowlistedMultiaddrs(c.Whitelist))
 		if err != nil {
 			llger.Fatal("could not create resource manager")
-		}
-
-		if c.Limit.LimitConfig != nil {
-			if err := node.NetSetLimit(rc, c.Limit.Scope, &c.Limit.LimitConfig.System); err != nil {
-				return opts, vpnOpts, err
-			}
 		}
 
 		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(rc))
