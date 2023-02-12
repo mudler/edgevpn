@@ -108,7 +108,7 @@ The endpoint accept a JSON payload of the following form:
 }
 ```
 
-Takes a regex and a set of records and registers then to the blockchain.
+Takes a regex and a set of records and registers them to the blockchain.
 
 The DNS table in the ledger will be used by the embedded DNS server to handle requests locally.
 
