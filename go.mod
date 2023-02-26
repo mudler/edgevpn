@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/benbjohnson/clock v1.3.0
-	github.com/c-robinson/iplib v1.0.3
+	github.com/c-robinson/iplib v1.0.6
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/creachadair/otp v0.4.0
 	github.com/google/gopacket v1.1.19
