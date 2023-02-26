@@ -113,7 +113,6 @@ type Connection struct {
 	AutoRelay bool
 
 	AutoRelayDiscoveryInterval time.Duration
-	RelayV1                    bool
 	StaticRelays               []string
 	OnlyStaticRelays           bool
 
@@ -248,9 +247,6 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	// AutoRelay section configuration
 	if c.Connection.AutoRelay {
 		relayOpts := []autorelay.Option{}
-		if c.Connection.RelayV1 {
-			relayOpts = append(relayOpts, autorelay.WithCircuitV1Support())
-		}
 
 		staticRelays := c.Connection.StaticRelays
 

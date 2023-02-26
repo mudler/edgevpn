@@ -148,11 +148,6 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Automatically act as a relay if the node can accept inbound connections",
 		EnvVar: "EDGEVPNAUTORELAY",
 	},
-	&cli.BoolFlag{
-		Name:   "autorelay-v1",
-		Usage:  "Enable autorelay v1 circuits",
-		EnvVar: "EDGEVPNAUTORELAYV1",
-	},
 	&cli.IntFlag{
 		Name:  "concurrency",
 		Usage: "Number of concurrent requests to serve",
@@ -432,7 +427,6 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		},
 		Connection: config.Connection{
 			AutoRelay:                  c.Bool("autorelay"),
-			RelayV1:                    c.Bool("autorelay-v1"),
 			MaxConnections:             c.Int("max-connections"),
 			HolePunch:                  c.Bool("holepunch"),
 			Mplex:                      c.Bool("mplex-multiplexer"),
