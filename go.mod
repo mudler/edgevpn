@@ -26,7 +26,8 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
-	github.com/urfave/cli v1.22.12
+	github.com/urfave/cli v1.22.2
+	github.com/urfave/cli/v2 v2.24.4
 	github.com/vishvananda/netlink v1.1.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/sys v0.5.0
