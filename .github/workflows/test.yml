@@ -27,13 +27,13 @@ jobs:
 
 
       - name: Upload results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: connection
           path: config.yaml
           if-no-files-found: error
       - name: Upload results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: edgevpn
           path: edgevpn
