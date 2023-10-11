@@ -18,7 +18,7 @@ require (
 	github.com/libp2p/go-libp2p-kad-dht v0.24.2
 	github.com/libp2p/go-libp2p-pubsub v0.9.3
 	github.com/miekg/dns v1.1.54
-	github.com/mudler/go-processmanager v0.0.0-20220724164624-c45b5c61312d
+	github.com/mudler/go-processmanager v0.0.0-20230818213616-f204007f963c
 	github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0
 	github.com/multiformats/go-multiaddr v0.9.0
 	github.com/onsi/ginkgo/v2 v2.13.0
@@ -53,6 +53,7 @@ require (
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -95,6 +96,7 @@ require (
 	github.com/libp2p/go-reuseport v0.3.0 // indirect
 	github.com/libp2p/go-yamux/v4 v4.0.0 // indirect
 	github.com/libp2p/zeroconf/v2 v2.2.0 // indirect
+	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
@@ -118,6 +120,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/polydawn/refmt v0.89.0 // indirect
+	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
@@ -129,14 +132,19 @@ require (
 	github.com/quic-go/webtransport-go v0.5.3 // indirect
 	github.com/raulk/go-watchdog v1.3.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/shirou/gopsutil/v3 v3.23.7 // indirect
+	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
+	github.com/tklauser/go-sysconf v0.3.11 // indirect
+	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
+	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel v1.16.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
