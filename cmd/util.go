@@ -178,11 +178,6 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Enable low profile. Lowers connections usage",
 		EnvVar: "EDGEVPNLOWPROFILE",
 	},
-	&cli.BoolFlag{
-		Name:   "mplex-multiplexer",
-		Usage:  "Enable mplex multiplexer.",
-		EnvVar: "EDGEVPNMPLEX",
-	},
 	&cli.IntFlag{
 		Name:   "aliveness-healthcheck-interval",
 		Usage:  "Healthcheck interval",
@@ -233,6 +228,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Specify an edgevpn token in place of a config file",
 		EnvVar: "EDGEVPNTOKEN",
 	},
+	&cli.BoolFlag{
+		Name:   "limit-enable",
+		Usage:  "Enable resource management",
+		EnvVar: "LIMITENABLE",
+	},
 	&cli.StringFlag{
 		Name:   "limit-file",
 		Usage:  "Specify a resource limit config (json)",
@@ -243,11 +243,6 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Specify a limit scope",
 		EnvVar: "LIMITSCOPE",
 		Value:  "system",
-	},
-	&cli.BoolFlag{
-		Name:   "resource-limit",
-		Usage:  "Enable resource manager. (Experimental) All options prefixed with limit requires resource manager to be enabled",
-		EnvVar: "LIMITENABLE",
 	},
 	&cli.IntFlag{
 		Name:   "limit-config-streams",
@@ -429,7 +424,6 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			AutoRelay:                  c.Bool("autorelay"),
 			MaxConnections:             c.Int("max-connections"),
 			HolePunch:                  c.Bool("holepunch"),
-			Mplex:                      c.Bool("mplex-multiplexer"),
 			StaticRelays:               c.StringSlice("autorelay-static-peer"),
 			AutoRelayDiscoveryInterval: autorelayInterval,
 			OnlyStaticRelays:           c.Bool("autorelay-static-only"),

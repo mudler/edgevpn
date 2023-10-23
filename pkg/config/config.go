@@ -28,8 +28,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
 	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
-	mplex "github.com/libp2p/go-libp2p/p2p/muxer/mplex"
-	yamux "github.com/libp2p/go-libp2p/p2p/muxer/yamux"
 	connmanager "github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/crypto"
@@ -118,7 +116,6 @@ type Connection struct {
 
 	PeerTable map[string]peer.ID
 
-	Mplex          bool
 	MaxConnections int
 }
 
@@ -161,6 +158,8 @@ func peers2AddrInfo(peers []string) []peer.AddrInfo {
 	}
 	return addrsList
 }
+
+var infiniteResourceLimits = rcmgr.InfiniteLimits.ToPartialLimitConfig().System
 
 // ToOpts returns node and vpn options from a configuration
 func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
@@ -261,14 +260,6 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			libp2p.EnableAutoRelay(relayOpts...))
 	}
 
-	if c.Connection.Mplex {
-		libp2pOpts = append(libp2pOpts,
-			libp2p.ChainOptions(
-				libp2p.Muxer("/yamux/1.0.0", yamux.DefaultTransport),
-				libp2p.Muxer("/mplex/6.7.0", mplex.DefaultTransport),
-			))
-	}
-
 	if c.NAT.RateLimit {
 		libp2pOpts = append(libp2pOpts, libp2p.AutoNATServiceRateLimit(
 			c.NAT.RateLimitGlobal,
@@ -291,8 +282,11 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	}
 
 	if !c.Limit.Enable || runtime.GOOS == "darwin" {
+		llger.Info("go-libp2p resource manager protection disabled")
 		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(&network.NullResourceManager{}))
 	} else {
+		llger.Info("go-libp2p resource manager protection enabled")
+
 		var limiter rcmgr.Limiter
 
 		if c.Limit.FileLimit != "" {
@@ -308,6 +302,91 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			}
 
 			limiter = l
+		} else if c.Limit.MaxConns == -1 {
+			llger.Infof("max connections: unlimited")
+
+			scalingLimits := rcmgr.DefaultLimits
+
+			// Add limits around included libp2p protocols
+			libp2p.SetDefaultServiceLimits(&scalingLimits)
+
+			// Turn the scaling limits into a concrete set of limits using `.AutoScale`. This
+			// scales the limits proportional to your system memory.
+			scaledDefaultLimits := scalingLimits.AutoScale()
+
+			// Tweak certain settings
+			cfg := rcmgr.PartialLimitConfig{
+				System: rcmgr.ResourceLimits{
+					Memory: rcmgr.Unlimited64,
+					FD:     rcmgr.Unlimited,
+
+					Conns:         rcmgr.Unlimited,
+					ConnsInbound:  rcmgr.Unlimited,
+					ConnsOutbound: rcmgr.Unlimited,
+
+					Streams:         rcmgr.Unlimited,
+					StreamsOutbound: rcmgr.Unlimited,
+					StreamsInbound:  rcmgr.Unlimited,
+				},
+
+				// Transient connections won't cause any memory to be accounted for by the resource manager/accountant.
+				// Only established connections do.
+				// As a result, we can't rely on System.Memory to protect us from a bunch of transient connection being opened.
+				// We limit the same values as the System scope, but only allow the Transient scope to take 25% of what is allowed for the System scope.
+				Transient: rcmgr.ResourceLimits{
+					Memory:        rcmgr.Unlimited64,
+					FD:            rcmgr.Unlimited,
+					Conns:         rcmgr.Unlimited,
+					ConnsInbound:  rcmgr.Unlimited,
+					ConnsOutbound: rcmgr.Unlimited,
+
+					Streams:         rcmgr.Unlimited,
+					StreamsInbound:  rcmgr.Unlimited,
+					StreamsOutbound: rcmgr.Unlimited,
+				},
+
+				// Lets get out of the way of the allow list functionality.
+				// If someone specified "Swarm.ResourceMgr.Allowlist" we should let it go through.
+				AllowlistedSystem: infiniteResourceLimits,
+
+				AllowlistedTransient: infiniteResourceLimits,
+
+				// Keep it simple by not having Service, ServicePeer, Protocol, ProtocolPeer, Conn, or Stream limits.
+				ServiceDefault: infiniteResourceLimits,
+
+				ServicePeerDefault: infiniteResourceLimits,
+
+				ProtocolDefault: infiniteResourceLimits,
+
+				ProtocolPeerDefault: infiniteResourceLimits,
+
+				Conn: infiniteResourceLimits,
+
+				Stream: infiniteResourceLimits,
+
+				// Limit the resources consumed by a peer.
+				// This doesn't protect us against intentional DoS attacks since an attacker can easily spin up multiple peers.
+				// We specify this limit against unintentional DoS attacks (e.g., a peer has a bug and is sending too much traffic intentionally).
+				// In that case we want to keep that peer's resource consumption contained.
+				// To keep this simple, we only constrain inbound connections and streams.
+				PeerDefault: rcmgr.ResourceLimits{
+					Memory:          rcmgr.Unlimited64,
+					FD:              rcmgr.Unlimited,
+					Conns:           rcmgr.Unlimited,
+					ConnsInbound:    rcmgr.DefaultLimit,
+					ConnsOutbound:   rcmgr.Unlimited,
+					Streams:         rcmgr.Unlimited,
+					StreamsInbound:  rcmgr.DefaultLimit,
+					StreamsOutbound: rcmgr.Unlimited,
+				},
+			}
+
+			// Create our limits by using our cfg and replacing the default values with values from `scaledDefaultLimits`
+			limits := cfg.Build(scaledDefaultLimits)
+
+			// The resource manager expects a limiter, se we create one from our limits.
+			limiter = rcmgr.NewFixedLimiter(limits)
+
 		} else if c.Limit.MaxConns != 0 {
 			min := int64(1 << 30)
 			max := int64(4 << 30)
@@ -320,9 +399,12 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			maxconns := int(c.Limit.MaxConns)
 
 			defaultLimits := rcmgr.DefaultLimits.Scale(min+max/2, logScale(2*maxconns))
+			llger.Infof("max connections: %d", c.Limit.MaxConns)
 
 			limiter = rcmgr.NewFixedLimiter(defaultLimits)
 		} else {
+			llger.Infof("max connections: defaults limits")
+
 			defaults := rcmgr.DefaultLimits
 			def := &defaults
 
