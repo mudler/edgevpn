@@ -178,11 +178,6 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Enable low profile. Lowers connections usage",
 		EnvVar: "EDGEVPNLOWPROFILE",
 	},
-	&cli.BoolFlag{
-		Name:   "mplex-multiplexer",
-		Usage:  "Enable mplex multiplexer.",
-		EnvVar: "EDGEVPNMPLEX",
-	},
 	&cli.IntFlag{
 		Name:   "aliveness-healthcheck-interval",
 		Usage:  "Healthcheck interval",
@@ -218,6 +213,18 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "List of discovery peers to use",
 		EnvVar: "EDGEVPNBOOTSTRAPPEERS",
 	},
+	&cli.IntFlag{
+		Name:   "connection-high-water",
+		Usage:  "max number of connection allowed",
+		EnvVar: "EDGEVPN_CONNECTION_HIGH_WATER",
+		Value:  0,
+	},
+	&cli.IntFlag{
+		Name:   "connection-low-water",
+		Usage:  "low number of connection allowed",
+		EnvVar: "EDGEVPN_CONNECTION_LOW_WATER",
+		Value:  0,
+	},
 	&cli.StringSliceFlag{
 		Name:   "autorelay-static-peer",
 		Usage:  "List of autorelay static peers to use",
@@ -233,6 +240,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Specify an edgevpn token in place of a config file",
 		EnvVar: "EDGEVPNTOKEN",
 	},
+	&cli.BoolFlag{
+		Name:   "limit-enable",
+		Usage:  "Enable resource management",
+		EnvVar: "LIMITENABLE",
+	},
 	&cli.StringFlag{
 		Name:   "limit-file",
 		Usage:  "Specify a resource limit config (json)",
@@ -243,11 +255,6 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "Specify a limit scope",
 		EnvVar: "LIMITSCOPE",
 		Value:  "system",
-	},
-	&cli.BoolFlag{
-		Name:   "resource-limit",
-		Usage:  "Enable resource manager. (Experimental) All options prefixed with limit requires resource manager to be enabled",
-		EnvVar: "LIMITENABLE",
 	},
 	&cli.IntFlag{
 		Name:   "limit-config-streams",
@@ -429,10 +436,11 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			AutoRelay:                  c.Bool("autorelay"),
 			MaxConnections:             c.Int("max-connections"),
 			HolePunch:                  c.Bool("holepunch"),
-			Mplex:                      c.Bool("mplex-multiplexer"),
 			StaticRelays:               c.StringSlice("autorelay-static-peer"),
 			AutoRelayDiscoveryInterval: autorelayInterval,
 			OnlyStaticRelays:           c.Bool("autorelay-static-only"),
+			HighWater:                  c.Int("connection-high-water"),
+			LowWater:                   c.Int("connection-low-water"),
 		},
 		Limit: config.ResourceLimit{
 			Enable:      c.Bool("limit-enable"),
