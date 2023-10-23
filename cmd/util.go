@@ -213,6 +213,18 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:  "List of discovery peers to use",
 		EnvVar: "EDGEVPNBOOTSTRAPPEERS",
 	},
+	&cli.IntFlag{
+		Name:   "connection-high-water",
+		Usage:  "max number of connection allowed",
+		EnvVar: "EDGEVPN_CONNECTION_HIGH_WATER",
+		Value:  0,
+	},
+	&cli.IntFlag{
+		Name:   "connection-low-water",
+		Usage:  "low number of connection allowed",
+		EnvVar: "EDGEVPN_CONNECTION_LOW_WATER",
+		Value:  0,
+	},
 	&cli.StringSliceFlag{
 		Name:   "autorelay-static-peer",
 		Usage:  "List of autorelay static peers to use",
@@ -427,6 +439,8 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			StaticRelays:               c.StringSlice("autorelay-static-peer"),
 			AutoRelayDiscoveryInterval: autorelayInterval,
 			OnlyStaticRelays:           c.Bool("autorelay-static-only"),
+			HighWater:                  c.Int("connection-high-water"),
+			LowWater:                   c.Int("connection-low-water"),
 		},
 		Limit: config.ResourceLimit{
 			Enable:      c.Bool("limit-enable"),

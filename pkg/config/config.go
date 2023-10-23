@@ -117,6 +117,9 @@ type Connection struct {
 	PeerTable map[string]peer.ID
 
 	MaxConnections int
+
+	LowWater  int
+	HighWater int
 }
 
 // NAT is the structure relative to NAT configuration settings
@@ -268,10 +271,21 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		))
 	}
 
-	if c.Connection.MaxConnections != 0 {
+	if c.Connection.LowWater != 0 && c.Connection.HighWater != 0 {
 		cm, err := connmanager.NewConnManager(
-			1,
-			c.Connection.MaxConnections,
+			c.Connection.LowWater,
+			c.Connection.HighWater,
+			connmanager.WithGracePeriod(80*time.Second),
+		)
+		if err != nil {
+			llger.Fatal("could not create connection manager")
+		}
+
+		libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
+	} else {
+		cm, err := connmanager.NewConnManager(
+			9999999999,
+			9999999999,
 			connmanager.WithGracePeriod(80*time.Second),
 		)
 		if err != nil {
