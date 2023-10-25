@@ -121,9 +121,82 @@ func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 		opts = append(opts, libp2p.NoSecurity)
 	}
 
-	opts = append(opts, libp2p.FallbackDefaults)
+	opts = append(opts, FallbackDefaults)
 
 	return libp2p.New(opts...)
+}
+
+// FallbackDefaults applies default options to the libp2p node if and only if no
+// other relevant options have been applied. will be appended to the options
+// passed into New.
+var FallbackDefaults libp2p.Option = func(cfg *libp2p.Config) error {
+	for _, def := range defaults {
+		if !def.fallback(cfg) {
+			continue
+		}
+		if err := cfg.Apply(def.opt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Complete list of default options and when to fallback on them.
+//
+// Please *DON'T* specify default options any other way. Putting this all here
+// makes tracking defaults *much* easier.
+var defaults = []struct {
+	fallback func(cfg *libp2p.Config) bool
+	opt      libp2p.Option
+}{
+	{
+		fallback: func(cfg *libp2p.Config) bool { return cfg.Transports == nil && cfg.ListenAddrs == nil },
+		opt:      libp2p.DefaultListenAddrs,
+	},
+	{
+		fallback: func(cfg *libp2p.Config) bool { return cfg.Transports == nil && cfg.PSK == nil },
+		opt:      libp2p.DefaultTransports,
+	},
+	{
+		fallback: func(cfg *libp2p.Config) bool { return cfg.Transports == nil && cfg.PSK != nil },
+		opt:      libp2p.DefaultPrivateTransports,
+	},
+	{
+		fallback: func(cfg *libp2p.Config) bool { return cfg.Muxers == nil },
+		opt:      libp2p.DefaultMuxers,
+	},
+	{
+		fallback: func(cfg *libp2p.Config) bool { return !cfg.Insecure && cfg.SecurityTransports == nil },
+		opt:      libp2p.DefaultSecurity,
+	},
+	{
+		fallback: func(cfg *libp2p.Config) bool { return cfg.PeerKey == nil },
+		opt:      libp2p.RandomIdentity,
+	},
+	{
+		fallback: func(cfg *libp2p.Config) bool { return cfg.Peerstore == nil },
+		opt:      libp2p.DefaultPeerstore,
+	},
+	{
+		fallback: func(cfg *libp2p.Config) bool { return !cfg.RelayCustom },
+		opt:      libp2p.DefaultEnableRelay,
+	},
+	//{
+	//	fallback: func(cfg *libp2p.Config) bool { return cfg.ResourceManager == nil },
+	//	opt:      libp2p.DefaultResourceManager,
+	//},
+	//{
+	//	fallback: func(cfg *libp2p.Config) bool { return cfg.ConnManager == nil },
+	//	opt:      libp2p.DefaultConnectionManager,
+	//},
+	{
+		fallback: func(cfg *libp2p.Config) bool { return cfg.MultiaddrResolver == nil },
+		opt:      libp2p.DefaultMultiaddrResolver,
+	},
+	//{
+	//	fallback: func(cfg *libp2p.Config) bool { return !cfg.DisableMetrics && cfg.PrometheusRegisterer == nil },
+	//	opt:      libp2p.DefaultPrometheusRegisterer,
+	//},
 }
 
 func (e *Node) sealkey() string {

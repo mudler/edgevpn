@@ -154,9 +154,7 @@ func streamHandler(l *blockchain.Ledger, ifce *water.Interface, c *Config, nc no
 		if err != nil {
 			stream.Reset()
 		}
-		if c.lowProfile {
-			stream.Close()
-		}
+		stream.Close()
 	}
 }
 
@@ -260,15 +258,13 @@ func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Nod
 	if err != nil {
 		return fmt.Errorf("could not open stream to %s: %w", d.String(), err)
 	}
+	defer stream.Close()
 
 	if mgr != nil {
 		mgr.Connected(n.Host().Network(), stream)
 	}
 
 	_, err = stream.Write(frame)
-	if c.lowProfile {
-		return stream.Close()
-	}
 	return err
 }
 
