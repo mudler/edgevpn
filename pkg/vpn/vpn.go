@@ -70,7 +70,7 @@ func VPNNetworkService(p ...Option) node.NetworkService {
 
 		var mgr streamManager
 
-		if !c.lowProfile {
+		if c.lowProfile {
 			// Create stream manager for outgoing connections
 			mgr, err = stream.NewConnManager(10, c.MaxStreams)
 			if err != nil {
