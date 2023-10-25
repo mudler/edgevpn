@@ -42,11 +42,6 @@ import (
 	"github.com/peterbourgon/diskv"
 )
 
-const MaxUint = ^uint(0)
-const MinUint = 0
-const MaxInt = int(MaxUint >> 1)
-const MinInt = -MaxInt - 1
-
 // Config is the config struct for the node and the default EdgeVPN services
 // It is used to generate opts for the node and the services before start.
 type Config struct {
@@ -282,18 +277,6 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		cm, err := connmanager.NewConnManager(
 			c.Connection.LowWater,
 			c.Connection.HighWater,
-			connmanager.WithGracePeriod(80*time.Second),
-		)
-		if err != nil {
-			llger.Fatal("could not create connection manager")
-		}
-
-		libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
-	} else {
-		llger.Infof("connmanager low-hi connections: %d", MaxInt)
-		cm, err := connmanager.NewConnManager(
-			MaxInt,
-			MaxInt,
 			connmanager.WithGracePeriod(80*time.Second),
 		)
 		if err != nil {
