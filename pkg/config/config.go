@@ -288,6 +288,8 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		llger.Infof("connmanager disabled")
 	}
 
+	libp2pOpts = append(libp2pOpts, libp2p.DisableMetrics())
+
 	if !c.Limit.Enable || runtime.GOOS == "darwin" {
 		llger.Info("go-libp2p resource manager protection disabled")
 		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(&network.NullResourceManager{}))
