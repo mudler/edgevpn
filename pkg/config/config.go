@@ -284,6 +284,8 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		}
 
 		libp2pOpts = append(libp2pOpts, libp2p.ConnectionManager(cm))
+	} else {
+		llger.Infof("connmanager disabled")
 	}
 
 	if !c.Limit.Enable || runtime.GOOS == "darwin" {

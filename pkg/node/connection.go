@@ -123,7 +123,7 @@ func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 
 	opts = append(opts, FallbackDefaults)
 
-	return libp2p.New(opts...)
+	return libp2p.NewWithoutDefaults(opts...)
 }
 
 // FallbackDefaults applies default options to the libp2p node if and only if no
