@@ -103,6 +103,8 @@ func (e *Node) genHost(ctx context.Context) (host.Host, error) {
 	}
 
 	opts = append(opts, libp2p.ConnectionGater(cg), libp2p.Identity(prvKey))
+	// Do not enable metrics for now
+	opts = append(opts, libp2p.DisableMetrics())
 
 	addrs := []multiaddr.Multiaddr{}
 	for _, l := range e.config.ListenAddresses {
