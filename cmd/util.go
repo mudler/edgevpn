@@ -382,7 +382,7 @@ func stringsToMultiAddr(peers []string) []multiaddr.Multiaddr {
 	return res
 }
 
-func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
+func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *log.StandardLogger) {
 
 	var limitConfig *rcmgr.PartialLimitConfig
 
@@ -511,12 +511,12 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		nc.Connection.PeerTable[dat[0]] = peer.ID(dat[1])
 	}
 
-	nodeOpts, vpnOpts, err := nc.ToOpts(llger)
+	nodeOpts, vpnOpts, err := nc.ToOpts()
 	if err != nil {
 		llger.Fatal(err.Error())
 	}
 
-	return nodeOpts, vpnOpts, llger
+	return nodeOpts, vpnOpts, &llger
 }
 
 func handleStopSignals() {
