@@ -17,13 +17,16 @@ limitations under the License.
 package vpn
 
 import (
+	"net"
+	"os/exec"
+	"strconv"
+
 	"github.com/mudler/water"
-	"github.com/vishvananda/netlink"
 )
 
 func createInterface(c *Config) (*water.Interface, error) {
 	config := water.Config{
-		DeviceType: c.DeviceType,
+		DeviceType: water.TUN,
 	}
 	config.Name = c.InterfaceName
 
@@ -31,28 +34,39 @@ func createInterface(c *Config) (*water.Interface, error) {
 }
 
 func prepareInterface(c *Config) error {
-	link, err := netlink.LinkByName(c.InterfaceName)
-	if err != nil {
-		return err
-	}
-	addr, err := netlink.ParseAddr(c.InterfaceAddress)
+	iface, err := net.InterfaceByName(c.InterfaceName)
 	if err != nil {
 		return err
 	}
 
-	err = netlink.LinkSetMTU(link, c.InterfaceMTU)
+	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
 		return err
 	}
 
-	err = netlink.AddrAdd(link, addr)
+	// Set the MTU using the `ifconfig` command, since the `net` package does not provide a way to set the MTU.
+	mtu := strconv.Itoa(c.InterfaceMTU)
+	cmd := exec.Command("ifconfig", iface.Name, "mtu", mtu)
+	err = cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	err = netlink.LinkSetUp(link)
+	// Add the address to the interface. This is not directly possible with the `net` package,
+	// so we use the `ifconfig` command.
+	cmd = exec.Command("ifconfig", iface.Name, "inet", ip.String(), ip.String())
+	err = cmd.Run()
 	if err != nil {
 		return err
 	}
+
+	// Bring up the interface. This is not directly possible with the `net` package,
+	// so we use the `ifconfig` command.
+	cmd = exec.Command("ifconfig", iface.Name, "up")
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
