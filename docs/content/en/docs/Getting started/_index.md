@@ -14,6 +14,14 @@ Prerequisites: No dependencies. EdgeVPN releases are statically compiled.
 
 Just grab a release from [the release page on GitHub](https://github.com/mudler/edgevpn/releases). The binaries are statically compiled.
 
+### Via Homebrew on Macos
+
+If you're using homebrew in MacOS, you can use the [edgevpn formula](https://formulae.brew.sh/formula/edgevpn)
+
+```
+brew install edgevpn
+```
+
 
 ### Building EdgeVPN from source
 
