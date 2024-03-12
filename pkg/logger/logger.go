@@ -29,7 +29,7 @@ type Logger struct {
 	zap   *zap.SugaredLogger
 }
 
-func New(lvl log.LogLevel) *Logger {
+func New(lvl log.LogLevel) log.StandardLogger {
 	cfg := zap.Config{
 
 		Encoding:         "json",
