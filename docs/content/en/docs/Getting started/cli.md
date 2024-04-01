@@ -78,3 +78,12 @@ Note: Experimental feature!
 Automatic IP negotiation is available since version `0.8.1`.
 
 DHCP can be enabled with `--dhcp` and `--address` can be omitted. If an IP is specfied with `--address` it will be the default IP.
+
+## IPv6 (experimental)
+
+Node: Very experimental feature! Highly unstable!
+
+Very provisional support for IPv6 is available using static addresses only. Currently only one address is supported per interface, dual stack is not available.
+For more information, checkout [issue #15](https://github.com/mudler/edgevpn/issues/15)
+
+IPv6 can be enabled with `--address fd:ed4e::<IP>/64` and `--mtu >1280`.
