@@ -62,6 +62,11 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
 &lt;p&gt;Note: Experimental feature!&lt;/p&gt;
 &lt;p&gt;Automatic IP negotiation is available since version &lt;code&gt;0.8.1&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;DHCP can be enabled with &lt;code&gt;--dhcp&lt;/code&gt; and &lt;code&gt;--address&lt;/code&gt; can be omitted. If an IP is specfied with &lt;code&gt;--address&lt;/code&gt; it will be the default IP.&lt;/p&gt;
+&lt;h2 id=&#34;ipv6-experimental&#34;&gt;IPv6 (experimental)&lt;/h2&gt;
+&lt;p&gt;Node: Very experimental feature! Highly unstable!&lt;/p&gt;
+&lt;p&gt;Very provisional support for IPv6 is available using static addresses only. Currently only one address is supported per interface, dual stack is not available.
+For more information, checkout &lt;a href=&#34;https://github.com/mudler/edgevpn/issues/15&#34;&gt;issue #15&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;IPv6 can be enabled with &lt;code&gt;--address fd:ed4e::&amp;lt;IP&amp;gt;/64&lt;/code&gt; and &lt;code&gt;--mtu &amp;gt;1280&lt;/code&gt;.&lt;/p&gt;
 
       </description>
     </item>

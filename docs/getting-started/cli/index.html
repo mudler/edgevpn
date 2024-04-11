@@ -27,13 +27,13 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://mudler.github.io/edgevpn/docs/getting-started/cli/" /><meta property="article:section" content="docs" />
 
-<meta property="article:modified_time" content="2024-04-11T19:08:40+02:00" /><meta property="og:site_name" content="EdgeVPN" />
+<meta property="article:modified_time" content="2024-04-11T19:10:02+02:00" /><meta property="og:site_name" content="EdgeVPN" />
 
 <meta itemprop="name" content="CLI">
 <meta itemprop="description" content="Command line interface
 ">
-<meta itemprop="dateModified" content="2024-04-11T19:08:40+02:00" />
-<meta itemprop="wordCount" content="392">
+<meta itemprop="dateModified" content="2024-04-11T19:10:02+02:00" />
+<meta itemprop="wordCount" content="440">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="CLI"/>
 <meta name="twitter:description" content="Command line interface
@@ -122,7 +122,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="/edgevpn/offline-search-index.acaa8a69e04cc69a9cbe1c3082bc9279.json"
+  data-offline-search-index-json-src="/edgevpn/offline-search-index.45649a2433a91f23f557d59a2e37a7b8.json"
   data-offline-search-base-href="/"
   data-offline-search-max-results="10"
 >
@@ -144,7 +144,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="/edgevpn/offline-search-index.acaa8a69e04cc69a9cbe1c3082bc9279.json"
+  data-offline-search-index-json-src="/edgevpn/offline-search-index.45649a2433a91f23f557d59a2e37a7b8.json"
   data-offline-search-base-href="/"
   data-offline-search-max-results="10"
 >
@@ -219,6 +219,7 @@ if (!doNotTrack) {
     <li><a href="#generate-a-network-token">Generate a network token</a></li>
     <li><a href="#api">API</a></li>
     <li><a href="#dhcp">DHCP</a></li>
+    <li><a href="#ipv6-experimental">IPv6 (experimental)</a></li>
   </ul>
 </nav></div>
 
@@ -309,6 +310,11 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
 <p>Note: Experimental feature!</p>
 <p>Automatic IP negotiation is available since version <code>0.8.1</code>.</p>
 <p>DHCP can be enabled with <code>--dhcp</code> and <code>--address</code> can be omitted. If an IP is specfied with <code>--address</code> it will be the default IP.</p>
+<h2 id="ipv6-experimental">IPv6 (experimental)</h2>
+<p>Node: Very experimental feature! Highly unstable!</p>
+<p>Very provisional support for IPv6 is available using static addresses only. Currently only one address is supported per interface, dual stack is not available.
+For more information, checkout <a href="https://github.com/mudler/edgevpn/issues/15">issue #15</a></p>
+<p>IPv6 can be enabled with <code>--address fd:ed4e::&lt;IP&gt;/64</code> and <code>--mtu &gt;1280</code>.</p>
 
 	
 		<style>
@@ -375,7 +381,7 @@ b3RwOgogIGRodDoKICAgIGludGVydmFsOiA5MDAwCiAgICBrZXk6IDRPNk5aUUMyTzVRNzdKRlJJT1BC
 	
 	
 	<div class="text-muted mt-5 pt-3 border-top">
-  Last modified April 11, 2024: <a href="https://github.com/mudler/edgevpn/commit/1ae9a986760368d9da572e5007e2f034957ddd0a">Merge pull request #167 from mauromorales/master (1ae9a98)</a>
+  Last modified April 11, 2024: <a href="https://github.com/mudler/edgevpn/commit/6ab9ef6e79723aef29ec6622868d2496b37d9912">Merge pull request #165 from CodedInternet/IPv6 (6ab9ef6)</a>
 </div>
 
 </div>
