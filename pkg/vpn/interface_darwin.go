@@ -39,7 +39,7 @@ func prepareInterface(c *Config) error {
 		return err
 	}
 
-	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
+	ip, ipNet, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
 		return err
 	}
@@ -63,6 +63,13 @@ func prepareInterface(c *Config) error {
 	// Bring up the interface. This is not directly possible with the `net` package,
 	// so we use the `ifconfig` command.
 	cmd = exec.Command("ifconfig", iface.Name, "up")
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	// Add route
+	cmd = exec.Command("route", "-n", "add", "-net", ipNet.String(), ip.String())
 	err = cmd.Run()
 	if err != nil {
 		return err
