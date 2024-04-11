@@ -54,7 +54,13 @@ func prepareInterface(c *Config) error {
 
 	// Add the address to the interface. This is not directly possible with the `net` package,
 	// so we use the `ifconfig` command.
-	cmd = exec.Command("ifconfig", iface.Name, "inet", ip.String(), ip.String())
+	if ip.To4() == nil {
+		// IPV6
+		cmd = exec.Command("ifconfig", iface.Name, "inet6", ip.String())
+	} else {
+		// IPv4
+		cmd = exec.Command("ifconfig", iface.Name, "inet", ip.String(), ip.String())
+	}
 	err = cmd.Run()
 	if err != nil {
 		return err
