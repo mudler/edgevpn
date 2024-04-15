@@ -242,6 +242,8 @@ github.com/libp2p/go-libp2p-kad-dht v0.24.2 h1:zd7myKBKCmtZBhI3I0zm8xBkb28v3gmSE
 github.com/libp2p/go-libp2p-kad-dht v0.24.2/go.mod h1:BShPzRbK6+fN3hk8a0WGAYKpb8m4k+DtchkqouGTrSg=
 github.com/libp2p/go-libp2p-kad-dht v0.25.1 h1:ofFNrf6MMEy4vi3R1VbJ7LOcTn3Csh0cDcaWHTxtWNA=
 github.com/libp2p/go-libp2p-kad-dht v0.25.1/go.mod h1:6za56ncRHYXX4Nc2vn8z7CZK0P4QiMcrn77acKLM2Oo=
+github.com/libp2p/go-libp2p-kad-dht v0.25.2 h1:FOIk9gHoe4YRWXTu8SY9Z1d0RILol0TrtApsMDPjAVQ=
+github.com/libp2p/go-libp2p-kad-dht v0.25.2/go.mod h1:6za56ncRHYXX4Nc2vn8z7CZK0P4QiMcrn77acKLM2Oo=
 github.com/libp2p/go-libp2p-kbucket v0.6.3 h1:p507271wWzpy2f1XxPzCQG9NiN6R6lHL9GiSErbQQo0=
 github.com/libp2p/go-libp2p-kbucket v0.6.3/go.mod h1:RCseT7AH6eJWxxk2ol03xtP9pEHetYSPXOaJnOiD8i0=
 github.com/libp2p/go-libp2p-pubsub v0.9.3 h1:ihcz9oIBMaCK9kcx+yHWm3mLAFBMAUsM4ux42aikDxo=
