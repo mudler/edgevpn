@@ -22,7 +22,7 @@ require (
 	github.com/miekg/dns v1.1.59
 	github.com/mudler/go-processmanager v0.0.0-20230818213616-f204007f963c
 	github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0
-	github.com/multiformats/go-multiaddr v0.11.0
+	github.com/multiformats/go-multiaddr v0.12.3
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.30.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible
@@ -76,7 +76,7 @@ require (
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
 	github.com/jbenet/goprocess v0.1.4 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
 	github.com/koron/go-ssdp v0.0.4 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
