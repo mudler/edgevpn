@@ -165,7 +165,7 @@ func peers2AddrInfo(peers []string) []peer.AddrInfo {
 var infiniteResourceLimits = rcmgr.InfiniteLimits.ToPartialLimitConfig().System
 
 // ToOpts returns node and vpn options from a configuration
-func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
+func (c Config) ToOpts() ([]node.Option, []vpn.Option, error) {
 
 	if err := c.Validate(); err != nil {
 		return nil, nil, err
