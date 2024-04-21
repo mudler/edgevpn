@@ -25,11 +25,11 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://mudler.github.io/edgevpn/index.json" /><meta property="article:section" content="" />
 
-<meta property="article:modified_time" content="2024-04-21T19:37:06+02:00" /><meta property="og:site_name" content="EdgeVPN" />
+<meta property="article:modified_time" content="2024-04-21T23:33:22+02:00" /><meta property="og:site_name" content="EdgeVPN" />
 
 <meta itemprop="name" content="">
 <meta itemprop="description" content="">
-<meta itemprop="dateModified" content="2024-04-21T19:37:06+02:00" />
+<meta itemprop="dateModified" content="2024-04-21T23:33:22+02:00" />
 <meta itemprop="wordCount" content="0">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content=""/>
@@ -38,8 +38,8 @@
 
 
 
-<link rel="preload" href="/edgevpn/scss/main.min.65bba7b8f2ec6247b9bd8cf2e15bf24b3f05fd508a778c868a23f6abdd304c3e.css" as="style">
-<link href="/edgevpn/scss/main.min.65bba7b8f2ec6247b9bd8cf2e15bf24b3f05fd508a778c868a23f6abdd304c3e.css" rel="stylesheet" integrity="">
+<link rel="preload" href="/edgevpn/scss/main.min.08b7c43cd23e065bfc51bfe9ee553fe53c0a9b8ba4c69c637de2271094061dcb.css" as="style">
+<link href="/edgevpn/scss/main.min.08b7c43cd23e065bfc51bfe9ee553fe53c0a9b8ba4c69c637de2271094061dcb.css" rel="stylesheet" integrity="">
 
 <script
   src="https://code.jquery.com/jquery-3.6.0.min.js"
