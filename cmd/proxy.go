@@ -22,36 +22,36 @@ import (
 	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/services"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-func Proxy() cli.Command {
-	return cli.Command{
+func Proxy() *cli.Command {
+	return &cli.Command{
 		Name:        "proxy",
 		Usage:       "Starts a local http proxy server to egress nodes",
 		Description: `Start a proxy locally, providing an ingress point for the network.`,
 		UsageText:   "edgevpn proxy",
 		Flags: append(CommonFlags,
 			&cli.StringFlag{
-				Name:   "listen",
-				Value:  ":8080",
-				Usage:  "Listening address",
-				EnvVar: "PROXYLISTEN",
+				Name:    "listen",
+				Value:   ":8080",
+				Usage:   "Listening address",
+				EnvVars: []string{"PROXYLISTEN"},
 			},
 			&cli.BoolFlag{
 				Name: "debug",
 			},
 			&cli.IntFlag{
-				Name:   "interval",
-				Usage:  "proxy announce time interval",
-				EnvVar: "PROXYINTERVAL",
-				Value:  120,
+				Name:    "interval",
+				Usage:   "proxy announce time interval",
+				EnvVars: []string{"PROXYINTERVAL"},
+				Value:   120,
 			},
 			&cli.IntFlag{
-				Name:   "dead-interval",
-				Usage:  "interval (in seconds) wether detect egress nodes offline",
-				EnvVar: "PROXYDEADINTERVAL",
-				Value:  600,
+				Name:    "dead-interval",
+				Usage:   "interval (in seconds) wether detect egress nodes offline",
+				EnvVars: []string{"PROXYDEADINTERVAL"},
+				Value:   600,
 			},
 		),
 		Action: func(c *cli.Context) error {

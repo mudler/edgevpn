@@ -20,7 +20,7 @@ import (
 
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/services"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func cliNameAddress(c *cli.Context) (name, address string, err error) {
@@ -43,8 +43,8 @@ func cliNameAddress(c *cli.Context) (name, address string, err error) {
 	return name, address, nil
 }
 
-func ServiceAdd() cli.Command {
-	return cli.Command{
+func ServiceAdd() *cli.Command {
+	return &cli.Command{
 		Name:    "service-add",
 		Aliases: []string{"sa"},
 		Usage:   "Expose a service to the network without creating a VPN",
@@ -52,11 +52,11 @@ func ServiceAdd() cli.Command {
 		The host will act as a proxy between the service and the connection`,
 		UsageText: "edgevpn service-add unique-id ip:port",
 		Flags: append(CommonFlags,
-			cli.StringFlag{
+			&cli.StringFlag{
 				Name:  "name",
 				Usage: `Unique name of the service to be server over the network.`,
 			},
-			cli.StringFlag{
+			&cli.StringFlag{
 				Name: "address",
 				Usage: `Remote address that the service is running to. That can be a remote webserver, a local SSH server, etc.
 For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
@@ -98,8 +98,8 @@ For example, '192.168.1.1:80', or '127.0.0.1:22'.`,
 	}
 }
 
-func ServiceConnect() cli.Command {
-	return cli.Command{
+func ServiceConnect() *cli.Command {
+	return &cli.Command{
 		Aliases: []string{"sc"},
 		Usage:   "Connects to a service in the network without creating a VPN",
 		Name:    "service-connect",
@@ -108,11 +108,11 @@ Creates a local listener which connects over the service in the network without 
 `,
 		UsageText: "edgevpn service-connect unique-id (ip):port",
 		Flags: append(CommonFlags,
-			cli.StringFlag{
+			&cli.StringFlag{
 				Name:  "name",
 				Usage: `Unique name of the service in the network.`,
 			},
-			cli.StringFlag{
+			&cli.StringFlag{
 				Name: "address",
 				Usage: `Address where to bind locally. E.g. ':8080'. A proxy will be created
 to the service over the network`,

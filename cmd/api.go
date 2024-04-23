@@ -22,11 +22,11 @@ import (
 	"github.com/mudler/edgevpn/api"
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/services"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-func API() cli.Command {
-	return cli.Command{
+func API() *cli.Command {
+	return &cli.Command{
 		Name:  "api",
 		Usage: "Starts an http server to display network informations",
 		Description: `Start listening locally, providing an API for the network.
@@ -34,8 +34,8 @@ A simple UI interface is available to display network data.`,
 		UsageText: "edgevpn api",
 		Flags: append(CommonFlags,
 			&cli.BoolFlag{
-				Name:   "enable-healthchecks",
-				EnvVar: "ENABLE_HEALTHCHECKS",
+				Name:    "enable-healthchecks",
+				EnvVars: []string{"ENABLE_HEALTHCHECKS"},
 			},
 			&cli.BoolFlag{
 				Name: "debug",

@@ -19,38 +19,39 @@ import (
 
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/services"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-func DNS() cli.Command {
-	return cli.Command{
+func DNS() *cli.Command {
+	return &cli.Command{
 		Name:        "dns",
 		Usage:       "Starts a local dns server",
 		Description: `Start a local dns server which uses the blockchain to resolve addresses`,
 		UsageText:   "edgevpn dns",
 		Flags: append(CommonFlags,
 			&cli.StringFlag{
-				Name:   "listen",
-				Usage:  "DNS listening address. Empty to disable dns server",
-				EnvVar: "DNSADDRESS",
-				Value:  "",
+				Name:    "listen",
+				Usage:   "DNS listening address. Empty to disable dns server",
+				EnvVars: []string{"DNSADDRESS"},
+				Value:   "",
 			},
-			&cli.BoolTFlag{
-				Name:   "dns-forwarder",
-				Usage:  "Enables dns forwarding",
-				EnvVar: "DNSFORWARD",
+			&cli.BoolFlag{
+				Name:    "dns-forwarder",
+				Usage:   "Enables dns forwarding",
+				EnvVars: []string{"DNSFORWARD"},
+				Value:   true,
 			},
 			&cli.IntFlag{
-				Name:   "dns-cache-size",
-				Usage:  "DNS LRU cache size",
-				EnvVar: "DNSCACHESIZE",
-				Value:  200,
+				Name:    "dns-cache-size",
+				Usage:   "DNS LRU cache size",
+				EnvVars: []string{"DNSCACHESIZE"},
+				Value:   200,
 			},
 			&cli.StringSliceFlag{
-				Name:   "dns-forward-server",
-				Usage:  "List of DNS forward server, e.g. 8.8.8.8:53, 192.168.1.1:53 ...",
-				EnvVar: "DNSFORWARDSERVER",
-				Value:  &cli.StringSlice{"8.8.8.8:53", "1.1.1.1:53"},
+				Name:    "dns-forward-server",
+				Usage:   "List of DNS forward server, e.g. 8.8.8.8:53, 192.168.1.1:53 ...",
+				EnvVars: []string{"DNSFORWARDSERVER"},
+				Value:   cli.NewStringSlice("8.8.8.8:53", "1.1.1.1:53"),
 			},
 		),
 		Action: func(c *cli.Context) error {
