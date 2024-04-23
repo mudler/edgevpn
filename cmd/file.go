@@ -20,7 +20,7 @@ import (
 
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/services"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func cliNamePath(c *cli.Context) (name, path string, err error) {
@@ -43,21 +43,21 @@ func cliNamePath(c *cli.Context) (name, path string, err error) {
 	return name, path, nil
 }
 
-func FileSend() cli.Command {
-	return cli.Command{
+func FileSend() *cli.Command {
+	return &cli.Command{
 		Name:        "file-send",
 		Aliases:     []string{"fs"},
 		Usage:       "Serve a file to the network",
 		Description: `Serve a file to the network without connecting over VPN`,
 		UsageText:   "edgevpn file-send unique-id /src/path",
 		Flags: append(CommonFlags,
-			cli.StringFlag{
+			&cli.StringFlag{
 				Name:     "name",
 				Required: true,
 				Usage: `Unique name of the file to be served over the network. 
 This is also the ID used to refer when receiving it.`,
 			},
-			cli.StringFlag{
+			&cli.StringFlag{
 				Name:     "path",
 				Usage:    `File to serve`,
 				Required: true,
@@ -103,19 +103,19 @@ This is also the ID used to refer when receiving it.`,
 	}
 }
 
-func FileReceive() cli.Command {
-	return cli.Command{
+func FileReceive() *cli.Command {
+	return &cli.Command{
 		Name:        "file-receive",
 		Aliases:     []string{"fr"},
 		Usage:       "Receive a file which is served from the network",
 		Description: `Receive a file from the network without connecting over VPN`,
 		UsageText:   "edgevpn file-receive unique-id /dst/path",
 		Flags: append(CommonFlags,
-			cli.StringFlag{
+			&cli.StringFlag{
 				Name:  "name",
 				Usage: `Unique name of the file to be received over the network.`,
 			},
-			cli.StringFlag{
+			&cli.StringFlag{
 				Name:  "path",
 				Usage: `Destination where to save the file`,
 			},

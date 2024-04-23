@@ -17,11 +17,11 @@ import (
 	"fmt"
 
 	"github.com/mudler/edgevpn/pkg/trustzone/authprovider/ecdsa"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-func Peergate() cli.Command {
-	return cli.Command{
+func Peergate() *cli.Command {
+	return &cli.Command{
 		Name:        "peergater",
 		Usage:       "peergater ecdsa-genkey",
 		Description: `Peergater auth utilities`,

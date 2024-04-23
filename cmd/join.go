@@ -17,11 +17,11 @@ import (
 	"context"
 
 	"github.com/mudler/edgevpn/pkg/node"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-func Start() cli.Command {
-	return cli.Command{
+func Start() *cli.Command {
+	return &cli.Command{
 		Name:  "start",
 		Usage: "Start the network without activating any interface",
 		Description: `Connect over the p2p network without establishing a VPN.

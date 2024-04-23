@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/mudler/edgevpn/cmd"
 	internal "github.com/mudler/edgevpn/internal"
@@ -29,12 +29,12 @@ func main() {
 	app := &cli.App{
 		Name:        "edgevpn",
 		Version:     internal.Version,
-		Author:      "Ettore Di Giacinto",
+		Authors:     []*cli.Author{{Name: "Ettore Di Giacinto"}},
 		Usage:       "edgevpn --config /etc/edgevpn/config.yaml",
 		Description: "edgevpn uses libp2p to build an immutable trusted blockchain addressable p2p network",
 		Copyright:   cmd.Copyright,
 		Flags:       cmd.MainFlags(),
-		Commands: []cli.Command{
+		Commands: []*cli.Command{
 			cmd.Start(),
 			cmd.API(),
 			cmd.ServiceAdd(),
