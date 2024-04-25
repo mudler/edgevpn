@@ -99,8 +99,8 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVars: []string{"EDGEVPNAUTORELAYSTATICONLY"},
 	},
 	&cli.IntFlag{
-		Name:    "ledger-syncronization-interval",
-		Usage:   "Ledger syncronization interval time",
+		Name:    "ledger-synchronization-interval",
+		Usage:   "Ledger synchronization interval time",
 		EnvVars: []string{"EDGEVPNLEDGERSYNCINTERVAL"},
 		Value:   10,
 	},
@@ -424,7 +424,7 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 		Ledger: config.Ledger{
 			StateDir:         c.String("ledger-state"),
 			AnnounceInterval: time.Duration(c.Int("ledger-announce-interval")) * time.Second,
-			SyncInterval:     time.Duration(c.Int("ledger-syncronization-interval")) * time.Second,
+			SyncInterval:     time.Duration(c.Int("ledger-synchronization-interval")) * time.Second,
 		},
 		NAT: config.NAT{
 			Service:           c.Bool("natservice"),
