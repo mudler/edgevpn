@@ -31,7 +31,6 @@ import (
 	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	"github.com/mudler/edgevpn/internal"
 	"github.com/mudler/edgevpn/pkg/config"
-	nodeConfig "github.com/mudler/edgevpn/pkg/config"
 	"github.com/multiformats/go-multiaddr"
 
 	"github.com/mudler/edgevpn/pkg/logger"
@@ -391,8 +390,8 @@ func stringsToMultiAddr(peers []string) []multiaddr.Multiaddr {
 	return res
 }
 
-func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
-
+// ConfigFromContext returns a config object from a cli context
+func ConfigFromContext(c *cli.Context) *config.Config {
 	var limitConfig *rcmgr.PartialLimitConfig
 
 	autorelayInterval, err := time.ParseDuration(c.String("autorelay-discovery-interval"))
@@ -405,7 +404,7 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 	d := map[string]map[string]interface{}{}
 	json.Unmarshal([]byte(pa), &d)
 
-	nc := nodeConfig.Config{
+	return &config.Config{
 		NetworkConfig:     c.String("config"),
 		NetworkToken:      c.String("token"),
 		Address:           c.String("address"),
@@ -467,6 +466,10 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			AuthProviders: d,
 		},
 	}
+}
+
+func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
+	nc := ConfigFromContext(c)
 
 	lvl, err := log.LevelFromString(nc.LogLevel)
 	if err != nil {
