@@ -29,7 +29,7 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
-	github.com/urfave/cli v1.22.14
+	github.com/urfave/cli v1.22.15
 	github.com/vishvananda/netlink v1.1.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/sys v0.19.0
@@ -46,7 +46,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
