@@ -16,11 +16,11 @@ Sending and receiving files, as services, don't establish a VPN connection.
 ### Sending
 
 ```bash
-$ edgevpn file-send 'unique-id' '/src/path'
+$ edgevpn file-send --name unique-id --path /src/path
 ```
 
 ### Receiving
 
 ```bash
-$ edgevpn file-receive 'unique-id' '/dst/path'
+$ edgevpn file-receive --name unique-id --path /dst/path
 ```
