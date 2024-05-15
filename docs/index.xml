@@ -296,9 +296,9 @@ $ curl -X PUT &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;http://localhos
 &lt;p&gt;EdgeVPN can be used to send and receive files between hosts via p2p with the  &lt;code&gt;file-send&lt;/code&gt; and &lt;code&gt;file-receive&lt;/code&gt; subcommand.&lt;/p&gt;
 &lt;p&gt;Sending and receiving files, as services, don&amp;rsquo;t establish a VPN connection.&lt;/p&gt;
 &lt;h3 id=&#34;sending&#34;&gt;Sending&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn file-send &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;unique-id&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;/src/path&amp;#39;&lt;/span&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn file-send --name unique-id --path /src/path
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;receiving&#34;&gt;Receiving&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn file-receive &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;unique-id&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;/dst/path&amp;#39;&lt;/span&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ edgevpn file-receive --name unique-id --path /dst/path
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
       </description>
     </item>
