@@ -343,7 +343,7 @@ func (t *decayingTag) Bump(p peer.ID, delta int) error {
 	default:
 		return fmt.Errorf(
 			"unable to bump decaying tag for peer %s, tag %s, delta %d; queue full (len=%d)",
-			p.Pretty(), t.name, delta, len(t.trkr.bumpTagCh))
+			p.String(), t.name, delta, len(t.trkr.bumpTagCh))
 	}
 }
 
@@ -360,7 +360,7 @@ func (t *decayingTag) Remove(p peer.ID) error {
 	default:
 		return fmt.Errorf(
 			"unable to remove decaying tag for peer %s, tag %s; queue full (len=%d)",
-			p.Pretty(), t.name, len(t.trkr.removeTagCh))
+			p.String(), t.name, len(t.trkr.removeTagCh))
 	}
 }
 
