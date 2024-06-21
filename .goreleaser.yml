@@ -1,4 +1,5 @@
 # Make sure to check the documentation at http://goreleaser.com
+version: 2
 builds:
   - ldflags:
       - -w -s
@@ -21,14 +22,14 @@ source:
   name_template: '{{ .ProjectName }}-{{ .Tag }}-source'
 archives:
   # Default template uses underscores instead of -
-  - name_template: "{{ .ProjectName }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      freebsd: FreeBSD
-      386: i386
-      amd64: x86_64
+  - name_template: >-
+      {{ .ProjectName }}-{{ .Tag }}-
+      {{- if eq .Os "freebsd" }}FreeBSD
+      {{- else }}{{- title .Os }}{{end}}-
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{end}}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
 checksum:
   name_template: '{{ .ProjectName }}-{{ .Tag }}-checksums.txt'
 snapshot:

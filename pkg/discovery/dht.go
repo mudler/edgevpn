@@ -172,7 +172,7 @@ func (d *DHT) FindClosePeers(ll log.StandardLogger, onlyStaticRelays bool, stati
 					if len(addrs) == 0 {
 						continue
 					}
-					ll.Debugf("[relay discovery] Found close peer '%s'", p.Pretty())
+					ll.Debugf("[relay discovery] Found close peer '%s'", p.String())
 					toStream = append(toStream, peer.AddrInfo{ID: p, Addrs: addrs})
 				}
 			}
