@@ -164,7 +164,7 @@ func (d *DHT) FindClosePeers(ll log.StandardLogger, onlyStaticRelays bool, stati
 			if !onlyStaticRelays {
 				closestPeers, err := d.GetClosestPeers(ctx, d.PeerID().String())
 				if err != nil {
-					close(peerChan)
+					ll.Debug("Error getting closest peers: ", err)
 				}
 
 				for _, p := range closestPeers {
