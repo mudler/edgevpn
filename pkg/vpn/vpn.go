@@ -54,7 +54,7 @@ func VPNNetworkService(p ...Option) node.NetworkService {
 		c := &Config{
 			Concurrency:        1,
 			LedgerAnnounceTime: 5 * time.Second,
-			Timeout:            15 * time.Second,
+			Timeout:            120 * time.Second,
 			Logger:             logger.New(log.LevelDebug),
 			MaxStreams:         30,
 		}
@@ -185,7 +185,8 @@ func getFrame(ifce *water.Interface, c *Config) (ethernet.Frame, error) {
 }
 
 func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce *water.Interface, nc node.Config) error {
-	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
+	t := time.Now().Add(c.Timeout)
+	ctx, cancel := context.WithDeadline(context.Background(), t)
 	defer cancel()
 
 	var dstIP, srcIP net.IP
