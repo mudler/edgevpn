@@ -48,7 +48,7 @@ func MainFlags() []cli.Flag {
 		&cli.IntFlag{
 			Name:  "key-otp-interval",
 			Usage: "Tweaks default otp interval (in seconds) when generating new tokens",
-			Value: 9000,
+			Value: 360,
 		},
 		&cli.BoolFlag{
 			Name:  "g",
