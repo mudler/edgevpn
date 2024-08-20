@@ -123,7 +123,7 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 		for {
 			select {
 			case <-t.C:
-				connect()
+				go connect()
 			case <-ctx.Done():
 				return
 			}
