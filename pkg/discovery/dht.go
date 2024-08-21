@@ -117,13 +117,13 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 	}
 
 	go func() {
-		connect()
+		go connect()
 		t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d.RefreshDiscoveryTime))
 		defer t.Stop()
 		for {
 			select {
 			case <-t.C:
-				connect()
+				go connect()
 			case <-ctx.Done():
 				return
 			}
