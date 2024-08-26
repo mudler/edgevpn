@@ -38,14 +38,14 @@ type DHT struct {
 	KeyLength            int
 	RendezvousString     string
 	BootstrapPeers       AddrList
-	latestRendezvous     string
+	randezvousHistory    Ring
 	RefreshDiscoveryTime time.Duration
 	*dht.IpfsDHT
 	dhtOptions []dht.Option
 }
 
 func NewDHT(d ...dht.Option) *DHT {
-	return &DHT{dhtOptions: d}
+	return &DHT{dhtOptions: d, randezvousHistory: Ring{Length: 2}}
 }
 
 func (d *DHT) Option(ctx context.Context) func(c *libp2p.Config) error {
@@ -57,9 +57,7 @@ func (d *DHT) Option(ctx context.Context) func(c *libp2p.Config) error {
 func (d *DHT) Rendezvous() string {
 	if d.OTPKey != "" {
 		totp := internalCrypto.TOTP(sha256.New, d.KeyLength, d.OTPInterval, d.OTPKey)
-
 		rv := internalCrypto.MD5(totp)
-		d.latestRendezvous = rv
 		return rv
 	}
 	return d.RendezvousString
@@ -108,14 +106,13 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 
 	connect := func() {
 		d.bootstrapPeers(c, ctx, host)
-		if d.latestRendezvous != "" {
-			c.Debugf("Announcing with old rendezvous: %s", d.latestRendezvous)
-			d.announceAndConnect(c, ctx, kademliaDHT, host, d.latestRendezvous)
-		}
-
 		rv := d.Rendezvous()
-		c.Debugf("Announcing with current rendezvous: %s", d.latestRendezvous)
-		d.announceAndConnect(c, ctx, kademliaDHT, host, rv)
+		d.randezvousHistory.Add(rv)
+
+		for _, r := range d.randezvousHistory.Data {
+			c.Debugf("Announcing with rendezvous: %s", r)
+			d.announceAndConnect(c, ctx, kademliaDHT, host, r)
+		}
 	}
 
 	go func() {
