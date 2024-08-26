@@ -80,6 +80,17 @@ func (d *DHT) startDHT(ctx context.Context, h host.Host) (*dht.IpfsDHT, error) {
 	return d.IpfsDHT, nil
 }
 
+func (d *DHT) announceRandezvous(c log.StandardLogger, ctx context.Context, host host.Host, kademliaDHT *dht.IpfsDHT) {
+	d.bootstrapPeers(c, ctx, host)
+	rv := d.Rendezvous()
+	d.randezvousHistory.Add(rv)
+
+	for _, r := range d.randezvousHistory.Data {
+		c.Debugf("Announcing with rendezvous: %s", r)
+		d.announceAndConnect(c, ctx, kademliaDHT, host, r)
+	}
+}
+
 func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) error {
 	if d.KeyLength == 0 {
 		d.KeyLength = 12
@@ -104,25 +115,34 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 		return err
 	}
 
-	connect := func() {
-		d.bootstrapPeers(c, ctx, host)
-		rv := d.Rendezvous()
-		d.randezvousHistory.Add(rv)
-
-		for _, r := range d.randezvousHistory.Data {
-			c.Debugf("Announcing with rendezvous: %s", r)
-			d.announceAndConnect(c, ctx, kademliaDHT, host, r)
-		}
-	}
-
 	go func() {
-		connect()
+		d.announceRandezvous(c, ctx, host, kademliaDHT)
 		t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d.RefreshDiscoveryTime))
 		defer t.Stop()
 		for {
 			select {
 			case <-t.C:
-				connect()
+				// We announce ourselves as rendezvous point for peers.
+				// This is like telling your friends to meet you at your house.
+				// We have a safeguard of 1 hour to avoid blocking the main loop
+				// in case of network issues.
+				// The TTL of DHT is by default no longer than 3 hours, so we should
+				// be safe by having an entry less than that.
+				safeTimeout, cancel := context.WithTimeout(ctx, time.Hour)
+
+				endChan := make(chan struct{})
+				go func() {
+					d.announceRandezvous(c, safeTimeout, host, kademliaDHT)
+					endChan <- struct{}{}
+				}()
+
+				select {
+				case <-endChan:
+					cancel()
+				case <-safeTimeout.Done():
+					c.Error("Timeout while announcing rendezvous")
+					cancel()
+				}
 			case <-ctx.Done():
 				return
 			}
