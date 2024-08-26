@@ -109,10 +109,12 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 	connect := func() {
 		d.bootstrapPeers(c, ctx, host)
 		if d.latestRendezvous != "" {
+			c.Debugf("Announcing with old rendezvous: %s", d.latestRendezvous)
 			d.announceAndConnect(c, ctx, kademliaDHT, host, d.latestRendezvous)
 		}
 
 		rv := d.Rendezvous()
+		c.Debugf("Announcing with current rendezvous: %s", d.latestRendezvous)
 		d.announceAndConnect(c, ctx, kademliaDHT, host, rv)
 	}
 
