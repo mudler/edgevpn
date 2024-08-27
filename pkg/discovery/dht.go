@@ -224,12 +224,16 @@ func (d *DHT) FindClosePeers(ll log.StandardLogger, onlyStaticRelays bool, stati
 
 func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kademliaDHT *dht.IpfsDHT, host host.Host, rv string) error {
 	l.Debug("Announcing ourselves...")
+
+	tCtx, c := context.WithTimeout(ctx, time.Second*120)
+	defer c()
 	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
-	routingDiscovery.Advertise(ctx, rv)
+	routingDiscovery.Advertise(tCtx, rv)
 	l.Debug("Successfully announced!")
 	// Now, look for others who have announced
 	// This is like your friend telling you the location to meet you.
 	l.Debug("Searching for other peers...")
+
 	peerChan, err := routingDiscovery.FindPeers(ctx, rv)
 	if err != nil {
 		return err
