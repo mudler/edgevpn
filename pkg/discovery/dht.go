@@ -234,7 +234,9 @@ func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kade
 	// This is like your friend telling you the location to meet you.
 	l.Debug("Searching for other peers...")
 
-	peerChan, err := routingDiscovery.FindPeers(ctx, rv)
+	fCtx, cf := context.WithTimeout(ctx, time.Second*120)
+	defer cf()
+	peerChan, err := routingDiscovery.FindPeers(fCtx, rv)
 	if err != nil {
 		return err
 	}
