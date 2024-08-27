@@ -85,10 +85,12 @@ func (d *DHT) announceRendezvous(c log.StandardLogger, ctx context.Context, host
 	rv := d.Rendezvous()
 	d.rendezvousHistory.Add(rv)
 
+	c.Debugf("The following rendezvous points are being used: %+v", d.rendezvousHistory.Data)
 	for _, r := range d.rendezvousHistory.Data {
 		c.Debugf("Announcing with rendezvous: %s", r)
 		d.announceAndConnect(c, ctx, kademliaDHT, host, r)
 	}
+	c.Debug("Announcing to rendezvous done")
 }
 
 func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) error {
@@ -244,7 +246,7 @@ func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kade
 			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*120)
 			defer cancel()
 			if err := host.Connect(timeoutCtx, p); err != nil {
-				l.Debug("Failed connecting to", p)
+				l.Debugf("Failed connecting to '%s', error: '%s'", p, err.Error())
 			} else {
 				l.Debug("Connected to:", p)
 			}
