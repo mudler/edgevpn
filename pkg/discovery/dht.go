@@ -241,7 +241,9 @@ func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kade
 
 		if host.Network().Connectedness(p.ID) != network.Connected {
 			l.Debug("Found peer:", p)
-			if err := host.Connect(ctx, p); err != nil {
+			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*120)
+			defer cancel()
+			if err := host.Connect(timeoutCtx, p); err != nil {
 				l.Debug("Failed connecting to", p)
 			} else {
 				l.Debug("Connected to:", p)
