@@ -38,14 +38,14 @@ type DHT struct {
 	KeyLength            int
 	RendezvousString     string
 	BootstrapPeers       AddrList
-	latestRendezvous     string
+	rendezvousHistory    Ring
 	RefreshDiscoveryTime time.Duration
 	*dht.IpfsDHT
 	dhtOptions []dht.Option
 }
 
 func NewDHT(d ...dht.Option) *DHT {
-	return &DHT{dhtOptions: d}
+	return &DHT{dhtOptions: d, rendezvousHistory: Ring{Length: 2}}
 }
 
 func (d *DHT) Option(ctx context.Context) func(c *libp2p.Config) error {
@@ -57,9 +57,7 @@ func (d *DHT) Option(ctx context.Context) func(c *libp2p.Config) error {
 func (d *DHT) Rendezvous() string {
 	if d.OTPKey != "" {
 		totp := internalCrypto.TOTP(sha256.New, d.KeyLength, d.OTPInterval, d.OTPKey)
-
 		rv := internalCrypto.MD5(totp)
-		d.latestRendezvous = rv
 		return rv
 	}
 	return d.RendezvousString
@@ -80,6 +78,19 @@ func (d *DHT) startDHT(ctx context.Context, h host.Host) (*dht.IpfsDHT, error) {
 	}
 
 	return d.IpfsDHT, nil
+}
+
+func (d *DHT) announceRendezvous(c log.StandardLogger, ctx context.Context, host host.Host, kademliaDHT *dht.IpfsDHT) {
+	d.bootstrapPeers(c, ctx, host)
+	rv := d.Rendezvous()
+	d.rendezvousHistory.Add(rv)
+
+	c.Debugf("The following rendezvous points are being used: %+v", d.rendezvousHistory.Data)
+	for _, r := range d.rendezvousHistory.Data {
+		c.Debugf("Announcing with rendezvous: %s", r)
+		d.announceAndConnect(c, ctx, kademliaDHT, host, r)
+	}
+	c.Debug("Announcing to rendezvous done")
 }
 
 func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) error {
@@ -106,33 +117,42 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 		return err
 	}
 
-	connect := func() {
-		d.bootstrapPeers(c, ctx, host)
-		if d.latestRendezvous != "" {
-			c.Debugf("Announcing with old rendezvous: %s", d.latestRendezvous)
-			d.announceAndConnect(c, ctx, kademliaDHT, host, d.latestRendezvous)
-		}
-
-		rv := d.Rendezvous()
-		c.Debugf("Announcing with current rendezvous: %s", d.latestRendezvous)
-		d.announceAndConnect(c, ctx, kademliaDHT, host, rv)
-	}
-
-	go func() {
-		go connect()
-		t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d.RefreshDiscoveryTime))
-		defer t.Stop()
-		for {
-			select {
-			case <-t.C:
-				go connect()
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
+	go d.runBackground(c, ctx, host, kademliaDHT)
 
 	return nil
+}
+
+func (d *DHT) runBackground(c log.StandardLogger, ctx context.Context, host host.Host, kademliaDHT *dht.IpfsDHT) {
+	d.announceRendezvous(c, ctx, host, kademliaDHT)
+	t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d.RefreshDiscoveryTime))
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			// We announce ourselves to the rendezvous point for all the peers.
+			// We have a safeguard of 1 hour to avoid blocking the main loop
+			// in case of network issues.
+			// The TTL of DHT is by default no longer than 3 hours, so we should
+			// be safe by having an entry less than that.
+			safeTimeout, cancel := context.WithTimeout(ctx, time.Hour)
+
+			endChan := make(chan struct{})
+			go func() {
+				d.announceRendezvous(c, safeTimeout, host, kademliaDHT)
+				endChan <- struct{}{}
+			}()
+
+			select {
+			case <-endChan:
+				cancel()
+			case <-safeTimeout.Done():
+				c.Error("Timeout while announcing rendezvous")
+				cancel()
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func (d *DHT) bootstrapPeers(c log.StandardLogger, ctx context.Context, host host.Host) {
@@ -223,8 +243,10 @@ func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kade
 
 		if host.Network().Connectedness(p.ID) != network.Connected {
 			l.Debug("Found peer:", p)
-			if err := host.Connect(ctx, p); err != nil {
-				l.Debug("Failed connecting to", p)
+			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*120)
+			defer cancel()
+			if err := host.Connect(timeoutCtx, p); err != nil {
+				l.Debugf("Failed connecting to '%s', error: '%s'", p, err.Error())
 			} else {
 				l.Debug("Connected to:", p)
 			}
@@ -232,6 +254,8 @@ func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kade
 			l.Debug("Known peer (already connected):", p)
 		}
 	}
+
+	l.Debug("Finished searching for peers.")
 
 	return nil
 }
