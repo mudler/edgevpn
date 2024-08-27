@@ -212,7 +212,7 @@ func Main() func(c *cli.Context) error {
 		ctx := context.Background()
 
 		if c.Bool("transient-conn") {
-			ctx = network.WithUseTransient(ctx, "accept")
+			ctx = network.WithAllowLimitedConn(ctx, "accept")
 		}
 
 		if c.Bool("api") {

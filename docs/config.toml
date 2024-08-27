@@ -54,13 +54,11 @@ id = "UA-00000000-0"
 [languages]
 [languages.en]
 title = "EdgeVPN"
-description = "Package manager built from containers"
 languageName ="English"
 # Weight used for sorting.
 weight = 1
 #[languages.it]
 #title = "EdgeVPN"
-#description = "Gestore di pacchetti basato su containers"
 #languageName ="Italian"
 #contentDir = "content/it"
 #time_format_default = "02.01.2006"
