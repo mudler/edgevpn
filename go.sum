@@ -54,6 +54,8 @@ github.com/creachadair/mds v0.7.0 h1:7QoYqiPl18C0h7CLq9z9/qUH5Vr62V9677yJZHGLoQM
 github.com/creachadair/mds v0.7.0/go.mod h1:4vrFYUzTXMJpMBU+OA292I6IUxKWCCfZkgXg+/kBZMo=
 github.com/creachadair/otp v0.4.2 h1:ngNMaD6Tzd7UUNRFyed7ykZFn/Wr5sSs5ffqZWm9pu8=
 github.com/creachadair/otp v0.4.2/go.mod h1:DqV9hJyUbcUme0pooYfiFvvMe72Aua5sfhNzwfZvk40=
+github.com/creachadair/otp v0.5.0 h1:q3Th7CXm2zlmCdBjw5tEPFOj4oWJMnVL5HXlq0sNKS0=
+github.com/creachadair/otp v0.5.0/go.mod h1:0kceI87EnYFNYSTL121goJVAnk3eJhaed9H0nMuJUkA=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
