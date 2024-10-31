@@ -22,7 +22,7 @@ require (
 	github.com/miekg/dns v1.1.62
 	github.com/mudler/go-processmanager v0.0.0-20240820160718-8b802d3ecf82
 	github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0
-	github.com/multiformats/go-multiaddr v0.13.0
+	github.com/multiformats/go-multiaddr v0.14.0
 	github.com/onsi/ginkgo/v2 v2.21.0
 	github.com/onsi/gomega v1.35.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible
