@@ -45,6 +45,16 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:   "Specify a path to a edgevpn config file",
 		EnvVars: []string{"EDGEVPNCONFIG"},
 	},
+	&cli.StringSliceFlag{
+		Name:    "listen-maddrs",
+		Usage:   "Override default 0.0.0.0 listen multiaddresses",
+		EnvVars: []string{"EDGEVPNLISTENMADDRS"},
+	},
+	&cli.StringSliceFlag{
+		Name:    "dht-announce-maddrs",
+		Usage:   "Override listen-maddrs on DHT announce",
+		EnvVars: []string{"EDGEVPNDHTANNOUNCEMADDRS"},
+	},
 	&cli.StringFlag{
 		Name:    "timeout",
 		Usage:   "Specify a default timeout for connection stream",
@@ -407,6 +417,8 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 	return &config.Config{
 		NetworkConfig:     c.String("config"),
 		NetworkToken:      c.String("token"),
+		ListenMaddrs:      (c.StringSlice("listen-maddrs")),
+		DHTAnnounceMaddrs: stringsToMultiAddr(c.StringSlice("dht-announce-maddrs")),
 		Address:           c.String("address"),
 		Router:            c.String("router"),
 		Interface:         c.String("interface"),
