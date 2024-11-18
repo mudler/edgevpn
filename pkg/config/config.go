@@ -47,6 +47,8 @@ import (
 type Config struct {
 	NetworkConfig, NetworkToken                string
 	Address                                    string
+	ListenMaddrs                               []string
+	DHTAnnounceMaddrs                          []multiaddr.Multiaddr
 	Router                                     string
 	Interface                                  string
 	Libp2pLogLevel, LogLevel                   string
@@ -204,10 +206,20 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	if c.LowProfile {
 		dhtOpts = append(dhtOpts, dht.BucketSize(20))
 	}
+	if len(c.DHTAnnounceMaddrs) > 0 {
+		dhtOpts = append(dhtOpts, dht.AddressFilter(
+			func(m []multiaddr.Multiaddr) []multiaddr.Multiaddr {
+				return c.DHTAnnounceMaddrs
+			},
+		),
+		)
+	}
+
 	d := discovery.NewDHT(dhtOpts...)
 	m := &discovery.MDNS{}
 
 	opts := []node.Option{
+		node.ListenAddresses(c.ListenMaddrs...),
 		node.WithDiscoveryInterval(c.Discovery.Interval),
 		node.WithLedgerAnnounceTime(c.Ledger.AnnounceInterval),
 		node.WithLedgerInterval(c.Ledger.SyncInterval),
