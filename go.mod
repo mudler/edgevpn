@@ -8,7 +8,6 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/benbjohnson/clock v1.3.5
 	github.com/c-robinson/iplib v1.0.8
-	github.com/c-robinson/iplib/v2 v2.0.5
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/creachadair/otp v0.5.0
 	github.com/google/gopacket v1.1.19
@@ -23,7 +22,7 @@ require (
 	github.com/mudler/go-processmanager v0.0.0-20240820160718-8b802d3ecf82
 	github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0
 	github.com/multiformats/go-multiaddr v0.14.0
-	github.com/onsi/ginkgo/v2 v2.21.0
+	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.35.1
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/pkg/errors v0.9.1
@@ -34,7 +33,6 @@ require (
 	golang.org/x/sys v0.27.0
 	golang.zx2c4.com/wireguard/windows v0.5.3
 	gopkg.in/yaml.v2 v2.4.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
@@ -180,5 +178,6 @@ require (
 	golang.zx2c4.com/wireguard v0.0.0-20220703234212-c31a7b1ab478 // indirect
 	gonum.org/v1/gonum v0.15.0 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.3.0 // indirect
 )
