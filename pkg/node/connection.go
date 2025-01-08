@@ -29,6 +29,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	conngater "github.com/libp2p/go-libp2p/p2p/net/conngater"
+	"github.com/libp2p/go-libp2p/p2p/net/swarm"
 	hub "github.com/mudler/edgevpn/pkg/hub"
 	multiaddr "github.com/multiformats/go-multiaddr"
 )
@@ -144,10 +145,23 @@ var FallbackDefaults libp2p.Option = func(cfg *libp2p.Config) error {
 	return nil
 }
 
+var defaultUDPBlackHoleDetector = func(cfg *libp2p.Config) error {
+	// A black hole is a binary property. On a network if UDP dials are blocked, all dials will
+	// fail. So a low success rate of 5 out 100 dials is good enough.
+	return cfg.Apply(libp2p.UDPBlackHoleSuccessCounter(&swarm.BlackHoleSuccessCounter{N: 100, MinSuccesses: 5, Name: "UDP"}))
+}
+
+var defaultIPv6BlackHoleDetector = func(cfg *libp2p.Config) error {
+	// A black hole is a binary property. On a network if there is no IPv6 connectivity, all
+	// dials will fail. So a low success rate of 5 out 100 dials is good enough.
+	return cfg.Apply(libp2p.IPv6BlackHoleSuccessCounter(&swarm.BlackHoleSuccessCounter{N: 100, MinSuccesses: 5, Name: "IPv6"}))
+}
+
 // Complete list of default options and when to fallback on them.
 //
 // Please *DON'T* specify default options any other way. Putting this all here
 // makes tracking defaults *much* easier.
+// https://github.com/libp2p/go-libp2p/blob/2209ae05976df6a1cc2631c961f57549d109008c/defaults.go#L227
 var defaults = []struct {
 	fallback func(cfg *libp2p.Config) bool
 	opt      libp2p.Option
@@ -195,8 +209,16 @@ var defaults = []struct {
 		opt: libp2p.ConnectionManager(connmgr.NullConnMgr{}),
 	},
 	{
-		fallback: func(cfg *libp2p.Config) bool { return cfg.MultiaddrResolver == nil },
-		opt:      libp2p.DefaultMultiaddrResolver,
+		fallback: func(cfg *libp2p.Config) bool {
+			return !cfg.CustomUDPBlackHoleSuccessCounter && cfg.UDPBlackHoleSuccessCounter == nil
+		},
+		opt: defaultUDPBlackHoleDetector,
+	},
+	{
+		fallback: func(cfg *libp2p.Config) bool {
+			return !cfg.CustomIPv6BlackHoleSuccessCounter && cfg.IPv6BlackHoleSuccessCounter == nil
+		},
+		opt: defaultIPv6BlackHoleDetector,
 	},
 	//{
 	//	fallback: func(cfg *libp2p.Config) bool { return !cfg.DisableMetrics && cfg.PrometheusRegisterer == nil },
