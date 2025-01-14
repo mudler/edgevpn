@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/mudler/edgevpn/pkg/blockchain"
+	"github.com/mudler/edgevpn/pkg/discovery"
 	"github.com/mudler/edgevpn/pkg/logger"
 	. "github.com/mudler/edgevpn/pkg/node"
 )
@@ -33,11 +34,17 @@ var _ = Describe("Node", func() {
 
 	l := Logger(logger.New(log.LevelFatal))
 
-	Context("Configuration", func() {
+	Context("Node configuration validation", func() {
 		It("fails if is not valid", func() {
-			_, err := New(FromBase64(true, true, "  ", nil, nil), WithStore(&blockchain.MemoryStore{}), l)
+			_, err := New(FromBase64(true, true, "  ", &discovery.DHT{}, &discovery.MDNS{}), WithStore(&blockchain.MemoryStore{}), l)
 			Expect(err).To(HaveOccurred())
+
 			_, err = New(FromBase64(true, true, token, nil, nil), WithStore(&blockchain.MemoryStore{}), l)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("passes if when valid", func() {
+			_, err := New(FromBase64(true, true, token, &discovery.DHT{}, &discovery.MDNS{}), WithStore(&blockchain.MemoryStore{}), l)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
