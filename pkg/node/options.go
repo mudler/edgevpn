@@ -273,12 +273,12 @@ func (y YAMLConnectionConfig) YAML() string {
 	return string(bytesData)
 }
 
-func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config, d *discovery.DHT, m *discovery.MDNS) {
+func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config, d *discovery.DHT, m *discovery.MDNS) error {
 	if d == nil {
-		d = discovery.NewDHT()
+		return errors.New("DHT is nil")
 	}
 	if m == nil {
-		m = &discovery.MDNS{}
+		return errors.New("MDNS is nil")
 	}
 
 	d.RefreshDiscoveryTime = cfg.DiscoveryInterval
@@ -301,6 +301,8 @@ func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config, d *discovery.DHT
 	}
 	cfg.SealKeyLength = y.OTP.Crypto.Length
 	cfg.MaxMessageSize = y.MaxMessageSize
+
+	return nil
 }
 
 const defaultKeyLength = 43
@@ -357,8 +359,7 @@ func FromYaml(enablemDNS, enableDHT bool, path string, d *discovery.DHT, m *disc
 			return errors.Wrap(err, "parsing yaml")
 		}
 
-		t.copy(enablemDNS, enableDHT, cfg, d, m)
-		return nil
+		return t.copy(enablemDNS, enableDHT, cfg, d, m)
 	}
 }
 
@@ -376,7 +377,6 @@ func FromBase64(enablemDNS, enableDHT bool, bb string, d *discovery.DHT, m *disc
 		if err := yaml.Unmarshal(configDec, &t); err != nil {
 			return errors.Wrap(err, "parsing yaml")
 		}
-		t.copy(enablemDNS, enableDHT, cfg, d, m)
-		return nil
+		return t.copy(enablemDNS, enableDHT, cfg, d, m)
 	}
 }
