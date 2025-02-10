@@ -9,7 +9,6 @@ require (
 	github.com/benbjohnson/clock v1.3.5
 	github.com/c-robinson/iplib v1.0.8
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/creachadair/otp v0.5.0
 	github.com/google/gopacket v1.1.19
 	github.com/hashicorp/golang-lru v1.0.2
@@ -17,7 +16,7 @@ require (
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/libp2p/go-libp2p v0.39.0
-	github.com/libp2p/go-libp2p-kad-dht v0.28.2
+	github.com/libp2p/go-libp2p-kad-dht v0.29.0
 	github.com/libp2p/go-libp2p-pubsub v0.13.0
 	github.com/miekg/dns v1.1.63
 	github.com/mudler/go-processmanager v0.0.0-20240820160718-8b802d3ecf82
@@ -70,7 +69,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/huin/goupnp v1.3.0 // indirect
-	github.com/ipfs/boxo v0.24.3 // indirect
+	github.com/ipfs/boxo v0.27.2 // indirect
 	github.com/ipfs/go-cid v0.5.0 // indirect
 	github.com/ipfs/go-datastore v0.6.0 // indirect
 	github.com/ipld/go-ipld-prime v0.21.0 // indirect
@@ -86,7 +85,7 @@ require (
 	github.com/libp2p/go-flow-metrics v0.2.0 // indirect
 	github.com/libp2p/go-libp2p-asn-util v0.4.1 // indirect
 	github.com/libp2p/go-libp2p-kbucket v0.6.4 // indirect
-	github.com/libp2p/go-libp2p-record v0.2.0 // indirect
+	github.com/libp2p/go-libp2p-record v0.3.1 // indirect
 	github.com/libp2p/go-libp2p-routing-helpers v0.7.4 // indirect
 	github.com/libp2p/go-msgio v0.3.0 // indirect
 	github.com/libp2p/go-nat v0.2.0 // indirect
@@ -131,7 +130,6 @@ require (
 	github.com/pion/rtp v1.8.11 // indirect
 	github.com/pion/sctp v1.8.35 // indirect
 	github.com/pion/sdp/v3 v3.0.10 // indirect
-	github.com/pion/srtp/v2 v2.0.20 // indirect
 	github.com/pion/srtp/v3 v3.0.4 // indirect
 	github.com/pion/stun v0.6.1 // indirect
 	github.com/pion/stun/v3 v3.0.0 // indirect
@@ -139,7 +137,6 @@ require (
 	github.com/pion/transport/v3 v3.0.7 // indirect
 	github.com/pion/turn/v2 v2.1.6 // indirect
 	github.com/pion/turn/v4 v4.0.0 // indirect
-	github.com/pion/webrtc/v3 v3.3.5 // indirect
 	github.com/pion/webrtc/v4 v4.0.8 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/polydawn/refmt v0.89.0 // indirect
@@ -169,9 +166,10 @@ require (
 	github.com/wlynxg/anet v0.0.5 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/otel v1.31.0 // indirect
-	go.opentelemetry.io/otel/metric v1.31.0 // indirect
-	go.opentelemetry.io/otel/trace v1.31.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/otel v1.34.0 // indirect
+	go.opentelemetry.io/otel/metric v1.34.0 // indirect
+	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	go.uber.org/dig v1.18.0 // indirect
 	go.uber.org/fx v1.23.0 // indirect
 	go.uber.org/mock v0.5.0 // indirect
@@ -185,7 +183,7 @@ require (
 	golang.org/x/tools v0.29.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20211104114900-415007cec224 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20220703234212-c31a7b1ab478 // indirect
-	gonum.org/v1/gonum v0.15.0 // indirect
+	gonum.org/v1/gonum v0.15.1 // indirect
 	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.3.0 // indirect
