@@ -39,9 +39,9 @@ func NewPeerGuardian(logger log.StandardLogger, authProviders ...AuthProvider) *
 
 // ReceiveMessage is a GenericHandler for public channel to provide authentication.
 // We receive messages here and we select them based on 2 criterias:
-// - messages that are supposed to generate challenges for auth mechanisms.
-//   Auth mechanisms should get user auth data from a special TZ dedicated to hashes that are manually added
-// - messages that are answers to such challenges and then means that the sender.ID should be added to the trust zone
+//   - messages that are supposed to generate challenges for auth mechanisms.
+//     Auth mechanisms should get user auth data from a special TZ dedicated to hashes that are manually added
+//   - messages that are answers to such challenges and then means that the sender.ID should be added to the trust zone
 func (pg *PeerGuardian) ReceiveMessage(l *blockchain.Ledger, m *hub.Message, c chan *hub.Message) error {
 	pg.logger.Debug("Peerguardian received message from", m.SenderID)
 
@@ -49,13 +49,15 @@ func (pg *PeerGuardian) ReceiveMessage(l *blockchain.Ledger, m *hub.Message, c c
 
 		_, exists := l.GetKey(protocol.TrustZoneKey, m.SenderID)
 		trustAuth := l.CurrentData()[protocol.TrustZoneAuthKey]
-		if !exists && a.Authenticate(m, c, trustAuth) {
-			// try to authenticate it
-			// Note we can also not be in a TZ here as we are not able to check (we miss node information at hand)
-			// In any way nodes would ignore the messages, and that we hit Authenticate is useful for two (or more)
-			// steps authenticators.
-			l.Persist(context.Background(), 5*time.Second, 120*time.Second, protocol.TrustZoneKey, m.SenderID, "")
-			return nil
+		if !exists {
+			if ok, pubkey := a.Authenticate(m, c, trustAuth); ok {
+				// try to authenticate it
+				// Note we can also not be in a TZ here as we are not able to check (we miss node information at hand)
+				// In any way nodes would ignore the messages, and that we hit Authenticate is useful for two (or more)
+				// steps authenticators.
+				l.Persist(context.Background(), 5*time.Second, 120*time.Second, protocol.TrustZoneKey, m.SenderID, pubkey)
+				return nil
+			}
 		}
 	}
 
@@ -73,22 +75,42 @@ func (pg *PeerGuardian) Challenger(duration time.Duration, autocleanup bool) nod
 				a.Challenger(exists, c, n, b, trustAuth)
 			}
 
-			// Automatically cleanup TZ from peers not anymore in the hub
+			// Automatically cleanup TZ from peers not anymore in the hub, or when the public key was invalidated
 			if autocleanup {
 				peers, err := n.MessageHub.ListPeers()
 				if err != nil {
 					return
 				}
+				// Append ourselves, since trustzone needs to be consistent across every peer
+				peers = append(peers, n.Host().ID())
+
 				tz := b.CurrentData()[protocol.TrustZoneKey]
 
-				for k, _ := range tz {
-				PEER:
+				for peer, peerPubkey := range tz {
+					// Test if trustzone peer still in the hub
+					peerFound := false
 					for _, p := range peers {
-						if p.String() == k {
-							break PEER
+						if p.String() == peer {
+							peerFound = true
+							break
 						}
 					}
-					b.Delete(protocol.TrustZoneKey, k)
+					if !peerFound {
+						b.Delete(protocol.TrustZoneKey, peer)
+						continue
+					}
+					// Test if peer public key was invalidated
+					keyFound := false
+					for _, pubkey := range trustAuth {
+						if pubkey == peerPubkey {
+							keyFound = true
+							break
+						}
+					}
+					if !keyFound {
+						b.Delete(protocol.TrustZoneKey, peer)
+						continue
+					}
 				}
 			}
 		})
@@ -100,6 +122,6 @@ func (pg *PeerGuardian) Challenger(duration time.Duration, autocleanup bool) nod
 type AuthProvider interface {
 	// Authenticate either generates challanges to pick up later or authenticates a node
 	// from a message with the available auth data in the blockchain
-	Authenticate(*hub.Message, chan *hub.Message, map[string]blockchain.Data) bool
+	Authenticate(*hub.Message, chan *hub.Message, map[string]blockchain.Data) (bool, string)
 	Challenger(inTrustZone bool, c node.Config, n *node.Node, b *blockchain.Ledger, trustData map[string]blockchain.Data)
 }
