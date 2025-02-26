@@ -15,7 +15,9 @@ package node
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -109,6 +111,20 @@ func (e *Node) Start(ctx context.Context) error {
 	ledger, err := e.Ledger()
 	if err != nil {
 		return err
+	}
+	// For testing purposes, can be included into the config opts routine as init known public key
+	if os.Getenv("PEERGATE_PUBLIC") != "" {
+		publicStr := os.Getenv("PEERGATE_PUBLIC")
+		publicMap := map[string]string{}
+
+		err := json.Unmarshal([]byte(publicStr), &publicMap)
+		if err != nil {
+			return fmt.Errorf("error while unmarshaling initial public keys: '%w'", err)
+		}
+
+		for k, v := range publicMap {
+			ledger.Persist(ctx, 5*time.Second, 20*time.Second, "trustzoneAuth", k, v)
+		}
 	}
 
 	// Set the handler when we receive messages
