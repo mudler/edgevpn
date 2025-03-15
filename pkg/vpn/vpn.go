@@ -286,7 +286,7 @@ func connectionWorker(
 	}
 }
 
-// redirects packets from the interface to the node using the routing table in the blockchain
+// readPackets packets from the interface to the node using the routing table in the blockchain
 func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce *water.Interface, nc node.Config) error {
 	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
