@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"sync"
 	"time"
 
@@ -112,20 +113,6 @@ func (e *Node) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	// For testing purposes, can be included into the config opts routine as init known public key
-	if os.Getenv("PEERGATE_PUBLIC") != "" {
-		publicStr := os.Getenv("PEERGATE_PUBLIC")
-		publicMap := map[string]string{}
-
-		err := json.Unmarshal([]byte(publicStr), &publicMap)
-		if err != nil {
-			return fmt.Errorf("error while unmarshaling initial public keys: '%w'", err)
-		}
-
-		for k, v := range publicMap {
-			ledger.Persist(ctx, 5*time.Second, 20*time.Second, "trustzoneAuth", k, v)
-		}
-	}
 
 	// Set the handler when we receive messages
 	// The ledger needs to read them and update the internal blockchain
@@ -137,6 +124,28 @@ func (e *Node) Start(ctx context.Context) error {
 	err = e.startNetwork(ctx)
 	if err != nil {
 		return err
+	}
+
+	if len(e.config.TrustedPeerIDS) > 0 && !slices.Contains(e.config.TrustedPeerIDS, e.host.ID().String()) {
+		ledger.SkipVerify()
+	}
+	ledger.SetTrustedPeerIDS(e.config.TrustedPeerIDS)
+	ledger.SetProtectedStoreKeys(e.config.ProtectedStoreKeys)
+
+	// For testing purposes, can be included into the config opts routine as init known public key
+	if os.Getenv("PEERGATE_PUBLIC") != "" {
+		publicStr := os.Getenv("PEERGATE_PUBLIC")
+		publicMap := map[string]string{}
+
+		err := json.Unmarshal([]byte(publicStr), &publicMap)
+		if err != nil {
+			return fmt.Errorf("error while unmarshaling initial public keys: '%w'", err)
+		}
+
+		for k, v := range publicMap {
+			ledger.Persist(ctx, 5*time.Second, 20*time.Second, protocol.TrustZoneAuthKey, k, v)
+		}
+		ledger.Persist(ctx, 5*time.Second, 20*time.Second, "initialOwner", e.host.ID().String(), "")
 	}
 
 	// Send periodically messages to the channel with our blockchain content

@@ -93,6 +93,7 @@ func (e *ECDSA521) Challenger(inTrustZone bool, c node.Config, n *node.Node, b *
 		msg := hub.NewMessage("challenge")
 		msg.Annotations = make(map[string]interface{})
 		msg.Annotations["sigs"] = string(signature)
+		msg.SenderID = n.Host().ID().String()
 		n.PublishMessage(msg)
 		return
 	}

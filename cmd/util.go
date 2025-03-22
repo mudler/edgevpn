@@ -14,6 +14,7 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -321,6 +322,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:   "Enable peerguard. (Experimental)",
 		EnvVars: []string{"PEERGUARD"},
 	},
+	&cli.StringFlag{
+		Name:    "privkey",
+		Usage:   "Use fixed base64 <- protobuf encoded privkey. (Experimental)",
+		EnvVars: []string{"EDGEVPNPRIVKEY"},
+	},
 	&cli.BoolFlag{
 		Name:    "privkey-cache",
 		Usage:   "Enable privkey caching. (Experimental)",
@@ -495,31 +501,39 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		}
 	}
 
-	// Check if we have any privkey identity cached already
-	if c.Bool("privkey-cache") {
-		keyFile := filepath.Join(c.String("privkey-cache-dir"), "privkey")
-		dat, err := os.ReadFile(keyFile)
-		if err == nil && len(dat) > 0 {
-			llger.Info("Reading key from", keyFile)
-
-			nc.Privkey = dat
+	if c.String("privkey") != "" {
+		raw, err := base64.StdEncoding.DecodeString(c.String("privkey"))
+		if err != nil {
+			checkErr(fmt.Errorf("failed to decode privkey: %v", err))
 		} else {
-			// generate, write
-			llger.Info("Generating private key and saving it locally for later use in", keyFile)
+			nc.Privkey = raw
+		}
+	} else {
+		// Check if we have any privkey identity cached already
+		if c.Bool("privkey-cache") {
+			keyFile := filepath.Join(c.String("privkey-cache-dir"), "privkey")
+			dat, err := os.ReadFile(keyFile)
+			if err == nil && len(dat) > 0 {
+				llger.Info("Reading key from", keyFile)
+				nc.Privkey = dat
+			} else {
+				// generate, write
+				llger.Info("Generating private key and saving it locally for later use in", keyFile)
 
-			privkey, err := node.GenPrivKey(0)
-			checkErr(err)
+				privkey, err := node.GenPrivKey(0)
+				checkErr(err)
 
-			r, err := crypto.MarshalPrivateKey(privkey)
-			checkErr(err)
+				r, err := crypto.MarshalPrivateKey(privkey)
+				checkErr(err)
 
-			err = os.MkdirAll(c.String("privkey-cache-dir"), 0600)
-			checkErr(err)
+				err = os.MkdirAll(c.String("privkey-cache-dir"), 0600)
+				checkErr(err)
 
-			err = os.WriteFile(keyFile, r, 0600)
-			checkErr(err)
+				err = os.WriteFile(keyFile, r, 0600)
+				checkErr(err)
 
-			nc.Privkey = r
+				nc.Privkey = r
+			}
 		}
 	}
 
