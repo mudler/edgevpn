@@ -17,4 +17,3 @@ trusted_peer_ids:
 protected_store_key:
   - trustzone
   - trustzoneAuth
-  - initialOwner
