@@ -15,9 +15,7 @@ package node
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 	"slices"
 	"sync"
 	"time"
@@ -131,22 +129,6 @@ func (e *Node) Start(ctx context.Context) error {
 	}
 	ledger.SetTrustedPeerIDS(e.config.TrustedPeerIDS)
 	ledger.SetProtectedStoreKeys(e.config.ProtectedStoreKeys)
-
-	// For testing purposes, can be included into the config opts routine as init known public key
-	if os.Getenv("PEERGATE_PUBLIC") != "" {
-		publicStr := os.Getenv("PEERGATE_PUBLIC")
-		publicMap := map[string]string{}
-
-		err := json.Unmarshal([]byte(publicStr), &publicMap)
-		if err != nil {
-			return fmt.Errorf("error while unmarshaling initial public keys: '%w'", err)
-		}
-
-		for k, v := range publicMap {
-			ledger.Persist(ctx, 5*time.Second, 20*time.Second, protocol.TrustZoneAuthKey, k, v)
-		}
-		ledger.Persist(ctx, 5*time.Second, 20*time.Second, "initialOwner", e.host.ID().String(), "")
-	}
 
 	// Send periodically messages to the channel with our blockchain content
 	ledger.Syncronizer(ctx, e.config.LedgerSyncronizationTime)

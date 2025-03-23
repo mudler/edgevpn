@@ -15,14 +15,17 @@ export PEERGATE=true
 export PEERGUARD=true
 export PEERGATE_AUTOCLEAN=true
 export PEERGATE_AUTH='{ "ecdsa" : { "private_key": "'$MAIN_PRIVKEY'" } }'
-export PEERGATE_PUBLIC='{ "ecdsa_main": "'$MAIN_PUBKEY'", "ecdsa_client": "'$CLIENT_PUBKEY'" }'
 
 # killall main is a bad idea, but that worked on my machine
 sudo -E bash -c "
-  IFACE=\"utun10\"  go run main.go &
+  IFACE=\"utun10\" go run main.go api --enable-healthchecks &
   sleep 3
 
+  curl -X PUT http://127.0.0.1:8080/api/ledger/trustzoneAuth/ecdsa_client/"$CLIENT_PUBKEY"
+  curl -X PUT http://127.0.0.1:8080/api/ledger/trustzoneAuth/ecdsa_main/"$MAIN_PUBKEY"
+
   export -n EDGEVPNPRIVKEY
+  export -n PEERGATE
   export PEERGATE_AUTH='{ \"ecdsa\" : { \"private_key\": \""$CLIENT_PRIVKEY"\" } }'
   
   IFACE=\"utun11\" go run main.go
