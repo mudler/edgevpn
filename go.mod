@@ -18,7 +18,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/libp2p/go-libp2p v0.41.1
 	github.com/libp2p/go-libp2p-kad-dht v0.30.2
-	github.com/libp2p/go-libp2p-pubsub v0.13.0
+	github.com/libp2p/go-libp2p-pubsub v0.13.1
 	github.com/miekg/dns v1.1.63
 	github.com/mudler/go-processmanager v0.0.0-20240820160718-8b802d3ecf82
 	github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0
