@@ -43,7 +43,7 @@ func (pg *PeerGater) Enabled() bool {
 	return pg.enabled
 }
 
-// Disables turn off the peer gating mechanism
+// Disable turn off the peer gating mechanism
 func (pg *PeerGater) Disable() {
 	pg.Lock()
 	defer pg.Unlock()
