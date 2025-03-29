@@ -16,6 +16,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -122,6 +123,12 @@ func (e *Node) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	if len(e.config.TrustedPeerIDS) > 0 && !slices.Contains(e.config.TrustedPeerIDS, e.host.ID().String()) {
+		ledger.SkipVerify()
+	}
+	ledger.SetTrustedPeerIDS(e.config.TrustedPeerIDS)
+	ledger.SetProtectedStoreKeys(e.config.ProtectedStoreKeys)
 
 	// Send periodically messages to the channel with our blockchain content
 	ledger.Syncronizer(ctx, e.config.LedgerSyncronizationTime)

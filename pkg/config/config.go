@@ -482,6 +482,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			node.WithNetworkService(
 				pg.UpdaterService(dur),
 				pguardian.Challenger(dur, c.PeerGuard.Autocleanup),
+				pguardian.AutoTrust(dur),
 			),
 			node.EnableGenericHub,
 			node.GenericChannelHandlers(pguardian.ReceiveMessage),
