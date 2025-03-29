@@ -99,6 +99,20 @@ func (pg *PeerGuardian) Challenger(duration time.Duration, autocleanup bool) nod
 						b.Delete(protocol.TrustZoneKey, peer)
 						continue
 					}
+
+					// Skip key validation for initially trusted peers,
+					// as they don't have to share their key
+					peerTrusted := false
+					for _, p := range c.TrustedPeerIDS {
+						if p == peer {
+							peerTrusted = true
+							break
+						}
+					}
+					if peerTrusted {
+						continue
+					}
+
 					// Test if peer public key was invalidated
 					keyFound := false
 					for _, pubkey := range trustAuth {
@@ -112,6 +126,30 @@ func (pg *PeerGuardian) Challenger(duration time.Duration, autocleanup bool) nod
 						continue
 					}
 				}
+			}
+		})
+		return nil
+	}
+}
+
+// AutoTrust is a NetworkService that should add self peer ID to the trustzone if it exists in initial trusted peer IDs list
+func (pg *PeerGuardian) AutoTrust(duration time.Duration) node.NetworkService {
+	return func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
+
+		selfTrust := false
+		for _, p := range c.TrustedPeerIDS {
+			if p == n.Host().ID().String() {
+				selfTrust = true
+				break
+			}
+		}
+		if !selfTrust {
+			return nil
+		}
+
+		b.Announce(ctx, duration, func() {
+			if _, exists := b.GetKey(protocol.TrustZoneKey, n.Host().ID().String()); !exists {
+				b.Persist(context.Background(), 5*time.Second, 120*time.Second, protocol.TrustZoneKey, n.Host().ID().String(), "")
 			}
 		})
 		return nil

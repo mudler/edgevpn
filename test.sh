@@ -22,7 +22,6 @@ sudo -E bash -c "
   sleep 3
 
   curl -X PUT http://127.0.0.1:8080/api/ledger/trustzoneAuth/ecdsa_client/"$CLIENT_PUBKEY"
-  curl -X PUT http://127.0.0.1:8080/api/ledger/trustzoneAuth/ecdsa_main/"$MAIN_PUBKEY"
 
   export -n EDGEVPNPRIVKEY
   export -n PEERGATE
