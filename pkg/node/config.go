@@ -76,6 +76,9 @@ type Config struct {
 
 	Sealer    Sealer
 	PeerGater Gater
+
+	TrustedPeerIDS     []string
+	ProtectedStoreKeys []string
 }
 
 type Gater interface {
