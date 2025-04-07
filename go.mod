@@ -9,7 +9,6 @@ require (
 	github.com/benbjohnson/clock v1.3.5
 	github.com/c-robinson/iplib v1.0.8
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/creachadair/otp v0.5.0
 	github.com/google/gopacket v1.1.19
 	github.com/hashicorp/golang-lru v1.0.2
@@ -19,7 +18,7 @@ require (
 	github.com/libp2p/go-libp2p v0.41.1
 	github.com/libp2p/go-libp2p-kad-dht v0.30.2
 	github.com/libp2p/go-libp2p-pubsub v0.13.1
-	github.com/miekg/dns v1.1.64
+	github.com/miekg/dns v1.1.65
 	github.com/mudler/go-processmanager v0.0.0-20240820160718-8b802d3ecf82
 	github.com/mudler/water v0.0.0-20221010214108-8c7313014ce0
 	github.com/multiformats/go-multiaddr v0.15.0
