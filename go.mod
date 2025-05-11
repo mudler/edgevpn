@@ -29,6 +29,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
 	github.com/urfave/cli/v2 v2.27.6
+	github.com/urfave/cli/v3 v3.3.3
 	github.com/vishvananda/netlink v1.3.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/sys v0.31.0
