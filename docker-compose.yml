@@ -1,0 +1,24 @@
+services:
+  edgevpn:
+    image: quay.io/mudler/edgevpn:latest
+    pull_policy: always
+    container_name: edgevpn
+    restart: unless-stopped
+    volumes:
+      - /home/CHANGEME/.edgevpn:/root/.edgevpn
+
+    # If you want to specify arguments on startup you can either use the `entrypoint` below or specify environment variables
+    # entrypoint: /usr/bin/edgevpn --address 10.5.0.10/24 --api --api-listen 127.0.0.1:57777 --low-profile --privkey-cache --privkey-cache-dir=/root/.edgevpn
+    environment:
+      - EDGEVPNTOKEN=CHANGEME
+
+    # This is needed to allow edgevpn to setup the `edgevpn0` network interface systemwide:
+    network_mode: host
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+
+    # logging:
+    #   driver: journald
+

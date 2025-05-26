@@ -36,7 +36,18 @@ $> cd edgevpn
 $> go build
 ```
 
-### First VPN
+### Using Docker Compose
+
+Using docker is still experimental as setups can vary wildly.
+An example [docker-compose.yml](https://github.com/mudler/edgevpn/blob/master/docker-compose.yml) file is provided for convenience but you'll likely need to edit it.
+
+```bash
+$> git clone https://github.com/mudler/edgevpn
+$> cd edgevpn
+$> sudo docker compose up --detach
+```
+
+## Creating Your First VPN
 
 Let's create our first vpn now and start it:
 
