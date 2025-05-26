@@ -19,6 +19,14 @@ services:
     cap_add:
       - NET_ADMIN
 
+    # basic healthcheck that checks wether "edgevpn0" is indeed present as a network interface
+    healthcheck:
+      test: ["CMD", "sh", "-c", "ifconfig | grep -q edgevpn0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
     # logging:
     #   driver: journald
 
