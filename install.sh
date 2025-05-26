@@ -7,7 +7,7 @@ github_version() {
     curl -s https://api.github.com/repos/mudler/edgevpn/releases/latest | \
     grep tag_name | \
     awk '{ print $2 }' | \
-    sed -e 's/\"//g' -e 's/,//g' || echo "v0.8.5"
+    sed -e 's/\"//g' -e 's/,//g' || echo "v30.2"
     set -e
 }
 
