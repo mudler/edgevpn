@@ -5,19 +5,40 @@ services:
     container_name: edgevpn
     restart: unless-stopped
     volumes:
-      - /home/CHANGEME/.edgevpn:/root/.edgevpn
+      - /home/CHANGEME/.edgevpn:/root/.edgevpn:rw
+      # Add tmpfs mounts for writable areas since we made filesystem read-only
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 100M
+      - type: tmpfs
+        target: /var/tmp
+        tmpfs:
+          size: 50M
+      - type: tmpfs
+        target: /run
+        tmpfs:
+          size: 50M
+      - type: tmpfs
+        target: /var/run
+        tmpfs:
+          size: 50M
+
 
     # If you want to specify arguments on startup you can either use the `entrypoint` below or specify environment variables
     # entrypoint: /usr/bin/edgevpn --address 10.5.0.10/24 --api --api-listen 127.0.0.1:57777 --low-profile --privkey-cache --privkey-cache-dir=/root/.edgevpn
     environment:
       - EDGEVPNTOKEN=CHANGEME
 
+      # Explicitly unset potentially dangerous environment variables
+      - HOME=/home/edgevpn
+      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+
     # This is needed to allow edgevpn to setup the `edgevpn0` network interface systemwide:
     network_mode: host
     devices:
       - /dev/net/tun:/dev/net/tun
-    cap_add:
-      - NET_ADMIN
 
     # basic healthcheck that checks wether "edgevpn0" is indeed present as a network interface
     healthcheck:
@@ -30,3 +51,29 @@ services:
     # logging:
     #   driver: journald
 
+    # increase security
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    init: true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M  # Add memory limit
+          pids: 100     # Limit number of processes
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 2048
+      nproc:
+        soft: 64
+        hard: 128
+      memlock:
+        soft: 67108864  # 64MB
+        hard: 67108864
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
