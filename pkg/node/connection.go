@@ -24,7 +24,6 @@ import (
 	internalCrypto "github.com/mudler/edgevpn/pkg/crypto"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p/core/connmgr"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -198,6 +197,10 @@ var defaults = []struct {
 		fallback: func(cfg *libp2p.Config) bool { return !cfg.RelayCustom },
 		opt:      libp2p.DefaultEnableRelay,
 	},
+	{
+		fallback: func(cfg *libp2p.Config) bool { return cfg.ResourceManager == nil },
+		opt:      libp2p.DefaultResourceManager,
+	},
 	//{
 	//	fallback: func(cfg *libp2p.Config) bool { return cfg.ResourceManager == nil },
 	//	opt:      libp2p.DefaultResourceManager,
@@ -206,7 +209,8 @@ var defaults = []struct {
 		fallback: func(cfg *libp2p.Config) bool { return cfg.ConnManager == nil },
 		// Filling the ConnManager is required, even if its a null one as libp2p will call functions of the
 		// libp2p.Config.ConnManager so we need to have it not nil
-		opt: libp2p.ConnectionManager(connmgr.NullConnMgr{}),
+		opt: libp2p.DefaultConnectionManager,
+		//opt: libp2p.ConnectionManager(connmgr.NullConnMgr{}),
 	},
 	{
 		fallback: func(cfg *libp2p.Config) bool {
