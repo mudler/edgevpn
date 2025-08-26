@@ -21,6 +21,8 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"maps"
+	"slices"
 	"sync"
 	"time"
 
@@ -35,6 +37,10 @@ type Ledger struct {
 	blockchain Store
 
 	channel io.Writer
+
+	skipVerify         bool
+	trustedPeerIDS     []string
+	protectedStoreKeys []string
 }
 
 type Store interface {
@@ -57,6 +63,16 @@ func (l *Ledger) newGenesis() {
 	genesisBlock := Block{}
 	genesisBlock = Block{0, t.String(), map[string]map[string]Data{}, genesisBlock.Checksum(), ""}
 	l.blockchain.Add(genesisBlock)
+}
+
+func (l *Ledger) SkipVerify() {
+	l.skipVerify = true
+}
+func (l *Ledger) SetTrustedPeerIDS(ids []string) {
+	l.trustedPeerIDS = ids
+}
+func (l *Ledger) SetProtectedStoreKeys(keys []string) {
+	l.protectedStoreKeys = keys
 }
 
 // Syncronizer starts a goroutine which
@@ -123,8 +139,17 @@ func (l *Ledger) Update(f *Ledger, h *hub.Message, c chan *hub.Message) (err err
 		return
 	}
 
+	if len(l.protectedStoreKeys) > 0 && !slices.Contains(l.trustedPeerIDS, h.SenderID) {
+		for _, key := range l.protectedStoreKeys {
+			if !maps.Equal(l.blockchain.Last().Storage[key], block.Storage[key]) {
+				err = errors.Wrapf(err, "unauthorized attempt to write to protected bucket: %s", key)
+				return
+			}
+		}
+	}
+
 	l.Lock()
-	if block.Index > l.blockchain.Len() {
+	if l.skipVerify || block.Index > l.blockchain.Len() {
 		l.blockchain.Add(*block)
 	}
 	l.Unlock()
@@ -350,11 +375,13 @@ func (l *Ledger) Index() int {
 func (l *Ledger) writeData(s map[string]map[string]Data) {
 	newBlock := l.blockchain.Last().NewBlock(s)
 
-	if newBlock.IsValid(l.blockchain.Last()) {
-		l.Lock()
-		l.blockchain.Add(newBlock)
-		l.Unlock()
+	if !l.skipVerify && !newBlock.IsValid(l.blockchain.Last()) {
+		return
 	}
+
+	l.Lock()
+	l.blockchain.Add(newBlock)
+	l.Unlock()
 
 	bytes, err := json.Marshal(l.blockchain.Last())
 	if err != nil {

@@ -259,6 +259,9 @@ type YAMLConnectionConfig struct {
 	Rendezvous     string `yaml:"rendezvous"`
 	MDNS           string `yaml:"mdns"`
 	MaxMessageSize int    `yaml:"max_message_size"`
+
+	TrustedPeerIDS     []string `yaml:"trusted_peer_ids"`
+	ProtectedStoreKeys []string `yaml:"protected_store_keys"`
 }
 
 // Base64 returns the base64 string representation of the connection
@@ -301,6 +304,8 @@ func (y YAMLConnectionConfig) copy(mdns, dht bool, cfg *Config, d *discovery.DHT
 	}
 	cfg.SealKeyLength = y.OTP.Crypto.Length
 	cfg.MaxMessageSize = y.MaxMessageSize
+	cfg.TrustedPeerIDS = y.TrustedPeerIDS
+	cfg.ProtectedStoreKeys = y.ProtectedStoreKeys
 }
 
 const defaultKeyLength = 43
