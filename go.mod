@@ -18,7 +18,7 @@ require (
 	github.com/libp2p/go-libp2p v0.43.0
 	github.com/libp2p/go-libp2p-kad-dht v0.33.1
 	github.com/libp2p/go-libp2p-pubsub v0.14.2
-	github.com/miekg/dns v1.1.66
+	github.com/miekg/dns v1.1.68
 	github.com/mudler/go-processmanager v0.0.0-20240820160718-8b802d3ecf82
 	github.com/mudler/water v0.0.0-20250808092830-dd90dcf09025
 	github.com/multiformats/go-multiaddr v0.16.0
