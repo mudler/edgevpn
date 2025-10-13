@@ -1,6 +1,6 @@
 module github.com/mudler/edgevpn
 
-go 1.23.8
+go 1.24
 
 toolchain go1.25.0
 
@@ -13,7 +13,7 @@ require (
 	github.com/google/gopacket v1.1.19
 	github.com/hashicorp/golang-lru v1.0.2
 	github.com/ipfs/go-log v1.0.5
-	github.com/ipfs/go-log/v2 v2.6.0
+	github.com/ipfs/go-log/v2 v2.8.2
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/libp2p/go-libp2p v0.43.0
 	github.com/libp2p/go-libp2p-kad-dht v0.33.1
