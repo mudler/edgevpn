@@ -38,7 +38,7 @@ It can:
 
 - **Send files via p2p** : Send files over p2p between nodes without establishing a VPN connection.
 
-- **Be used as a library**: Plug a distributed p2p ledger easily in your golang code! For example EdgeVPN powers [LocalAI](github.com/go-skynet/LocalAI)'s P2P features (you can learn more about it [here](https://localai.io/features/distribute/)).
+- **Be used as a library**: Plug a distributed p2p ledger easily in your golang code! For example EdgeVPN powers [LocalAI](https://github.com/mudler/LocalAI)'s P2P features (you can learn more about it [here](https://localai.io/features/distribute/)).
 
 See the [documentation](https://mudler.github.io/edgevpn).
 
