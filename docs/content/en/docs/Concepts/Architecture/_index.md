@@ -26,7 +26,7 @@ Each node keeps broadcasting it's state until it is reconciled in the blockchain
 - Simple (KISS) interface to display network data from the blockchain
 - asymmetric p2p encryption between peers with libp2p
 - randezvous points dynamically generated from OTP keys
-- extra AES symmetric encryption on top. In case randezvous point is compromised
+- extra AES symmetric encryption on top. In case rendezvous point is compromised
 - blockchain is used as a sealed encrypted store for the routing table
 - connections are created host to host and encrypted asymmetrically
 
