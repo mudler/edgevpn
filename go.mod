@@ -2,7 +2,7 @@ module github.com/mudler/edgevpn
 
 go 1.23.8
 
-toolchain go1.25.0
+toolchain go1.25.3
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
