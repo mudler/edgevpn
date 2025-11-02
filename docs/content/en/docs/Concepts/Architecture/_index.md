@@ -37,7 +37,7 @@ Network is bootstrapped with libp2p and is composed of 3 phases:
 {{< imgproc edevpn_bootstrap.png Fit "1200x550" >}}
 {{< /imgproc >}}
 
-In the first phase, nodes do discover each others via DHT and a randevouz secret which is automatically generated via OTP.
+In the first phase, nodes do discover each others via DHT and a rendezvous secret which is automatically generated via OTP.
 
 Once peers know about each other a gossip network is established, where the nodes exchange a blockchain over an p2p e2e encrypted channel. The blockchain is sealed with a symmetric key which is rotated via OTP that is shared between the nodes. 
 
