@@ -135,6 +135,8 @@ github.com/ipfs/go-log v1.0.5/go.mod h1:j0b8ZoR+7+R99LD9jZ6+AJsrzkPbSXbZfGakb5JP
 github.com/ipfs/go-log/v2 v2.1.3/go.mod h1:/8d0SH3Su5Ooc31QlL1WysJhvyOTDCjcCZ9Axpmri6g=
 github.com/ipfs/go-log/v2 v2.6.0 h1:2Nu1KKQQ2ayonKp4MPo6pXCjqw1ULc9iohRqWV5EYqg=
 github.com/ipfs/go-log/v2 v2.6.0/go.mod h1:p+Efr3qaY5YXpx9TX7MoLCSEZX5boSWj9wh86P5HJa8=
+github.com/ipfs/go-log/v2 v2.8.2 h1:nVG4nNHUwwI/sTs9Bi5iE8sXFQwXs3AjkkuWhg7+Y2I=
+github.com/ipfs/go-log/v2 v2.8.2/go.mod h1:UhIYAwMV7Nb4ZmihUxfIRM2Istw/y9cAk3xaK+4Zs2c=
 github.com/ipfs/go-test v0.2.1 h1:/D/a8xZ2JzkYqcVcV/7HYlCnc7bv/pKHQiX5TdClkPE=
 github.com/ipfs/go-test v0.2.1/go.mod h1:dzu+KB9cmWjuJnXFDYJwC25T3j1GcN57byN+ixmK39M=
 github.com/ipld/go-ipld-prime v0.21.0 h1:n4JmcpOlPDIxBcY037SVfpd1G+Sj1nKZah0m6QH9C2E=
