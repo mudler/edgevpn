@@ -2,7 +2,7 @@
 ARG LDFLAGS=-s -w
 
 # Use a temporary build image based on Golang 1.20-alpine
-FROM golang:1.24-alpine as builder
+FROM golang:1.25-alpine as builder
 
 # Set environment variables: linker flags and disable CGO
 ENV LDFLAGS=$LDFLAGS CGO_ENABLED=0
