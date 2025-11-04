@@ -68,7 +68,7 @@ Dashboard            |  Connections index
 
 # Kubernetes 
 
-Check out [c3os](https://github.com/mudler/c3os) for seeing EdgeVPN in action with Kubernetes!
+Check out [Kairos](https://github.com/kairos-io/kairos) for seeing EdgeVPN in action with Kubernetes!
 
 # :running: Installation
 
