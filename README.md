@@ -33,6 +33,7 @@ It can:
   - Automatically assign IPs to nodes
   - Embedded tiny DNS server to resolve internal/external IPs
   - Create trusted zones to prevent network access if token is leaked
+  - For example, the [Kairos](https://github.com/kairos-io/kairos) CNCF project uses it as a layer for creating decentralized clusters with Kubernetes
 
 - **Act as a reverse Proxy** : Share a tcp service like you would do with `ngrok`. EdgeVPN let expose TCP services to the p2p network nodes without establishing a VPN connection: creates reverse proxy and tunnels traffic into the p2p network.
 
