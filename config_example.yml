@@ -1,0 +1,19 @@
+otp:
+  dht:
+    interval: 360
+    key: YVMwYeeoIJ9yGQeuRNHY3wigEhDEisAPcbt0L30vQ3q
+    length: 43
+  crypto:
+    interval: 360
+    key: 0Yu91JT1WPmWtmmrFD5tWrSzeyhLUVFWyiEXzIezcyz
+    length: 43
+room: k9xRlX6brHxKMAWhGgvsuoiwq4fcNyNtA7JQivZBYm7
+rendezvous: tFMpGqtqtFHckVt62FCklh9xqjTi9upKWCmXNrNBCpL
+mdns: NG8LRHaJTRnR0tbOGgr73oQTZqvKEn0kllXQr5SfKDs
+max_message_size: 20971520
+
+trusted_peer_ids:
+  - 12D3KooWQi1XDFy1Ntv5WXLYJWbuFy1zbXM3F6jc4DUJKtaoZPpC
+protected_store_key:
+  - trustzone
+  - trustzoneAuth
