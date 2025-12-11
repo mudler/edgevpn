@@ -59,7 +59,7 @@ $ curl -X PUT 'http://localhost:8080/api/ledger/trustzoneAuth/ecdsa_1/LS0tLS1CRU
 Now the private key can be used while starting new nodes:
 
 ```bash
-PEERGATE_AUTH="{ 'ecdsa' : { 'private_key': 'LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1JSGNBZ0VCQkVJQkhUZnRSTVZSRmlvaWZrdllhZEE2NXVRQXlSZTJSZHM0MW1UTGZlNlRIT3FBTTdkZW9sak0KZXVPbTk2V0hacEpzNlJiVU1tL3BCWnZZcElSZ0UwZDJjdUdnQndZRks0RUVBQ09oZ1lrRGdZWUFCQUdVWStMNQptUzcvVWVoSjg0b3JieGo3ZmZUMHBYZ09MSzNZWEZLMWVrSTlEWnR6YnZWOUdwMHl6OTB3aVZxajdpMDFVRnhVCnRKbU1lWURIRzBTQkNuVWpDZ0FGT3ByUURpTXBFR2xYTmZ4LzIvdEVySDIzZDNwSytraFdJbUIza01QL2tRNEIKZzJmYnk2cXJpY1dHd3B4TXBXNWxKZVZXUGlkeWJmMSs0cVhPTWdQbmRnPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=' } }"
+PEERGATE_AUTH='{ "ecdsa" : { "private_key": "LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1JSGNBZ0VCQkVJQkhUZnRSTVZSRmlvaWZrdllhZEE2NXVRQXlSZTJSZHM0MW1UTGZlNlRIT3FBTTdkZW9sak0KZXVPbTk2V0hacEpzNlJiVU1tL3BCWnZZcElSZ0UwZDJjdUdnQndZRks0RUVBQ09oZ1lrRGdZWUFCQUdVWStMNQptUzcvVWVoSjg0b3JieGo3ZmZUMHBYZ09MSzNZWEZLMWVrSTlEWnR6YnZWOUdwMHl6OTB3aVZxajdpMDFVRnhVCnRKbU1lWURIRzBTQkNuVWpDZ0FGT3ByUURpTXBFR2xYTmZ4LzIvdEVySDIzZDNwSytraFdJbUIza01QL2tRNEIKZzJmYnk2cXJpY1dHd3B4TXBXNWxKZVZXUGlkeWJmMSs0cVhPTWdQbmRnPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=" } }'
 $ edgevpn --peerguardian --peergate
 ```
 
@@ -88,7 +88,7 @@ $ curl -X PUT 'http://localhost:8080/api/peergate/disable'
 To init a new Trusted network, start nodes with `--peergate-relaxed` and add the neccessary auth keys:
 
 ```bash
-$ edgevpn --peerguardian --peergate --peergate-relaxed
+$ edgevpn --peerguard --peergate --peergate-relaxed
 $ curl -X PUT 'http://localhost:8080/api/ledger/trustzoneAuth/keytype_1/XXX'
 ```
 
