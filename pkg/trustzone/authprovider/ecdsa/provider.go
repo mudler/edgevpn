@@ -45,13 +45,13 @@ func ECDSA521Provider(ll log.StandardLogger, privkey string) (*ECDSA521, error) 
 // It cycles over all the Trusted zone Auth data ( providers options, not where senders ID are stored)
 // and detects any key with ecdsa prefix. Values are assumed to be string and parsed as pubkeys.
 // The pubkeys are then used to authenticate nodes and verify if any of the pubkeys validates the challenge.
-func (e *ECDSA521) Authenticate(m *hub.Message, c chan *hub.Message, tzdata map[string]blockchain.Data) bool {
+func (e *ECDSA521) Authenticate(m *hub.Message, c chan *hub.Message, tzdata map[string]blockchain.Data) (bool, string) {
 
 	sigs, ok := m.Annotations["sigs"]
 	if !ok {
 		e.logger.Debug("No signature in message", m.Message, m.Annotations)
 
-		return false
+		return false, ""
 	}
 
 	e.logger.Debug("ECDSA auth Received", m)
@@ -67,17 +67,17 @@ func (e *ECDSA521) Authenticate(m *hub.Message, c chan *hub.Message, tzdata map[
 	if len(pubKeys) == 0 {
 		e.logger.Debug("ECDSA auth: No pubkeys to auth against")
 		// no pubkeys to authenticate present in the ledger
-		return false
+		return false, ""
 	}
 	for _, pubkey := range pubKeys {
 		// Try verifying the signature
 		if err := verify([]byte(pubkey), []byte(fmt.Sprint(sigs)), bytes.NewBufferString(m.Message)); err == nil {
 			e.logger.Debug("ECDSA auth: Signature verified")
-			return true
+			return true, pubkey
 		}
 		e.logger.Debug("ECDSA auth: Signature not verified")
 	}
-	return false
+	return false, ""
 }
 
 // Challenger sends ECDSA521 challenges over the public channel if the current node is not in the trusted zone.
@@ -93,6 +93,7 @@ func (e *ECDSA521) Challenger(inTrustZone bool, c node.Config, n *node.Node, b *
 		msg := hub.NewMessage("challenge")
 		msg.Annotations = make(map[string]interface{})
 		msg.Annotations["sigs"] = string(signature)
+		msg.SenderID = n.Host().ID().String()
 		n.PublishMessage(msg)
 		return
 	}

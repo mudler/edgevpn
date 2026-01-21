@@ -15,6 +15,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"os"
@@ -22,6 +23,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/network"
 
@@ -57,6 +59,10 @@ func MainFlags() []cli.Flag {
 		&cli.BoolFlag{
 			Name:  "b",
 			Usage: "Encodes the new config in base64, so it can be used as a token",
+		},
+		&cli.BoolFlag{
+			Name:  "p",
+			Usage: "Generates a ED25519 private key, converts it to protobuf serialized form, and encodes as base64 string",
 		},
 		&cli.BoolFlag{
 			Name:  "debug",
@@ -154,6 +160,22 @@ func Main() func(c *cli.Context) error {
 				fmt.Println(newData.YAML())
 			}
 
+			os.Exit(0)
+		}
+
+		if c.Bool("p") {
+			// Generates a new protobuf encoded priv key and exit
+			privkey, err := node.GenPrivKey(0)
+			if err != nil {
+				return err
+			}
+
+			protoKey, err := crypto.MarshalPrivateKey(privkey)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("Private key: %s\n", base64.StdEncoding.EncodeToString(protoKey))
 			os.Exit(0)
 		}
 		o, vpnOpts, ll := cliToOpts(c)

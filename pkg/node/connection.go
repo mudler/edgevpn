@@ -20,6 +20,7 @@ import (
 	"io"
 	mrand "math/rand"
 	"net"
+	"slices"
 
 	internalCrypto "github.com/mudler/edgevpn/pkg/crypto"
 
@@ -255,6 +256,21 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 		case m := <-roomMessages:
 			if m == nil {
 				continue
+			}
+
+			// If we have enabled trusted arbiter peers
+			if len(e.config.TrustedPeerIDS) > 0 && e.host.ID().String() != m.SenderID {
+				// If we are not the trusted one
+				if !slices.Contains(e.config.TrustedPeerIDS, e.host.ID().String()) {
+					// If incoming message is not from trusted one
+					if !slices.Contains(e.config.TrustedPeerIDS, m.SenderID) {
+						e.config.Logger.Warnf("%s gated room message from %s - not present in trusted peer IDS", e.host.ID(), m.SenderID)
+						continue
+					} else {
+						// If we a non-trusted peer, and we receive a meesage from the trusted one - disable peerGater
+						peerGater = false
+					}
+				}
 			}
 
 			if peerGater {
