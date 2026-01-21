@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/benbjohnson/clock v1.3.5
 	github.com/c-robinson/iplib v1.0.8
+	github.com/c-robinson/iplib/v2 v2.0.5
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/creachadair/otp v0.5.0
 	github.com/google/gopacket v1.1.19
