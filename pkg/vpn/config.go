@@ -14,6 +14,7 @@ limitations under the License.
 package vpn
 
 import (
+	"io"
 	"time"
 
 	"github.com/ipfs/go-log"
@@ -21,7 +22,7 @@ import (
 )
 
 type Config struct {
-	Interface        *water.Interface
+	Interface        io.ReadWriteCloser
 	InterfaceName    string
 	InterfaceAddress string
 	RouterAddress    string
@@ -72,7 +73,12 @@ var LowProfile Option = func(cfg *Config) error {
 	return nil
 }
 
-func WithInterface(i *water.Interface) func(cfg *Config) error {
+// WithInterface sets a pre-created io.ReadWriteCloser as the tunnel interface,
+// bypassing platform-specific interface creation entirely. When set, neither
+// createInterface nor prepareInterface will be called. This is useful on
+// platforms like Android where the TUN file descriptor is provided by the OS
+// (e.g. via VpnService) and cannot be opened directly.
+func WithInterface(i io.ReadWriteCloser) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.Interface = i
 		return nil
