@@ -29,7 +29,7 @@ require (
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vishvananda/netlink v1.3.1
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	golang.org/x/sys v0.39.0
 	golang.zx2c4.com/wireguard/windows v0.5.3
 	gopkg.in/yaml.v2 v2.4.0
