@@ -52,12 +52,12 @@ jobs:
         with:
           go-version: 1.25
       - name: Download result for build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: connection
           path: ./
       - name: Download result for build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: edgevpn
           path: ./
@@ -89,12 +89,12 @@ jobs:
         with:
           fetch-depth: 0
       - name: Download result for build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: connection
           path: ./
       - name: Download result for build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: edgevpn
           path: ./
@@ -124,12 +124,12 @@ jobs:
         with:
           fetch-depth: 0
       - name: Download result for build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: connection
           path: ./
       - name: Download result for build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: edgevpn
           path: ./
@@ -154,12 +154,12 @@ jobs:
         with:
           fetch-depth: 0
       - name: Download result for build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: connection
           path: ./
       - name: Download result for build
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: edgevpn
           path: ./
