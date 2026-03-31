@@ -17,6 +17,9 @@ builds:
       - arm
       - 386
       - arm64
+    ignore:
+      - goos: windows
+        goarch: arm
 source:
   enabled: true
   name_template: '{{ .ProjectName }}-{{ .Tag }}-source'
