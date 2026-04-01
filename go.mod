@@ -31,6 +31,7 @@ require (
 	golang.org/x/sys v0.42.0
 	golang.zx2c4.com/wireguard/windows v0.5.3
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
