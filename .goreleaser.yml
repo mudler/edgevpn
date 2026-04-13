@@ -17,6 +17,7 @@ builds:
       - arm
       - 386
       - arm64
+      - riscv64
     ignore:
       - goos: windows
         goarch: arm
