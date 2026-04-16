@@ -167,7 +167,7 @@ func peers2AddrInfo(peers []string) []peer.AddrInfo {
 var infiniteResourceLimits = rcmgr.InfiniteLimits.ToPartialLimitConfig().System
 
 // ToOpts returns node and vpn options from a configuration
-func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
+func (c Config) ToOpts(l log.StandardLogger) ([]node.Option, []vpn.Option, error) {
 
 	if err := c.Validate(); err != nil {
 		return nil, nil, err
@@ -190,7 +190,11 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		lvl = log.LevelError
 	}
 
-	llger := logger.New(lvl)
+	// Use the caller-provided logger if given, otherwise create a default one.
+	llger := l
+	if llger == nil {
+		llger = logger.New(lvl)
+	}
 
 	libp2plvl, err := log.LevelFromString(libp2plogLevel)
 	if err != nil {

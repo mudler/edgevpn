@@ -249,7 +249,10 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 			c.Message = str
 
 			if err := pub(c); err != nil {
-				e.config.Logger.Warnf("publish error: %s", err)
+				// "no message room available" is normal during the first ~1s after start (hub joins room after TOTP tick).
+				if err.Error() != "no message room available" {
+					e.config.Logger.Warnf("publish error: %s", err)
+				}
 			}
 
 		case m := <-roomMessages:

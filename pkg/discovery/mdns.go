@@ -21,7 +21,6 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 )
 
 type MDNS struct {
@@ -47,11 +46,4 @@ func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 
 func (d *MDNS) Option(ctx context.Context) func(c *libp2p.Config) error {
 	return func(*libp2p.Config) error { return nil }
-}
-
-func (d *MDNS) Run(l log.StandardLogger, ctx context.Context, host host.Host) error {
-	// setup mDNS discovery to find local peers
-
-	disc := mdns.NewMdnsService(host, d.DiscoveryServiceTag, &discoveryNotifee{h: host, c: l})
-	return disc.Start()
 }

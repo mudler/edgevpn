@@ -37,7 +37,6 @@ import (
 	"github.com/mudler/edgevpn/pkg/stream"
 	"github.com/mudler/edgevpn/pkg/types"
 
-	"github.com/mudler/water"
 	"github.com/pkg/errors"
 	"github.com/songgao/packets/ethernet"
 )
@@ -62,12 +61,17 @@ func VPNNetworkService(p ...Option) node.NetworkService {
 			return err
 		}
 
-		ifce, err := createInterface(c)
-		if err != nil {
-			return err
+		ifce := c.Interface
+		if ifce == nil {
+			created, err := createInterface(c)
+			if err != nil {
+				return err
+			}
+			ifce = created
 		}
 		defer ifce.Close()
 
+		var err error
 		var mgr streamManager
 
 		if c.lowProfile {
@@ -127,7 +131,7 @@ func Register(p ...Option) ([]node.Option, error) {
 	return []node.Option{node.WithNetworkService(VPNNetworkService(p...))}, nil
 }
 
-func streamHandler(l *blockchain.Ledger, ifce *water.Interface, c *Config, nc node.Config) func(stream network.Stream) {
+func streamHandler(l *blockchain.Ledger, ifce io.ReadWriteCloser, c *Config, nc node.Config) func(stream network.Stream) {
 	return func(stream network.Stream) {
 		if len(nc.PeerTable) == 0 && !l.Exists(protocol.MachinesLedgerKey,
 			func(d blockchain.Data) bool {
@@ -150,7 +154,7 @@ func streamHandler(l *blockchain.Ledger, ifce *water.Interface, c *Config, nc no
 				return
 			}
 		}
-		_, err := io.Copy(ifce.ReadWriteCloser, stream)
+		_, err := io.Copy(ifce, stream)
 		if err != nil {
 			stream.Reset()
 		}
@@ -171,7 +175,7 @@ func newBlockChainData(n *node.Node, address string) types.Machine {
 	}
 }
 
-func getFrame(ifce *water.Interface, c *Config) (ethernet.Frame, error) {
+func getFrame(ifce io.Reader, c *Config) (ethernet.Frame, error) {
 	var frame ethernet.Frame
 	frame.Resize(c.MTU)
 
@@ -184,7 +188,7 @@ func getFrame(ifce *water.Interface, c *Config) (ethernet.Frame, error) {
 	return frame, nil
 }
 
-func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce *water.Interface, nc node.Config) error {
+func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce io.ReadWriteCloser, nc node.Config) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
 	defer cancel()
 
@@ -276,7 +280,7 @@ func connectionWorker(
 	ip net.IP,
 	wg *sync.WaitGroup,
 	ledger *blockchain.Ledger,
-	ifce *water.Interface,
+	ifce io.ReadWriteCloser,
 	nc node.Config) {
 	defer wg.Done()
 	for f := range p {
@@ -287,7 +291,7 @@ func connectionWorker(
 }
 
 // readPackets packets from the interface to the node using the routing table in the blockchain
-func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce *water.Interface, nc node.Config) error {
+func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce io.ReadWriteCloser, nc node.Config) error {
 	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
 		return err
