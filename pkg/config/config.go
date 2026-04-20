@@ -469,7 +469,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 		// Build up the authproviders for the peerguardian
 		aps := []trustzone.AuthProvider{}
 		for ap, providerOpts := range c.PeerGuard.AuthProviders {
-			a, err := authProvider(llger, ap, providerOpts)
+			a, err := AuthProvider(llger, ap, providerOpts)
 			if err != nil {
 				return opts, vpnOpts, fmt.Errorf("invalid authprovider: %w", err)
 			}
@@ -482,6 +482,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 			node.WithNetworkService(
 				pg.UpdaterService(dur),
 				pguardian.Challenger(dur, c.PeerGuard.Autocleanup),
+				pguardian.AutoTrust(dur),
 			),
 			node.EnableGenericHub,
 			node.GenericChannelHandlers(pguardian.ReceiveMessage),
@@ -497,7 +498,7 @@ func (c Config) ToOpts(l *logger.Logger) ([]node.Option, []vpn.Option, error) {
 	return opts, vpnOpts, nil
 }
 
-func authProvider(ll log.StandardLogger, s string, opts map[string]interface{}) (trustzone.AuthProvider, error) {
+func AuthProvider(ll log.StandardLogger, s string, opts map[string]interface{}) (trustzone.AuthProvider, error) {
 	switch strings.ToLower(s) {
 	case "ecdsa":
 		pk, exists := opts["private_key"]
