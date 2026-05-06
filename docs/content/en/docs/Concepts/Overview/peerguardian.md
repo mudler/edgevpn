@@ -15,7 +15,7 @@ Experimental feature!
 
 PeerGuardian is a mechanism to prevent unauthorized access to the network if tokens are leaked or either revoke network access.
 
-In order to enable it, start edgevpn nodes adding the `--peerguradian` flag.
+In order to enable it, start edgevpn nodes adding the `--peerguardian` flag.
 
 ```bash
 edgevpn --peerguardian
