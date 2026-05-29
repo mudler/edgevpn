@@ -124,7 +124,20 @@ func (l *Ledger) Update(f *Ledger, h *hub.Message, c chan *hub.Message) (err err
 	}
 
 	l.Lock()
-	if block.Index > l.blockchain.Len() {
+	// Adopt the incoming block when it is higher (height wins), or — on an
+	// exact height tie — when its hash sorts higher. The tie-break is what lets
+	// two ledgers that independently climbed to the same index with different
+	// data converge: with `>` alone each node rejects the other's equal-height
+	// block forever (split-brain — e.g. two peers that start simultaneously and
+	// advertise in lockstep). The comparison is deterministic, so every node
+	// picks the same winner and it cannot flip-flop; the loser re-adds its own
+	// data on the next Announce, which raises the index and is then adopted via
+	// the height rule. This is still a whole-block replace (not a merge), so
+	// deletions keep propagating through a higher index and nothing previously
+	// deleted is resurrected.
+	last := l.blockchain.Last()
+	if block.Index > last.Index ||
+		(block.Index == last.Index && block.Hash > last.Hash) {
 		l.blockchain.Add(*block)
 	}
 	l.Unlock()
