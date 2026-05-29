@@ -23,7 +23,9 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/net/conngater"
+	multiaddr "github.com/multiformats/go-multiaddr"
 
 	"github.com/mudler/edgevpn/pkg/crypto"
 	protocol "github.com/mudler/edgevpn/pkg/protocol"
@@ -53,6 +55,7 @@ const defaultChanSize = 3000
 var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableNATService(),
 	libp2p.NATPortMap(),
+	libp2p.EnableAutoNATv2(),
 }
 
 func New(p ...Option) (*Node, error) {
@@ -175,7 +178,14 @@ func (e *Node) startNetwork(ctx context.Context) error {
 	// Hub rotates within sealkey interval.
 	// this time length should be enough to make room for few block exchanges. This is ideally on minutes (10, 20, etc. )
 	// it makes sure that if a bruteforce is attempted over the encrypted messages, the real key is not exposed.
-	e.MessageHub = hub.NewHub(e.config.RoomName, e.config.MaxMessageSize, e.config.SealKeyLength, e.config.SealKeyInterval, e.config.GenericHub)
+	//
+	// Bootstrap peers double as gossipsub direct peers so pubsub delivery to
+	// them is guaranteed regardless of mesh state.
+	hubOpts := []hub.Option{}
+	if directPeers := bootstrapAddrInfos(e.config.DiscoveryBootstrapPeers); len(directPeers) > 0 {
+		hubOpts = append(hubOpts, hub.WithDirectPeers(directPeers))
+	}
+	e.MessageHub = hub.NewHub(e.config.RoomName, e.config.MaxMessageSize, e.config.SealKeyLength, e.config.SealKeyInterval, e.config.GenericHub, hubOpts...)
 
 	for _, sd := range e.config.ServiceDiscovery {
 		if err := sd.Run(e.config.Logger, ctx, host); err != nil {
@@ -194,6 +204,21 @@ func (e *Node) startNetwork(ctx context.Context) error {
 
 	e.config.Logger.Debug("Network started")
 	return nil
+}
+
+// bootstrapAddrInfos resolves a bootstrap address list into peer.AddrInfo
+// values. Entries without an embedded /p2p/<id> component (and therefore not
+// useful as gossipsub direct peers) are skipped.
+func bootstrapAddrInfos(addrs []multiaddr.Multiaddr) []peer.AddrInfo {
+	infos := make([]peer.AddrInfo, 0, len(addrs))
+	for _, a := range addrs {
+		pi, err := peer.AddrInfoFromP2pAddr(a)
+		if err != nil {
+			continue
+		}
+		infos = append(infos, *pi)
+	}
+	return infos
 }
 
 // PublishMessage publishes a message to the generic channel (if enabled)
