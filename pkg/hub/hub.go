@@ -40,6 +40,7 @@ type MessageHub struct {
 	keyLength          int
 	interval           int
 	joinPublic         bool
+	directPeers        []peer.AddrInfo
 
 	ctxCancel                context.CancelFunc
 	Messages, PublicMessages chan *Message
@@ -48,9 +49,24 @@ type MessageHub struct {
 // roomBufSize is the number of incoming messages to buffer for each topic.
 const roomBufSize = 128
 
-func NewHub(otp string, maxsize, keyLength, interval int, joinPublic bool) *MessageHub {
-	return &MessageHub{otpKey: otp, maxsize: maxsize, keyLength: keyLength, interval: interval,
+// Option configures a MessageHub at construction time.
+type Option func(*MessageHub)
+
+// WithDirectPeers pins peers as gossipsub direct peers — the router holds a
+// persistent connection to each and bypasses mesh negotiation for them, which
+// makes pubsub delivery reliable to known/bootstrap peers even when the mesh
+// (e.g. on a 2-node cluster) hasn't reached its target size.
+func WithDirectPeers(peers []peer.AddrInfo) Option {
+	return func(m *MessageHub) { m.directPeers = peers }
+}
+
+func NewHub(otp string, maxsize, keyLength, interval int, joinPublic bool, opts ...Option) *MessageHub {
+	m := &MessageHub{otpKey: otp, maxsize: maxsize, keyLength: keyLength, interval: interval,
 		Messages: make(chan *Message, roomBufSize), PublicMessages: make(chan *Message, roomBufSize), joinPublic: joinPublic}
+	for _, o := range opts {
+		o(m)
+	}
+	return m
 }
 
 func (m *MessageHub) topicKey(salts ...string) string {
@@ -72,8 +88,28 @@ func (m *MessageHub) joinRoom(host host.Host) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	m.ctxCancel = cancel
 
-	// create a new PubSub service using the GossipSub router
-	ps, err := pubsub.NewGossipSub(ctx, host, pubsub.WithMaxMessageSize(m.maxsize))
+	// create a new PubSub service using the GossipSub router.
+	//
+	// FloodPublish makes the publisher flood messages to ALL connected peers
+	// rather than only to its mesh — important for small clusters (2-3 nodes)
+	// where the gossipsub mesh sits below its low-watermark and standard
+	// mesh-only delivery becomes unreliable / asymmetric.
+	//
+	// PeerExchange lets gossipsub peers gossip about each other, which helps
+	// recover from one-way mesh links and from peer churn.
+	//
+	// DirectPeers (when set, typically from bootstrap peers) pins specific
+	// peers as always-connected, mesh-bypass delivery targets — guaranteeing
+	// publication reaches them.
+	psOpts := []pubsub.Option{
+		pubsub.WithMaxMessageSize(m.maxsize),
+		pubsub.WithFloodPublish(true),
+		pubsub.WithPeerExchange(true),
+	}
+	if len(m.directPeers) > 0 {
+		psOpts = append(psOpts, pubsub.WithDirectPeers(m.directPeers))
+	}
+	ps, err := pubsub.NewGossipSub(ctx, host, psOpts...)
 	if err != nil {
 		return err
 	}
