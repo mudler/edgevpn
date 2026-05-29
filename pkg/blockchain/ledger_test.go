@@ -28,18 +28,47 @@ func msgFor(l *Ledger) *hub.Message {
 	return hub.NewMessage(compress(bb).String())
 }
 
-// TestUpdateEqualIndexTieBreak guards the fix for the equal-index split-brain:
-// two ledgers that independently climb to the same index with different data
-// (e.g. two peers that start simultaneously and advertise in lockstep) must
-// converge on exchange instead of rejecting each other forever.
-func TestUpdateEqualIndexTieBreak(t *testing.T) {
+// announce mimics one AnnounceUpdate tick: (re)write our own key only if it is
+// not already the current value. This is what each node does periodically and
+// is what lets the loser of a tie-break re-introduce the data it dropped when
+// it adopted the peer's block.
+func announce(l *Ledger, key string) {
+	if v, ok := l.CurrentData()["nodes"][key]; ok && string(v) == `"1"` {
+		return
+	}
+	l.Add("nodes", map[string]interface{}{key: "1"})
+}
+
+func hasKeys(l *Ledger, keys ...string) bool {
+	nodes := l.CurrentData()["nodes"]
+	for _, k := range keys {
+		if _, ok := nodes[k]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// TestUpdateEqualIndexConvergesToUnion is the regression guard for the
+// equal-index split-brain. Two ledgers independently reach the same index with
+// different data (e.g. two peers booted simultaneously, each having advertised
+// once). It asserts the full outcome that matters: after a few exchange +
+// re-announce rounds BOTH ledgers hold BOTH advertisements and agree on the
+// same block.
+//
+// Note the intermediate state: a single Update only makes the loser adopt the
+// winner's block (the loser's key is momentarily gone). The union is reached on
+// the next announce — the loser re-adds its key, Add unions it onto the current
+// (winner's) storage at a higher index, and the winner adopts that via height.
+func TestUpdateEqualIndexConvergesToUnion(t *testing.T) {
 	a := New(io.Discard, &MemoryStore{})
 	b := New(io.Discard, &MemoryStore{})
 
 	a.Add("nodes", map[string]interface{}{"a": "1"})
 	b.Add("nodes", map[string]interface{}{"b": "1"})
 
-	// Precondition: same height, different blocks — the deadlock scenario.
+	// Precondition: same height, different blocks — the deadlock scenario that
+	// `>`-only rejection could never resolve.
 	if a.LastBlock().Index != b.LastBlock().Index {
 		t.Fatalf("precondition: expected equal index, got %d and %d",
 			a.LastBlock().Index, b.LastBlock().Index)
@@ -48,7 +77,19 @@ func TestUpdateEqualIndexTieBreak(t *testing.T) {
 		t.Fatal("precondition: expected the two blocks to differ")
 	}
 
-	// Each node receives the other's equal-index block.
+	// Drive a few reconcile rounds (exchange, then each re-announces its own
+	// key). Convergence is reached well within this; extra rounds are no-ops.
+	for i := 0; i < 5; i++ {
+		if err := a.Update(a, msgFor(b), nil); err != nil {
+			t.Fatal(err)
+		}
+		if err := b.Update(b, msgFor(a), nil); err != nil {
+			t.Fatal(err)
+		}
+		announce(a, "a")
+		announce(b, "b")
+	}
+	// Final exchange so both observe the latest block.
 	if err := a.Update(a, msgFor(b), nil); err != nil {
 		t.Fatal(err)
 	}
@@ -56,10 +97,14 @@ func TestUpdateEqualIndexTieBreak(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Deterministic tie-break: both must now hold the same (higher-hash) block,
-	// not their own divergent ones.
+	if !hasKeys(a, "a", "b") {
+		t.Fatalf("node a missing an advertisement: %+v", a.CurrentData()["nodes"])
+	}
+	if !hasKeys(b, "a", "b") {
+		t.Fatalf("node b missing an advertisement: %+v", b.CurrentData()["nodes"])
+	}
 	if a.LastBlock().Hash != b.LastBlock().Hash {
-		t.Fatalf("tie-break did not converge: a=%s b=%s",
+		t.Fatalf("ledgers did not converge on the same block: a=%s b=%s",
 			a.LastBlock().Hash, b.LastBlock().Hash)
 	}
 }
