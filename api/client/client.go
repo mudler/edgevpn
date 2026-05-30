@@ -36,17 +36,30 @@ type (
 	}
 )
 
+// UnixSocketScheme is the URI prefix that selects a unix domain
+// socket connection. Mirrors api.UnixSocketScheme so callers can
+// reference it without importing the api package.
+const UnixSocketScheme = "unix://"
+
 func WithHost(host string) func(c *Client) error {
 	return func(c *Client) error {
 		c.host = host
-		if strings.HasPrefix(host, "unix://") {
-			socket := strings.ReplaceAll(host, "unix://", "")
+		if strings.HasPrefix(host, UnixSocketScheme) {
+			socket := strings.TrimPrefix(host, UnixSocketScheme)
+			// HTTP needs a valid-looking host in the URL; "unix" is a
+			// synthetic placeholder — the actual dial target is the
+			// socket path picked up by DialContext.
 			c.host = "http://unix"
-			c.httpClient = &http.Client{
-				Transport: &http.Transport{
-					DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-						return net.Dial("unix", socket)
-					},
+			// Swap only the transport, preserving any timeout already
+			// set on the http.Client by WithTimeout / WithHTTPClient
+			// so ordering of options does not silently drop config.
+			if c.httpClient == nil {
+				c.httpClient = &http.Client{}
+			}
+			c.httpClient.Transport = &http.Transport{
+				DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+					var d net.Dialer
+					return d.DialContext(ctx, "unix", socket)
 				},
 			}
 		}
