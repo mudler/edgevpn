@@ -18,11 +18,13 @@ package api
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -67,7 +69,82 @@ const (
 	MetricsURL    = "/api/metrics"
 	PeerstoreURL  = "/api/peerstore"
 	PeerGateURL   = "/api/peergate"
+
+	// UnixSocketScheme is the URI prefix that selects a unix domain
+	// socket listener for the API instead of a TCP address.
+	UnixSocketScheme = "unix://"
+
+	// defaultUnixSocketMode is the file mode applied to API unix
+	// sockets when none is supplied via the APILISTENUNIXMODE env var.
+	// 0660 lets the owner and group communicate with the API and
+	// blocks every other process on the host, which is the right
+	// default for a hardened local control plane.
+	defaultUnixSocketMode os.FileMode = 0o660
 )
+
+// unixSocketMode resolves the file mode that should be applied to
+// the API socket. APILISTENUNIXMODE is interpreted as an octal value
+// (e.g. "0600"); anything unparseable falls back to defaultUnixSocketMode
+// so a typo cannot accidentally widen permissions.
+func unixSocketMode() os.FileMode {
+	v := strings.TrimSpace(os.Getenv("APILISTENUNIXMODE"))
+	if v == "" {
+		return defaultUnixSocketMode
+	}
+	// Accept either "0600" or "600" forms.
+	parsed, err := parseOctal(v)
+	if err != nil {
+		return defaultUnixSocketMode
+	}
+	return os.FileMode(parsed) & os.ModePerm
+}
+
+func parseOctal(s string) (uint32, error) {
+	if s == "" {
+		return 0, errors.New("empty mode")
+	}
+	var n uint32
+	// Strip an optional leading "0" / "0o" so callers can write the
+	// usual unix shorthand without us forcing a specific notation.
+	s = strings.TrimPrefix(strings.TrimPrefix(s, "0o"), "0O")
+	for _, r := range s {
+		if r < '0' || r > '7' {
+			return 0, fmt.Errorf("invalid octal digit %q", r)
+		}
+		n = n<<3 | uint32(r-'0')
+	}
+	return n, nil
+}
+
+// listenUnix creates the API unix socket listener. It removes a
+// stale socket file left over from a previous (crashed) run and then
+// tightens permissions before any client can connect — chmod must
+// happen between Listen and the first Accept to close the window
+// where the kernel-default mode is observable.
+func listenUnix(path string) (net.Listener, error) {
+	// Best-effort removal: ignore "not exist" but surface anything
+	// else so we do not silently bind on top of a non-socket file.
+	if fi, err := os.Lstat(path); err == nil {
+		if fi.Mode()&os.ModeSocket == 0 {
+			return nil, fmt.Errorf("refusing to remove non-socket file at %s", path)
+		}
+		if err := os.Remove(path); err != nil {
+			return nil, fmt.Errorf("remove stale socket %s: %w", path, err)
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("stat socket %s: %w", path, err)
+	}
+
+	l, err := net.Listen("unix", path)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.Chmod(path, unixSocketMode()); err != nil {
+		l.Close()
+		return nil, fmt.Errorf("chmod socket %s: %w", path, err)
+	}
+	return l, nil
+}
 
 func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, e *node.Node, bwc metrics.Reporter, debugMode bool) error {
 
@@ -75,8 +152,10 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 	ec := echo.New()
 
-	if strings.HasPrefix(l, "unix://") {
-		unixListener, err := net.Listen("unix", strings.ReplaceAll(l, "unix://", ""))
+	var unixSocketPath string
+	if strings.HasPrefix(l, UnixSocketScheme) {
+		unixSocketPath = strings.TrimPrefix(l, UnixSocketScheme)
+		unixListener, err := listenUnix(unixSocketPath)
 		if err != nil {
 			return err
 		}
@@ -337,16 +416,29 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 	ec.HideBanner = true
 
-	if err := ec.Start(l); err != nil && err != http.ErrServerClosed {
-		return err
-	}
-
+	// Tie the server's lifetime to ctx so callers can stop us from
+	// the outside. Registering the watcher BEFORE ec.Start avoids
+	// the dead-goroutine pattern where Shutdown was scheduled after
+	// the blocking call.
 	go func() {
 		<-ctx.Done()
 		ct, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		ec.Shutdown(ct)
-		cancel()
+		defer cancel()
+		_ = ec.Shutdown(ct)
 	}()
 
+	startErr := ec.Start(l)
+
+	// Always remove the socket on exit — a leftover file would block
+	// the next startup with "address already in use" until listenUnix
+	// reaps it, and leaving sockets around after the process is gone
+	// is generally a footgun for orchestration tooling.
+	if unixSocketPath != "" {
+		_ = os.Remove(unixSocketPath)
+	}
+
+	if startErr != nil && !errors.Is(startErr, http.ErrServerClosed) {
+		return startErr
+	}
 	return nil
 }
