@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"time"
@@ -75,6 +76,75 @@ var _ = Describe("API", func() {
 				d.Unmarshal(&s)
 				return s
 			}, 10*time.Second, 1*time.Second).Should(Equal("bar"))
+		})
+
+		It("applies hardened permissions to the socket file", func() {
+			d, _ := ioutil.TempDir("", "xxx-perm")
+			defer os.RemoveAll(d)
+			socket := filepath.Join(d, "socket")
+
+			token := node.GenerateNewConnectionData().Base64()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			l := node.Logger(logger.New(log.LevelFatal))
+			e, _ := node.New(node.FromBase64(true, true, token, nil, nil), node.WithStore(&blockchain.MemoryStore{}), l)
+			e.Start(ctx)
+
+			go func() {
+				_ = API(ctx, "unix://"+socket, 10*time.Second, 20*time.Second, e, nil, false)
+			}()
+
+			// Wait for the socket to actually appear before asserting on perms.
+			Eventually(func() error {
+				_, err := os.Stat(socket)
+				return err
+			}, 5*time.Second, 100*time.Millisecond).ShouldNot(HaveOccurred())
+
+			fi, err := os.Stat(socket)
+			Expect(err).ToNot(HaveOccurred())
+			// We must NOT be world-writable; that's the entire point of moving
+			// off 127.0.0.1. Owner+group RW (0660) is the documented default.
+			Expect(fi.Mode().Perm() & 0o002).To(Equal(os.FileMode(0)),
+				"socket must not be world-writable, got mode %o", fi.Mode().Perm())
+			Expect(fi.Mode()&os.ModeSocket).ToNot(Equal(os.FileMode(0)),
+				"file must be a unix socket")
+		})
+
+		It("reaps a stale socket file from a previous run", func() {
+			d, _ := ioutil.TempDir("", "xxx-stale")
+			defer os.RemoveAll(d)
+			socket := filepath.Join(d, "socket")
+
+			// Simulate a crashed previous instance by binding+closing
+			// a socket at the target path. net.Listen would otherwise
+			// fail with "address already in use" on the second bind.
+			pre, err := net.Listen("unix", socket)
+			Expect(err).ToNot(HaveOccurred())
+			pre.Close() // leaves the file on disk
+
+			token := node.GenerateNewConnectionData().Base64()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			l := node.Logger(logger.New(log.LevelFatal))
+			e, _ := node.New(node.FromBase64(true, true, token, nil, nil), node.WithStore(&blockchain.MemoryStore{}), l)
+			e.Start(ctx)
+
+			started := make(chan error, 1)
+			go func() {
+				started <- API(ctx, "unix://"+socket, 10*time.Second, 20*time.Second, e, nil, false)
+			}()
+
+			c := client.NewClient(client.WithHost("unix://" + socket))
+			// Successful Put proves the listener is up on the reused
+			// path; checking err==nil is the cleanest signal because
+			// GetBuckets returns an empty slice (not an error) when
+			// the ledger has no entries yet.
+			Eventually(func() error {
+				return c.Put("stale", "key", "v")
+			}, 5*time.Second, 100*time.Millisecond).ShouldNot(HaveOccurred())
+			_ = started
 		})
 	})
 })

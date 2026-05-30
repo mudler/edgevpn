@@ -70,7 +70,7 @@ func MainFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:    "api-listen",
 			Value:   "127.0.0.1:8080",
-			Usage:   "API listening port",
+			Usage:   "API listen address. Accepts a TCP host:port or a unix socket path with the 'unix://' prefix (e.g. unix:///run/edgevpn.sock). Socket mode defaults to 0660 and can be overridden via APILISTENUNIXMODE.",
 			EnvVars: []string{"APILISTEN"},
 		},
 		&cli.BoolFlag{
