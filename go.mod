@@ -22,7 +22,7 @@ require (
 	github.com/mudler/water v0.0.0-20250808092830-dd90dcf09025
 	github.com/multiformats/go-multiaddr v0.16.1
 	github.com/onsi/ginkgo/v2 v2.29.0
-	github.com/onsi/gomega v1.40.0
+	github.com/onsi/gomega v1.41.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/songgao/packets v0.0.0-20160404182456-549a10cd4091
