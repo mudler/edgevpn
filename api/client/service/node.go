@@ -317,7 +317,11 @@ func (k *Node) Start(ctx context.Context) error {
 		return err
 	}
 
-	k.client.Advertize(k.uuid)
+	if err := k.client.Advertize(k.uuid); err != nil {
+		k.logger.Warnf("[DEBUG-ADVERTIZE] initial Advertize uuid=%s FAILED: %v", k.uuid, err)
+	} else {
+		k.logger.Infof("[DEBUG-ADVERTIZE] initial Advertize uuid=%s OK", k.uuid)
+	}
 
 	minNode := 2
 	if k.minNode != 0 {
@@ -333,7 +337,11 @@ func (k *Node) Start(ctx context.Context) error {
 			i++
 			time.Sleep(10 * time.Second)
 			if i%2 == 0 {
-				k.client.Advertize(k.uuid)
+				if err := k.client.Advertize(k.uuid); err != nil {
+					k.logger.Warnf("[DEBUG-ADVERTIZE] tick=%d Advertize uuid=%s FAILED: %v", i, k.uuid, err)
+				} else {
+					k.logger.Infof("[DEBUG-ADVERTIZE] tick=%d Advertize uuid=%s OK", i, k.uuid)
+				}
 			}
 
 			uuids, _ := k.client.ActiveNodes()

@@ -57,25 +57,38 @@ type advertizeMessage struct {
 
 // Advertize advertize the given uuid to the ledger
 func (c Client) Advertize(uuid string) error {
-	return c.Client.Put(c.serviceID, fmt.Sprintf("%s-uuid", uuid), advertizeMessage{Time: time.Now().UTC()})
+	err := c.Client.Put(c.serviceID, fmt.Sprintf("%s-uuid", uuid), advertizeMessage{Time: time.Now().UTC()})
+	if err != nil {
+		fmt.Printf("[DEBUG-ADVERTIZE-PUT] serviceID=%s uuid=%s FAILED: %v\n", c.serviceID, uuid, err)
+	} else {
+		fmt.Printf("[DEBUG-ADVERTIZE-PUT] serviceID=%s uuid=%s OK\n", c.serviceID, uuid)
+	}
+	return err
 }
 
 // AdvertizingNodes returns a list of advertizing nodes
 func (c Client) AdvertizingNodes() (active []string, err error) {
 	uuids, err := c.ListItems(c.serviceID, "uuid")
 	if err != nil {
+		fmt.Printf("[DEBUG-ADVERTIZE-READ] serviceID=%s ListItems FAILED: %v\n", c.serviceID, err)
 		return
 	}
+	fmt.Printf("[DEBUG-ADVERTIZE-READ] serviceID=%s uuids-in-bucket=%v\n", c.serviceID, uuids)
 	for _, u := range uuids {
 		var d advertizeMessage
 		res, err := c.Client.GetBucketKey(c.serviceID, fmt.Sprintf("%s-uuid", u))
 		if err != nil {
+			fmt.Printf("[DEBUG-ADVERTIZE-READ]   GetBucketKey uuid=%s FAILED: %v\n", u, err)
 			continue
 		}
 		res.Unmarshal(&d)
 
+		age := time.Since(d.Time)
 		if d.Time.Add(15 * time.Minute).After(time.Now().UTC()) {
 			active = append(active, u)
+			fmt.Printf("[DEBUG-ADVERTIZE-READ]   uuid=%s time=%s age=%s -> ACTIVE\n", u, d.Time.Format(time.RFC3339), age)
+		} else {
+			fmt.Printf("[DEBUG-ADVERTIZE-READ]   uuid=%s time=%s age=%s -> STALE (over 15min)\n", u, d.Time.Format(time.RFC3339), age)
 		}
 	}
 	return
