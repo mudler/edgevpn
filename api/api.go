@@ -26,7 +26,9 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/metrics"
@@ -116,17 +118,97 @@ func parseOctal(s string) (uint32, error) {
 	return n, nil
 }
 
-// listenUnix creates the API unix socket listener. It removes a
-// stale socket file left over from a previous (crashed) run and then
+// systemdSocketListener returns a unix listener inherited from systemd
+// (LISTEN_FDS/LISTEN_PID), if any. nil, nil means "no socket activation
+// in effect" — the caller should fall through to its normal listen path.
+//
+// Inheriting the listener is the right path for the operator workflow
+// where a .socket unit declares the path, user, group and mode and
+// systemd hands the already-bound FD to the service. In that case we
+// must NOT touch the underlying socket file (its ownership and perms
+// are systemd's responsibility) and we must NOT chmod after the fact
+// (the kernel mode already came from the .socket unit).
+//
+// Reference: sd_listen_fds(3). The convention is FD 3 for the first
+// inherited socket and LISTEN_FDS counts how many are present. We only
+// support a single API listener so we accept LISTEN_FDS=1 strictly.
+func systemdSocketListener() (net.Listener, error) {
+	pidEnv := os.Getenv("LISTEN_PID")
+	fdsEnv := os.Getenv("LISTEN_FDS")
+	if pidEnv == "" || fdsEnv == "" {
+		return nil, nil
+	}
+	pid, err := strconv.Atoi(pidEnv)
+	if err != nil {
+		return nil, fmt.Errorf("invalid LISTEN_PID %q: %w", pidEnv, err)
+	}
+	if pid != os.Getpid() {
+		// systemd-managed FDs are addressed to a specific PID;
+		// if it isn't us, treat the env as not present.
+		return nil, nil
+	}
+	fds, err := strconv.Atoi(fdsEnv)
+	if err != nil {
+		return nil, fmt.Errorf("invalid LISTEN_FDS %q: %w", fdsEnv, err)
+	}
+	if fds != 1 {
+		return nil, fmt.Errorf("LISTEN_FDS=%d, expected exactly 1 (only the API socket can be passed)", fds)
+	}
+	// First inherited FD is always 3 (after stdin/stdout/stderr).
+	const firstFD = 3
+	// Don't leak the FD as O_CLOEXEC-off to children spawned later.
+	syscall.CloseOnExec(firstFD)
+	f := os.NewFile(uintptr(firstFD), "systemd-edgevpn-api-socket")
+	if f == nil {
+		return nil, fmt.Errorf("could not wrap inherited fd %d", firstFD)
+	}
+	l, err := net.FileListener(f)
+	// FileListener dups the fd; close ours so we don't keep it open twice.
+	f.Close()
+	if err != nil {
+		return nil, fmt.Errorf("net.FileListener(fd=%d): %w", firstFD, err)
+	}
+	return l, nil
+}
+
+// unixSocketInUse probes whether something is already serving on the
+// socket at path. A successful connect — even an immediate hangup —
+// means a listener is present and we should refuse to clobber it. We
+// treat ECONNREFUSED as "stale socket file from a crashed previous
+// run" and any other dial error conservatively as "in use" so we
+// never unlink a working socket on a flaky filesystem.
+func unixSocketInUse(path string) bool {
+	c, err := net.DialTimeout("unix", path, 250*time.Millisecond)
+	if err == nil {
+		c.Close()
+		return true
+	}
+	// errors.Is(err, syscall.ECONNREFUSED) is the only signal we'll
+	// accept as "definitively not in use".
+	return !errors.Is(err, syscall.ECONNREFUSED)
+}
+
+// listenUnix creates the API unix socket listener. It only removes a
+// stale socket file (one whose owning process is gone) and then
 // tightens permissions before any client can connect — chmod must
 // happen between Listen and the first Accept to close the window
 // where the kernel-default mode is observable.
+//
+// If the socket is currently being served, listenUnix refuses to
+// touch it — this protects against a second edgevpn racing into a
+// path already owned by a running instance, and against an operator
+// who pre-created the socket file (e.g. via a systemd .socket unit
+// without activation, or `install -m 0660 -o edgevpn`) and intends
+// edgevpn to use what's there. For full systemd socket-activation
+// support, see systemdSocketListener which is invoked by API() before
+// this function ever runs.
 func listenUnix(path string) (net.Listener, error) {
-	// Best-effort removal: ignore "not exist" but surface anything
-	// else so we do not silently bind on top of a non-socket file.
 	if fi, err := os.Lstat(path); err == nil {
 		if fi.Mode()&os.ModeSocket == 0 {
 			return nil, fmt.Errorf("refusing to remove non-socket file at %s", path)
+		}
+		if unixSocketInUse(path) {
+			return nil, fmt.Errorf("socket %s is already in use by another process", path)
 		}
 		if err := os.Remove(path); err != nil {
 			return nil, fmt.Errorf("remove stale socket %s: %w", path, err)
@@ -152,12 +234,30 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 	ec := echo.New()
 
-	var unixSocketPath string
+	var (
+		unixSocketPath  string
+		ownsSocketFile  bool // true iff WE created the file; false for systemd-passed FDs
+	)
 	if strings.HasPrefix(l, UnixSocketScheme) {
 		unixSocketPath = strings.TrimPrefix(l, UnixSocketScheme)
-		unixListener, err := listenUnix(unixSocketPath)
+		// Honour systemd socket activation first: if the operator
+		// declared a .socket unit, systemd has already created and
+		// bound the socket with the user/group/mode they want, and
+		// passed us its FD. Inherit that listener verbatim — do NOT
+		// touch the underlying file. systemdSocketListener returns
+		// (nil, nil) when no activation is in effect, in which case
+		// we fall through to listenUnix and manage the socket file
+		// ourselves.
+		unixListener, err := systemdSocketListener()
 		if err != nil {
-			return err
+			return fmt.Errorf("systemd socket activation: %w", err)
+		}
+		if unixListener == nil {
+			unixListener, err = listenUnix(unixSocketPath)
+			if err != nil {
+				return err
+			}
+			ownsSocketFile = true
 		}
 		ec.Listener = unixListener
 	}
@@ -429,11 +529,12 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 	startErr := ec.Start(l)
 
-	// Always remove the socket on exit — a leftover file would block
-	// the next startup with "address already in use" until listenUnix
-	// reaps it, and leaving sockets around after the process is gone
-	// is generally a footgun for orchestration tooling.
-	if unixSocketPath != "" {
+	// Remove the socket on exit only when we own the file. With
+	// systemd socket activation the .socket unit owns the path
+	// (permissions, ownership, lifecycle) and systemd is responsible
+	// for cleanup; unlinking it from here would break the next
+	// activation cycle.
+	if ownsSocketFile && unixSocketPath != "" {
 		_ = os.Remove(unixSocketPath)
 	}
 
