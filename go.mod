@@ -30,7 +30,7 @@ require (
 	github.com/vishvananda/netlink v1.3.1
 	github.com/wlynxg/anet v0.0.5
 	go.uber.org/zap v1.28.0
-	golang.org/x/sys v0.43.0
+	golang.org/x/sys v0.45.0
 	golang.zx2c4.com/wireguard/windows v0.5.3
 	gopkg.in/yaml.v2 v2.4.0
 )
