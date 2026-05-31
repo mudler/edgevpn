@@ -4,8 +4,6 @@ title = "EdgeVPN"
 enableRobotsTXT = true
 
 # Hugo allows theme composition (and inheritance). The precedence is from left to right.
-theme = ["docsy"]
-
 # Will give values to .Lastmod etc.
 enableGitInfo = true
 
@@ -16,7 +14,7 @@ defaultContentLanguageInSubdir = false
 # Useful when translating.
 enableMissingTranslationPlaceholders = true
 
-disableKinds = ["taxonomy", "taxonomyTerm"]
+disableKinds = ["taxonomy"]
 
 # Highlighting config
 pygmentsCodeFences = true
@@ -73,6 +71,18 @@ weight = 1
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
+
+[module]
+proxy = "direct"
+[module.hugoVersion]
+extended = true
+min = "0.146.0"
+[[module.imports]]
+path = "github.com/google/docsy"
+disable = false
+[[module.imports]]
+path = "github.com/google/docsy/dependencies"
+disable = false
 
 # Everything below this are Site Params
 
@@ -165,4 +175,3 @@ no = 'Sorry to hear that. Please <a href="https://github.com/mudler/edgevpn/issu
 # 	url = "https://example.org/mail"
 # 	icon = "fa fa-envelope"
 #         desc = "Discuss development issues around the project"
-
