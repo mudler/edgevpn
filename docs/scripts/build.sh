@@ -2,6 +2,7 @@
 set -e
 
 BASE_URL="${BASE_URL:-https://mudler.github.io/edgevpn/}"
+export GOTOOLCHAIN="${GOTOOLCHAIN:-local}"
 
 binpath="${ROOT_DIR}/bin"
 publicpath="${ROOT_DIR}/public"
