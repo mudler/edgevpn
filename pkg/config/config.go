@@ -145,6 +145,27 @@ type RelayService struct {
 	// its own NAT. Default (zero value) is false → service is offered,
 	// preserving back-compat for programmatic callers.
 	Disabled bool
+	// NetworkOnly, when true, gates incoming relay reservations on
+	// cluster membership: only peers whose libp2p peer ID appears in
+	// our local ledger's alive bucket (peers that completed a
+	// gossipsub handshake against our network token) may reserve a
+	// slot on this node. Strangers that found us via the public DHT
+	// or another relay discovery path are rejected. During a short
+	// bootstrap window — before the alive bucket has been observed —
+	// every reservation is allowed so the node itself can finish
+	// joining its cluster. Requires the alive service to be running.
+	//
+	// Note on the default: the CLI flag --relay-service-network-only
+	// defaults to TRUE (secure by default). The Go zero value of this
+	// field is false purely because Go doesn't let us pick a different
+	// zero. Programmatic callers constructing &config.Config{} who
+	// want to match the CLI default should set NetworkOnly: true
+	// explicitly.
+	NetworkOnly bool
+	// NetworkOnlyRefresh is the cadence at which the NetworkOnly ACL
+	// re-snapshots the alive bucket. Zero means the package default
+	// (30s).
+	NetworkOnlyRefresh time.Duration
 	// MaxData is the byte limit (per direction) for a single relayed
 	// connection before it is reset. libp2p default is 128 KiB.
 	MaxData int64
@@ -326,9 +347,25 @@ func (c Config) ToOpts(l log.StandardLogger) ([]node.Option, []vpn.Option, error
 	// ability to reserve slots on OTHER relays via AutoRelay) stays on
 	// regardless — disabling the service does not prevent this node
 	// from using third-party relays to traverse its own NAT.
+	//
+	// When NetworkOnly is set, an ACL gates incoming reservations on
+	// cluster membership (peers observed in our alive bucket). The
+	// ACL is constructed here and shared with a NetworkService that
+	// keeps it up to date from the ledger; see relay_acl.go.
 	if !c.Connection.RelayService.Disabled {
-		libp2pOpts = append(libp2pOpts,
-			libp2p.EnableRelayService(relayv2.WithResources(RelayServiceResources(c.Connection.RelayService))))
+		relayOpts := []relayv2.Option{
+			relayv2.WithResources(RelayServiceResources(c.Connection.RelayService)),
+		}
+		if c.Connection.RelayService.NetworkOnly {
+			acl := &NetworkOnlyACL{}
+			relayOpts = append(relayOpts, relayv2.WithACL(acl))
+			refresh := c.Connection.RelayService.NetworkOnlyRefresh
+			if refresh <= 0 {
+				refresh = DefaultRelayServiceACLRefresh
+			}
+			opts = append(opts, node.WithNetworkService(NetworkOnlyACLService(acl, refresh)))
+		}
+		libp2pOpts = append(libp2pOpts, libp2p.EnableRelayService(relayOpts...))
 	}
 
 	if c.NAT.RateLimit {
@@ -581,6 +618,11 @@ const (
 	DefaultRelayServiceMaxCircuits    int           = 64
 	DefaultRelayServiceReservationTTL time.Duration = time.Hour
 	DefaultRelayServiceBufferSize     int           = 64 << 10 // 64 KiB
+	// DefaultRelayServiceACLRefresh is how often the NetworkOnly ACL
+	// re-snapshots the alive bucket. Should be ≤ the alive-service
+	// announce interval (default 120s) so peers leaving/joining are
+	// reflected within a couple of ticks.
+	DefaultRelayServiceACLRefresh time.Duration = 30 * time.Second
 )
 
 // RelayServiceResources builds a relayv2.Resources struct from the
