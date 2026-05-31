@@ -137,6 +137,14 @@ type Connection struct {
 // larger memory footprint per relay client. Lower values are safer
 // for resource-constrained deployments.
 type RelayService struct {
+	// Disabled, when true, turns off the circuit-v2 relay *service* on
+	// this node so it no longer accepts reservations from other peers.
+	// The relay *client* (the ability to reserve slots on OTHER relays
+	// via AutoRelay) stays on regardless — turning the service off does
+	// not prevent this node from using third-party relays to traverse
+	// its own NAT. Default (zero value) is false → service is offered,
+	// preserving back-compat for programmatic callers.
+	Disabled bool
 	// MaxData is the byte limit (per direction) for a single relayed
 	// connection before it is reset. libp2p default is 128 KiB.
 	MaxData int64
@@ -309,11 +317,19 @@ func (c Config) ToOpts(l log.StandardLogger) ([]node.Option, []vpn.Option, error
 			libp2p.EnableAutoRelay(relayOpts...))
 	}
 
-	// Always enable the circuit-v2 relay service so any publicly-reachable
-	// cluster peer can carry relayed traffic for NAT-traversed peers that
-	// fail to DCUtR hole-punch. Resources are tuned via Connection.RelayService.
-	libp2pOpts = append(libp2pOpts,
-		libp2p.EnableRelayService(relayv2.WithResources(RelayServiceResources(c.Connection.RelayService))))
+	// Offer the circuit-v2 relay SERVICE unless explicitly disabled. Any
+	// publicly-reachable cluster peer can carry relayed traffic for
+	// NAT-traversed peers that fail to DCUtR hole-punch. Resources are
+	// tuned via Connection.RelayService. Set RelayService.Disabled=true
+	// to opt out of serving as a relay (resource-constrained nodes,
+	// edge devices, untrusted environments). The relay CLIENT (the
+	// ability to reserve slots on OTHER relays via AutoRelay) stays on
+	// regardless — disabling the service does not prevent this node
+	// from using third-party relays to traverse its own NAT.
+	if !c.Connection.RelayService.Disabled {
+		libp2pOpts = append(libp2pOpts,
+			libp2p.EnableRelayService(relayv2.WithResources(RelayServiceResources(c.Connection.RelayService))))
+	}
 
 	if c.NAT.RateLimit {
 		libp2pOpts = append(libp2pOpts, libp2p.AutoNATServiceRateLimit(

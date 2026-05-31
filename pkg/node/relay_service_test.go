@@ -101,6 +101,40 @@ func TestRelayServiceKnobsApplied(t *testing.T) {
 	}
 }
 
+// TestRelayServiceDisabledBuildsCleanNode verifies that ToOpts produces a
+// valid, constructible node when the relay service is disabled — the
+// disable code path is one extra if-branch in ToOpts and any wiring
+// regression there would surface as a ToOpts error or a node.New error.
+// The observable libp2p effect (no /hop protocol handler registered) is
+// gated behind AutoNAT's reachability verdict in non-test environments,
+// so the assertion that the protocol is absent requires more reachability
+// stubbing than is worth threading through this test; the value of
+// asserting "this code path still produces a working node" is preserved.
+func TestRelayServiceDisabledBuildsCleanNode(t *testing.T) {
+	token := node.GenerateNewConnectionData(25).Base64()
+	cfg := &config.Config{
+		NetworkToken: token,
+		Connection: config.Connection{
+			AutoRelay: false,
+			RelayService: config.RelayService{
+				Disabled: true,
+			},
+		},
+		Discovery: config.Discovery{DHT: false, MDNS: false},
+	}
+	opts, _, err := cfg.ToOpts(nil)
+	if err != nil {
+		t.Fatalf("ToOpts with RelayService.Disabled=true: %v", err)
+	}
+	n, err := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)
+	if err != nil {
+		t.Fatalf("node.New: %v", err)
+	}
+	if n == nil {
+		t.Fatal("node.New returned nil")
+	}
+}
+
 // TestNodeAcceptsCustomRelayKnobs is a plumbing smoke test: pkg/config
 // must accept custom relay-service knobs end-to-end and translate them
 // into valid pkg/node options that produce a constructible Node.

@@ -248,6 +248,12 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:   "List of autorelay static peers to use",
 		EnvVars: []string{"EDGEVPNAUTORELAYPEERS"},
 	},
+	&cli.BoolFlag{
+		Name:    "relay-service",
+		Usage:   "Offer the circuit-v2 relay service to cluster peers (i.e. let other peers reserve a slot on this node and route relayed traffic through us). Disabling does NOT prevent this node from USING other relays as a client via AutoRelay — set this to false on resource-constrained nodes or nodes that should not act as relays.",
+		EnvVars: []string{"EDGEVPN_RELAY_SERVICE"},
+		Value:   true,
+	},
 	&cli.Int64Flag{
 		Name:    "relay-service-max-data",
 		Usage:   "Bytes (per direction) a relayed connection may carry before reset. Higher values let cluster peers carry larger relayed transfers (e.g. model files for distributed inference) at the cost of a larger memory footprint per relay client. Set lower for resource-constrained deployments.",
@@ -501,6 +507,7 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 			HighWater:                  c.Int("connection-high-water"),
 			LowWater:                   c.Int("connection-low-water"),
 			RelayService: config.RelayService{
+				Disabled:       !c.Bool("relay-service"),
 				MaxData:        c.Int64("relay-service-max-data"),
 				MaxDuration:    relayMaxDuration,
 				MaxCircuits:    c.Int("relay-service-max-circuits"),
