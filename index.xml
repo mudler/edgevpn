@@ -1,16 +1,81 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>EdgeVPN – EdgeVPN</title>
+    <title>EdgeVPN</title>
     <link>https://mudler.github.io/edgevpn/</link>
     <description>Recent content on EdgeVPN</description>
-    <generator>Hugo -- gohugo.io</generator>
-    
-	  <atom:link href="https://mudler.github.io/edgevpn/index.xml" rel="self" type="application/rss+xml" />
-    
-    
-      
-      
-    
-    
+    <generator>Hugo</generator>
+    <language>en</language>
+    <atom:link href="https://mudler.github.io/edgevpn/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>CLI</title>
+      <link>https://mudler.github.io/edgevpn/docs/getting-started/cli/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/getting-started/cli/</guid>
+      <description>&lt;p&gt;To start the VPN, simply run &lt;code&gt;edgevpn&lt;/code&gt; without any argument.&lt;/p&gt;&#xA;&lt;p&gt;An example of running edgevpn on multiple hosts:&lt;/p&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# on Node A&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ &lt;span style=&#34;color:#000&#34;&gt;EDGEVPNTOKEN&lt;/span&gt;&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;.. edgevpn --address 10.1.0.11/24&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# on Node B&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ &lt;span style=&#34;color:#000&#34;&gt;EDGEVPNTOKEN&lt;/span&gt;&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;.. edgevpn --address 10.1.0.12/24&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# on Node C ...&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ &lt;span style=&#34;color:#000&#34;&gt;EDGEVPNTOKEN&lt;/span&gt;&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;.. edgevpn --address 10.1.0.13/24&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;...&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&amp;hellip; and that&amp;rsquo;s it! the &lt;code&gt;--address&lt;/code&gt; is a &lt;em&gt;virtual&lt;/em&gt; unique IP for each node, and it is actually the ip where the node will be reachable to from the vpn. You can assign IPs freely to the nodes of the network, while you can override the default &lt;code&gt;edgevpn0&lt;/code&gt; interface with &lt;code&gt;IFACE&lt;/code&gt; (or &lt;code&gt;--interface&lt;/code&gt;)&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>GUI</title>
+      <link>https://mudler.github.io/edgevpn/docs/getting-started/gui/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/getting-started/gui/</guid>
+      <description>&lt;p&gt;A Desktop GUI application (alpha) for Linux is available &lt;a href=&#34;https://github.com/mudler/edgevpn-gui&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;&#xA;&lt;p&gt;Note the GUI doesn&amp;rsquo;t require the CLI to be installed. It will automatically prompt to download the latest available version, and offer a version management option.&lt;/p&gt;&#xA;&lt;table&gt;&#xA;  &lt;thead&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;th style=&#34;text-align: center&#34;&gt;Dashboard&lt;/th&gt;&#xA;          &lt;th style=&#34;text-align: center&#34;&gt;Connections index&lt;/th&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/thead&gt;&#xA;  &lt;tbody&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td style=&#34;text-align: center&#34;&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/2420543/147854909-a223a7c1-5caa-4e90-b0ac-0ae04dc0949d.png&#34; alt=&#34;edgevpn-gui-2&#34;&gt;&lt;/td&gt;&#xA;          &lt;td style=&#34;text-align: center&#34;&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/2420543/147854904-09d96991-8752-421a-a301-8f0bdd9d5542.png&#34; alt=&#34;edgevpn-3&#34;&gt;&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td style=&#34;text-align: center&#34;&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/2420543/147854907-1e4a4715-3181-4dc2-8bc0-d052b3bf46d3.png&#34; alt=&#34;edgevpn-gui&#34;&gt;&lt;/td&gt;&#xA;          &lt;td&gt;&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/tbody&gt;&#xA;&lt;/table&gt;</description>
+    </item>
+    <item>
+      <title>Tunnel connections</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/services/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/services/</guid>
+      <description>&lt;h2 id=&#34;forwarding-a-local-connection&#34;&gt;Forwarding a local connection&lt;/h2&gt;&#xA;&lt;p&gt;EdgeVPN can also be used to expose local(or remote) services without establishing a VPN and allocating a local tun/tap device, similarly to &lt;code&gt;ngrok&lt;/code&gt;.&lt;/p&gt;&#xA;&lt;h3 id=&#34;exposing-a-service&#34;&gt;Exposing a service&lt;/h3&gt;&#xA;&lt;p&gt;If you are used to how Local SSH forwarding works (e.g. &lt;code&gt;ssh -L 9090:something:remote &amp;lt;my_node&amp;gt;&lt;/code&gt;), EdgeVPN takes a similar approach.&lt;/p&gt;&#xA;&lt;p&gt;A Service is a generalized TCP service running in a host (also outside the network). For example, let&amp;rsquo;s say that we want to expose a SSH server inside a LAN.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>WebUI and API</title>
+      <link>https://mudler.github.io/edgevpn/docs/getting-started/api/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/getting-started/api/</guid>
+      <description>&lt;p&gt;The API has a simple webUI embedded to display network informations.&lt;/p&gt;&#xA;&lt;p&gt;To access the web interface, run in the console:&lt;/p&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ edgevpn api&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;with either a &lt;code&gt;EDGEVPNCONFIG&lt;/code&gt; or &lt;code&gt;EDGEVPNTOKEN&lt;/code&gt;.&lt;/p&gt;&#xA;&lt;table&gt;&#xA;  &lt;thead&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;th style=&#34;text-align: center&#34;&gt;Dashboard (Dark mode)&lt;/th&gt;&#xA;          &lt;th style=&#34;text-align: center&#34;&gt;Dashboard (Light mode)&lt;/th&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/thead&gt;&#xA;  &lt;tbody&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td style=&#34;text-align: center&#34;&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/2420543/163020448-8e9238c1-3b6d-435d-9b25-7729d8779ebd.png&#34; alt=&#34;Screenshot 2021-10-31 at 00-12-16 EdgeVPN - Machines index&#34;&gt;&lt;/td&gt;&#xA;          &lt;td style=&#34;text-align: center&#34;&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/2420543/163020460-e18c07d7-8426-4992-aab3-0b2fd90279ae.png&#34; alt=&#34;Screenshot 2021-10-31 at 23-03-26 EdgeVPN - Machines index&#34;&gt;&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/tbody&gt;&#xA;&lt;/table&gt;&#xA;&lt;table&gt;&#xA;  &lt;thead&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;th style=&#34;text-align: center&#34;&gt;DNS&lt;/th&gt;&#xA;          &lt;th style=&#34;text-align: center&#34;&gt;Machine index&lt;/th&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/thead&gt;&#xA;  &lt;tbody&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td style=&#34;text-align: center&#34;&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/2420543/163020465-3d481da4-4912-445e-afc0-2614966dcadf.png&#34; alt=&#34;Screenshot 2021-10-31 at 23-03-44 EdgeVPN - Services index&#34;&gt;&lt;/td&gt;&#xA;          &lt;td style=&#34;text-align: center&#34;&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/2420543/163020462-7821a622-8c13-4971-8abe-9c5b6b491ae8.png&#34; alt=&#34;Screenshot 2021-10-31 at 23-03-59 EdgeVPN - Files index&#34;&gt;&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/tbody&gt;&#xA;&lt;/table&gt;&#xA;&lt;table&gt;&#xA;  &lt;thead&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;th style=&#34;text-align: center&#34;&gt;Services&lt;/th&gt;&#xA;          &lt;th style=&#34;text-align: center&#34;&gt;Blockchain index&lt;/th&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/thead&gt;&#xA;  &lt;tbody&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td style=&#34;text-align: center&#34;&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/2420543/163021285-3c5a980d-2562-4c10-b266-7e99f19d8a87.png&#34; alt=&#34;Screenshot 2021-10-31 at 23-04-12 EdgeVPN - Users connected&#34;&gt;&lt;/td&gt;&#xA;          &lt;td style=&#34;text-align: center&#34;&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/2420543/163020457-77ef6e50-40a6-4e3b-83c4-a81db729bd7d.png&#34; alt=&#34;Screenshot 2021-10-31 at 23-04-20 EdgeVPN - Blockchain index&#34;&gt;&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/tbody&gt;&#xA;&lt;/table&gt;&#xA;&lt;p&gt;In API mode, EdgeVPN will connect to the network without routing any packet, and without setting up a VPN interface.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>DNS</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/dns/</link>
+      <pubDate>Thu, 05 Jan 2017 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/dns/</guid>
+      <description>&lt;div class=&#34;pageinfo pageinfo-warning&#34;&gt;&#xA;&lt;p&gt;Experimental feature!&lt;/p&gt;&#xA;&#xA;&lt;/div&gt;&#xA;&#xA;&lt;h2 id=&#34;dns-server&#34;&gt;DNS Server&lt;/h2&gt;&#xA;&lt;p&gt;A DNS Server is available but disabled by default.&lt;/p&gt;&#xA;&lt;p&gt;The DNS server will resolve DNS queries using the blockchain as a record and will forward unknown domains by default.&lt;/p&gt;&#xA;&lt;p&gt;It can be enabled by specifying a listening address with &lt;code&gt;--dns&lt;/code&gt;. For example, to bind to default &lt;code&gt;53&lt;/code&gt; port locally, run in the console:&lt;/p&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;edgevpn --dns &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;127.0.0.1:53&amp;#34;&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To turn off dns forwarding, specify &lt;code&gt;--dns-forwarder=false&lt;/code&gt;. Optionally a list of DNS servers can be specified multiple times with &lt;code&gt;--dns-forward-server&lt;/code&gt;.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Sending and receiving files</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/files/</link>
+      <pubDate>Thu, 05 Jan 2017 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/files/</guid>
+      <description>&lt;h2 id=&#34;sending-and-receiving-files&#34;&gt;Sending and receiving files&lt;/h2&gt;&#xA;&lt;p&gt;EdgeVPN can be used to send and receive files between hosts via p2p with the  &lt;code&gt;file-send&lt;/code&gt; and &lt;code&gt;file-receive&lt;/code&gt; subcommand.&lt;/p&gt;&#xA;&lt;p&gt;Sending and receiving files, as services, don&amp;rsquo;t establish a VPN connection.&lt;/p&gt;&#xA;&lt;h3 id=&#34;sending&#34;&gt;Sending&lt;/h3&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ edgevpn file-send --name unique-id --path /src/path&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;receiving&#34;&gt;Receiving&lt;/h3&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ edgevpn file-receive --name unique-id --path /dst/path&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    <item>
+      <title>Peerguardian</title>
+      <link>https://mudler.github.io/edgevpn/docs/concepts/overview/peerguardian/</link>
+      <pubDate>Wed, 05 Jan 2022 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/concepts/overview/peerguardian/</guid>
+      <description>&lt;div class=&#34;pageinfo pageinfo-warning&#34;&gt;&#xA;&lt;p&gt;Experimental feature!&lt;/p&gt;&#xA;&#xA;&lt;/div&gt;&#xA;&#xA;&lt;h2 id=&#34;peerguardian&#34;&gt;Peerguardian&lt;/h2&gt;&#xA;&lt;p&gt;PeerGuardian is a mechanism to prevent unauthorized access to the network if tokens are leaked or either revoke network access.&lt;/p&gt;&#xA;&lt;p&gt;In order to enable it, start edgevpn nodes adding the &lt;code&gt;--peerguradian&lt;/code&gt; flag.&lt;/p&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;edgevpn --peerguardian&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To turn on peer gating, specify also &lt;code&gt;--peergate&lt;/code&gt;.&lt;/p&gt;&#xA;&lt;p&gt;Peerguardian and peergating has several options:&lt;/p&gt;&#xA;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;   --peerguard                                   Enable peerguard. (Experimental) [$PEERGUARD]&#xA;   --peergate                                    Enable peergating. (Experimental) [$PEERGATE]&#xA;   --peergate-autoclean                          Enable peergating autoclean. (Experimental) [$PEERGATE_AUTOCLEAN]&#xA;   --peergate-relaxed                            Enable peergating relaxation. (Experimental) [$PEERGATE_RELAXED]&#xA;   --peergate-auth value                         Peergate auth [$PEERGATE_AUTH]&#xA;   --peergate-interval value                     Peergater interval time (default: 120) [$EDGEVPNPEERGATEINTERVAL]&#xA;&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;When the PeerGuardian and Peergater are enabled, a VPN node will only accepts blocks from authorized nodes.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Contributing</title>
+      <link>https://mudler.github.io/edgevpn/docs/contribution-guidelines/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/contribution-guidelines/</guid>
+      <description>&lt;h2 id=&#34;contributing-to-edgevpn&#34;&gt;Contributing to EdgeVPN&lt;/h2&gt;&#xA;&lt;p&gt;Contribution guidelines for the EdgeVPN project are on the &lt;a href=&#34;https://github.com/mudler/edgevpn/blob/master/CONTRIBUTING.md&#34;&gt;Github repository&lt;/a&gt;. Here you can find some heads up for contributing to the documentation website.&lt;/p&gt;&#xA;&lt;h2 id=&#34;contributing-to-the-docs-website&#34;&gt;Contributing to the Docs website&lt;/h2&gt;&#xA;&lt;h3 id=&#34;we-develop-with-github&#34;&gt;We Develop with Github&lt;/h3&gt;&#xA;&lt;p&gt;We use &lt;a href=&#34;https://github.com/mudler/edgevpn&#34;&gt;github to host code&lt;/a&gt;, to track issues and feature requests, as well as accept pull requests.&lt;/p&gt;&#xA;&lt;p&gt;We use &lt;a href=&#34;https://gohugo.io/&#34;&gt;Hugo&lt;/a&gt; to format and generate our website, the&#xA;&lt;a href=&#34;https://github.com/google/docsy&#34;&gt;Docsy&lt;/a&gt; theme for styling and site structure,&#xA;and Github Actions to manage the deployment of the site.&#xA;Hugo is an open-source static site generator that provides us with templates,&#xA;content organisation in a standard directory structure, and a website generation&#xA;engine. You write the pages in Markdown (or HTML if you want), and Hugo wraps them up into a website.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title></title>
+      <link>https://mudler.github.io/edgevpn/index.json</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/index.json</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Search Results</title>
+      <link>https://mudler.github.io/edgevpn/search/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/search/</guid>
+      <description></description>
+    </item>
   </channel>
 </rss>
