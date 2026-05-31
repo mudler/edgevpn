@@ -29,6 +29,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/host/autorelay"
 	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	connmanager "github.com/libp2p/go-libp2p/p2p/net/connmgr"
+	relayv2 "github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/crypto"
 	"github.com/mudler/edgevpn/pkg/discovery"
@@ -122,6 +123,35 @@ type Connection struct {
 
 	LowWater  int
 	HighWater int
+
+	// RelayService configures circuit-v2 relay-service resource limits
+	// applied when this node acts as a relay for other peers.
+	RelayService RelayService
+}
+
+// RelayService holds the circuit-v2 relay-service resource limits
+// applied to this node when it serves as a relay for other peers.
+//
+// Higher values let cluster peers carry larger relayed transfers
+// (e.g. model files for distributed inference) at the cost of a
+// larger memory footprint per relay client. Lower values are safer
+// for resource-constrained deployments.
+type RelayService struct {
+	// MaxData is the byte limit (per direction) for a single relayed
+	// connection before it is reset. libp2p default is 128 KiB.
+	MaxData int64
+	// MaxDuration is the time limit before a relayed connection is reset.
+	// libp2p default is 2 minutes.
+	MaxDuration time.Duration
+	// MaxCircuits is the maximum number of open relay circuits per peer.
+	// libp2p default is 16.
+	MaxCircuits int
+	// ReservationTTL is the duration of a relay reservation.
+	// libp2p default is 1 hour.
+	ReservationTTL time.Duration
+	// BufferSize is the per-circuit relayed connection buffer size in bytes.
+	// libp2p default is 2048.
+	BufferSize int
 }
 
 // NAT is the structure relative to NAT configuration settings
@@ -278,6 +308,12 @@ func (c Config) ToOpts(l log.StandardLogger) ([]node.Option, []vpn.Option, error
 		libp2pOpts = append(libp2pOpts,
 			libp2p.EnableAutoRelay(relayOpts...))
 	}
+
+	// Always enable the circuit-v2 relay service so any publicly-reachable
+	// cluster peer can carry relayed traffic for NAT-traversed peers that
+	// fail to DCUtR hole-punch. Resources are tuned via Connection.RelayService.
+	libp2pOpts = append(libp2pOpts,
+		libp2p.EnableRelayService(relayv2.WithResources(RelayServiceResources(c.Connection.RelayService))))
 
 	if c.NAT.RateLimit {
 		libp2pOpts = append(libp2pOpts, libp2p.AutoNATServiceRateLimit(
@@ -516,4 +552,59 @@ func authProvider(ll log.StandardLogger, s string, opts map[string]interface{}) 
 func logScale(val int) int {
 	bitlen := bits.Len(uint(val))
 	return 1 << bitlen
+}
+
+// Default circuit-v2 relay-service resource limits for edgevpn.
+// These are deliberately much wider than libp2p's defaults so cluster
+// peers can carry larger / longer relayed transfers (e.g. model files
+// for distributed inference) when DCUtR hole-punching fails. Operators
+// can override any of these via the Connection.RelayService config.
+const (
+	DefaultRelayServiceMaxData        int64         = 1 << 30 // 1 GiB
+	DefaultRelayServiceMaxDuration    time.Duration = 30 * time.Minute
+	DefaultRelayServiceMaxCircuits    int           = 64
+	DefaultRelayServiceReservationTTL time.Duration = time.Hour
+	DefaultRelayServiceBufferSize     int           = 64 << 10 // 64 KiB
+)
+
+// RelayServiceResources builds a relayv2.Resources struct from the
+// configured knobs, falling back to edgevpn defaults (wider than
+// libp2p's defaults) for any zero-valued field. libp2p's Resources
+// struct is passed by value to relayv2.WithResources; it has no public
+// constructor that merges with defaults, so we apply defaults here.
+func RelayServiceResources(c RelayService) relayv2.Resources {
+	res := relayv2.DefaultResources()
+
+	if c.MaxCircuits > 0 {
+		res.MaxCircuits = c.MaxCircuits
+	} else {
+		res.MaxCircuits = DefaultRelayServiceMaxCircuits
+	}
+
+	if c.BufferSize > 0 {
+		res.BufferSize = c.BufferSize
+	} else {
+		res.BufferSize = DefaultRelayServiceBufferSize
+	}
+
+	if c.ReservationTTL > 0 {
+		res.ReservationTTL = c.ReservationTTL
+	} else {
+		res.ReservationTTL = DefaultRelayServiceReservationTTL
+	}
+
+	limit := *res.Limit // copy so we don't mutate the DefaultLimit singleton
+	if c.MaxDuration > 0 {
+		limit.Duration = c.MaxDuration
+	} else {
+		limit.Duration = DefaultRelayServiceMaxDuration
+	}
+	if c.MaxData > 0 {
+		limit.Data = c.MaxData
+	} else {
+		limit.Data = DefaultRelayServiceMaxData
+	}
+	res.Limit = &limit
+
+	return res
 }

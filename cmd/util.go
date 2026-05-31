@@ -248,6 +248,36 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:   "List of autorelay static peers to use",
 		EnvVars: []string{"EDGEVPNAUTORELAYPEERS"},
 	},
+	&cli.Int64Flag{
+		Name:    "relay-service-max-data",
+		Usage:   "Bytes (per direction) a relayed connection may carry before reset. Higher values let cluster peers carry larger relayed transfers (e.g. model files for distributed inference) at the cost of a larger memory footprint per relay client. Set lower for resource-constrained deployments.",
+		EnvVars: []string{"EDGEVPN_RELAY_MAX_DATA"},
+		Value:   int64(config.DefaultRelayServiceMaxData),
+	},
+	&cli.StringFlag{
+		Name:    "relay-service-max-duration",
+		Usage:   "Maximum lifetime of a single relayed connection (Go duration). Higher values let cluster peers carry longer-running relayed transfers at the cost of holding circuits open. Set lower for resource-constrained deployments.",
+		EnvVars: []string{"EDGEVPN_RELAY_MAX_DURATION"},
+		Value:   config.DefaultRelayServiceMaxDuration.String(),
+	},
+	&cli.IntFlag{
+		Name:    "relay-service-max-circuits",
+		Usage:   "Maximum number of concurrent relay circuits per peer. Higher values let more peers tunnel through this node simultaneously at the cost of a larger memory footprint. Set lower for resource-constrained deployments.",
+		EnvVars: []string{"EDGEVPN_RELAY_MAX_CIRCUITS"},
+		Value:   config.DefaultRelayServiceMaxCircuits,
+	},
+	&cli.StringFlag{
+		Name:    "relay-service-reservation-ttl",
+		Usage:   "Time-to-live of a relay reservation (Go duration). Higher values reduce reservation churn for stable cluster peers; lower values free relay slots faster.",
+		EnvVars: []string{"EDGEVPN_RELAY_RESERVATION_TTL"},
+		Value:   config.DefaultRelayServiceReservationTTL.String(),
+	},
+	&cli.IntFlag{
+		Name:    "relay-service-buffer-size",
+		Usage:   "Per-circuit relayed connection buffer size in bytes. Higher values improve throughput of large relayed transfers at the cost of memory per relay client. Set lower for resource-constrained deployments.",
+		EnvVars: []string{"EDGEVPN_RELAY_BUFFER_SIZE"},
+		Value:   config.DefaultRelayServiceBufferSize,
+	},
 	&cli.StringSliceFlag{
 		Name:    "blacklist",
 		Usage:   "List of peers/cidr to gate",
@@ -409,6 +439,15 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 		autorelayInterval = 0
 	}
 
+	relayMaxDuration, err := time.ParseDuration(c.String("relay-service-max-duration"))
+	if err != nil {
+		relayMaxDuration = 0
+	}
+	relayReservationTTL, err := time.ParseDuration(c.String("relay-service-reservation-ttl"))
+	if err != nil {
+		relayReservationTTL = 0
+	}
+
 	// Authproviders are supposed to be passed as a json object
 	pa := c.String("peergate-auth")
 	d := map[string]map[string]interface{}{}
@@ -461,6 +500,13 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 			OnlyStaticRelays:           c.Bool("autorelay-static-only"),
 			HighWater:                  c.Int("connection-high-water"),
 			LowWater:                   c.Int("connection-low-water"),
+			RelayService: config.RelayService{
+				MaxData:        c.Int64("relay-service-max-data"),
+				MaxDuration:    relayMaxDuration,
+				MaxCircuits:    c.Int("relay-service-max-circuits"),
+				ReservationTTL: relayReservationTTL,
+				BufferSize:     c.Int("relay-service-buffer-size"),
+			},
 		},
 		Limit: config.ResourceLimit{
 			Enable:      c.Bool("limit-enable"),
