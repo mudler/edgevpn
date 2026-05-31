@@ -1,5 +1,5 @@
 module github.com/mudler/edgevpn/docs
 
-go 1.25.0
+go 1.26
 
 require github.com/google/docsy v0.13.0 // indirect
