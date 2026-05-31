@@ -254,6 +254,18 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVars: []string{"EDGEVPN_RELAY_SERVICE"},
 		Value:   true,
 	},
+	&cli.BoolFlag{
+		Name:    "relay-service-network-only",
+		Usage:   "Restrict incoming relay reservations to peers observed in the local ledger's alive bucket (cluster members). Strangers that found us via the public DHT or another relay discovery path are rejected. Requires the alive service to be running. During a short bootstrap window — before the alive bucket is first observed — every reservation is allowed so the node itself can finish joining the cluster. Default ON: secure by default; pass --relay-service-network-only=false to open the relay to all peers.",
+		EnvVars: []string{"EDGEVPN_RELAY_SERVICE_NETWORK_ONLY"},
+		Value:   true,
+	},
+	&cli.StringFlag{
+		Name:    "relay-service-acl-refresh",
+		Usage:   "Cadence at which the NetworkOnly relay-service ACL re-snapshots the alive bucket (Go duration). Should be <= the alive-service announce interval so peer churn is reflected within a couple of ticks.",
+		EnvVars: []string{"EDGEVPN_RELAY_SERVICE_ACL_REFRESH"},
+		Value:   config.DefaultRelayServiceACLRefresh.String(),
+	},
 	&cli.Int64Flag{
 		Name:    "relay-service-max-data",
 		Usage:   "Bytes (per direction) a relayed connection may carry before reset. Higher values let cluster peers carry larger relayed transfers (e.g. model files for distributed inference) at the cost of a larger memory footprint per relay client. Set lower for resource-constrained deployments.",
@@ -453,6 +465,10 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 	if err != nil {
 		relayReservationTTL = 0
 	}
+	relayACLRefresh, err := time.ParseDuration(c.String("relay-service-acl-refresh"))
+	if err != nil {
+		relayACLRefresh = 0 // zero → ToOpts falls back to DefaultRelayServiceACLRefresh
+	}
 
 	// Authproviders are supposed to be passed as a json object
 	pa := c.String("peergate-auth")
@@ -507,12 +523,14 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 			HighWater:                  c.Int("connection-high-water"),
 			LowWater:                   c.Int("connection-low-water"),
 			RelayService: config.RelayService{
-				Disabled:       !c.Bool("relay-service"),
-				MaxData:        c.Int64("relay-service-max-data"),
-				MaxDuration:    relayMaxDuration,
-				MaxCircuits:    c.Int("relay-service-max-circuits"),
-				ReservationTTL: relayReservationTTL,
-				BufferSize:     c.Int("relay-service-buffer-size"),
+				Disabled:           !c.Bool("relay-service"),
+				NetworkOnly:        c.Bool("relay-service-network-only"),
+				NetworkOnlyRefresh: relayACLRefresh,
+				MaxData:            c.Int64("relay-service-max-data"),
+				MaxDuration:        relayMaxDuration,
+				MaxCircuits:        c.Int("relay-service-max-circuits"),
+				ReservationTTL:     relayReservationTTL,
+				BufferSize:         c.Int("relay-service-buffer-size"),
 			},
 		},
 		Limit: config.ResourceLimit{
