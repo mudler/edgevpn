@@ -75,7 +75,7 @@ func DHCPNetworkService(ip chan string, l log.StandardLogger, maxTime time.Durat
 			currentIPs := map[string]string{}
 			ips := []string{}
 
-			for _, t := range b.LastBlock().Storage[protocol.MachinesLedgerKey] {
+			for _, t := range b.CurrentData()[protocol.MachinesLedgerKey] {
 				var m types.Machine
 				t.Unmarshal(&m)
 				currentIPs[m.PeerID] = m.Address

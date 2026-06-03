@@ -52,6 +52,10 @@ type Node struct {
 
 const defaultChanSize = 3000
 
+// defaultOwnershipTTL is the liveness window used when ownership enforcement is
+// enabled without an explicit TTL.
+const defaultOwnershipTTL = 2 * time.Minute
+
 var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableNATService(),
 	libp2p.NATPortMap(),
@@ -97,7 +101,7 @@ func (e *Node) Ledger() (*blockchain.Ledger, error) {
 		return nil, err
 	}
 
-	e.ledger = blockchain.New(mw, e.config.Store)
+	e.ledger = blockchain.New(mw, e.config.Store, blockchain.WithViolationLogger(e.config.Logger.Warnf))
 	return e.ledger, nil
 }
 
@@ -166,6 +170,27 @@ func (e *Node) startNetwork(ctx context.Context) error {
 	ledger, err := e.Ledger()
 	if err != nil {
 		return err
+	}
+
+	// Once the host identity exists, install the signer and enable ledger
+	// ownership enforcement if configured. Signing is only switched on for
+	// observe/enforce modes so the default network keeps the legacy wire format.
+	if e.config.OwnershipMode != blockchain.OwnershipOff {
+		if priv := host.Peerstore().PrivKey(host.ID()); priv != nil {
+			signer, serr := blockchain.NewSigner(priv)
+			if serr != nil {
+				return fmt.Errorf("could not build ledger signer: %w", serr)
+			}
+			ttl := e.config.OwnershipTTL
+			if ttl == 0 {
+				ttl = defaultOwnershipTTL
+			}
+			ledger.SetSigner(signer)
+			ledger.SetOwnership(e.config.OwnershipMode, blockchain.DefaultRegistry(ttl), ttl)
+			e.config.Logger.Infof("ledger ownership enforcement: mode=%d ttl=%s", e.config.OwnershipMode, ttl)
+		} else {
+			e.config.Logger.Warn("ownership enforcement requested but host private key is unavailable; running unsigned")
+		}
 	}
 
 	for pid, strh := range e.config.StreamHandlers {

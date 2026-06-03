@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/mudler/edgevpn/pkg/hub"
+	"github.com/mudler/edgevpn/pkg/protocol"
 	"github.com/mudler/edgevpn/pkg/utils"
 
 	"github.com/pkg/errors"
@@ -35,7 +36,30 @@ type Ledger struct {
 	blockchain Store
 
 	channel io.Writer
+
+	// Authentication / ownership (see docs/design/authenticated-ledger.md).
+	// When signer is set, writes are signed; the mode controls whether Update
+	// runs the authorized merge and whether violations are dropped or logged.
+	signer   Signer
+	mode     OwnershipMode
+	registry Registry
+	ttl      time.Duration
+	clock    func() time.Time
+	warn     func(string, ...interface{})
 }
+
+// OwnershipMode selects how the ledger handles authenticated buckets.
+type OwnershipMode int
+
+const (
+	// OwnershipOff: legacy height-wins replace; entries unsigned (default).
+	OwnershipOff OwnershipMode = iota
+	// OwnershipObserve: run the authorized merge but accept-and-warn on
+	// violations instead of dropping (safe rollout / observation).
+	OwnershipObserve
+	// OwnershipEnforce: run the authorized merge and drop invalid writes.
+	OwnershipEnforce
+)
 
 type Store interface {
 	Add(Block)
@@ -43,9 +67,64 @@ type Store interface {
 	Last() Block
 }
 
+// LedgerOption configures optional ledger behaviour.
+type LedgerOption func(*Ledger)
+
+// WithSigner makes the ledger sign every write with s. Without enforcement this
+// only annotates entries (so a network can pre-sign before flipping enforcement
+// on); with enforcement it is required for the local node to author entries.
+func WithSigner(s Signer) LedgerOption { return func(l *Ledger) { l.signer = s } }
+
+// WithOwnership switches Update to the per-key authorized merge using the given
+// policy registry, liveness window and mode (observe = log-only, enforce = drop).
+func WithOwnership(mode OwnershipMode, r Registry, ttl time.Duration) LedgerOption {
+	return func(l *Ledger) {
+		l.mode = mode
+		l.registry = r
+		l.ttl = ttl
+	}
+}
+
+// WithEnforcedOwnership is shorthand for WithOwnership(OwnershipEnforce, ...).
+func WithEnforcedOwnership(r Registry, ttl time.Duration) LedgerOption {
+	return WithOwnership(OwnershipEnforce, r, ttl)
+}
+
+// WithViolationLogger sets the sink for ownership-violation warnings.
+func WithViolationLogger(f func(string, ...interface{})) LedgerOption {
+	return func(l *Ledger) { l.warn = f }
+}
+
+// WithClock overrides the time source (tests).
+func WithClock(f func() time.Time) LedgerOption { return func(l *Ledger) { l.clock = f } }
+
+// SetSigner installs the signing key (called once the host identity exists).
+func (l *Ledger) SetSigner(s Signer) {
+	l.Lock()
+	l.signer = s
+	l.Unlock()
+}
+
+// SetOwnership configures the merge mode/registry/ttl at runtime (called during
+// node startup before the message hub is running).
+func (l *Ledger) SetOwnership(mode OwnershipMode, r Registry, ttl time.Duration) {
+	l.Lock()
+	l.mode, l.registry, l.ttl = mode, r, ttl
+	l.Unlock()
+}
+
 // New returns a new ledger which writes to the writer
-func New(w io.Writer, s Store) *Ledger {
-	c := &Ledger{channel: w, blockchain: s}
+func New(w io.Writer, s Store, opts ...LedgerOption) *Ledger {
+	c := &Ledger{channel: w, blockchain: s, clock: time.Now, warn: log.Printf}
+	for _, o := range opts {
+		o(c)
+	}
+	if c.clock == nil {
+		c.clock = time.Now
+	}
+	if c.warn == nil {
+		c.warn = log.Printf
+	}
 	if s.Len() == 0 {
 		c.newGenesis()
 	}
@@ -53,9 +132,9 @@ func New(w io.Writer, s Store) *Ledger {
 }
 
 func (l *Ledger) newGenesis() {
-	t := time.Now()
+	t := l.clock()
 	genesisBlock := Block{}
-	genesisBlock = Block{0, t.String(), map[string]map[string]Data{}, genesisBlock.Checksum(), ""}
+	genesisBlock = Block{0, t.String(), map[string]map[string]SignedData{}, genesisBlock.Checksum(), ""}
 	l.blockchain.Add(genesisBlock)
 }
 
@@ -108,7 +187,6 @@ func deCompress(b []byte) (*bytes.Buffer, error) {
 
 // Update the blockchain from a message
 func (l *Ledger) Update(f *Ledger, h *hub.Message, c chan *hub.Message) (err error) {
-	//chain := make(Blockchain, 0)
 	block := &Block{}
 
 	b, err := deCompress([]byte(h.Message))
@@ -123,26 +201,142 @@ func (l *Ledger) Update(f *Ledger, h *hub.Message, c chan *hub.Message) (err err
 		return
 	}
 
-	l.Lock()
-	// Adopt the incoming block when it is higher (height wins), or — on an
-	// exact height tie — when its hash sorts higher. The tie-break is what lets
-	// two ledgers that independently climbed to the same index with different
-	// data converge: with `>` alone each node rejects the other's equal-height
-	// block forever (split-brain — e.g. two peers that start simultaneously and
-	// advertise in lockstep). The comparison is deterministic, so every node
-	// picks the same winner and it cannot flip-flop; the loser re-adds its own
-	// data on the next Announce, which raises the index and is then adopted via
-	// the height rule. This is still a whole-block replace (not a merge), so
-	// deletions keep propagating through a higher index and nothing previously
-	// deleted is resurrected.
-	last := l.blockchain.Last()
-	if block.Index > last.Index ||
-		(block.Index == last.Index && block.Hash > last.Hash) {
-		l.blockchain.Add(*block)
+	if l.mode == OwnershipOff {
+		l.Lock()
+		// Legacy path: adopt the incoming block when it is higher (height wins),
+		// or — on an exact height tie — when its hash sorts higher. This is a
+		// whole-block replace and is the behaviour when ownership enforcement is
+		// disabled (the default), keeping existing networks unchanged.
+		last := l.blockchain.Last()
+		if block.Index > last.Index ||
+			(block.Index == last.Index && block.Hash > last.Hash) {
+			l.blockchain.Add(*block)
+		}
+		l.Unlock()
+		return
 	}
+
+	// Enforced path: authenticated per-key merge.
+	l.Lock()
+	cur := copyStorage(l.blockchain.Last().Storage)
+	now := l.clock()
 	l.Unlock()
 
+	if merged, changed := l.merge(cur, block, now); changed {
+		l.writeData(merged)
+	}
 	return
+}
+
+// merge applies each entry of an incoming block into cur, enforcing the
+// per-bucket ownership policy. Returns the merged storage and whether anything
+// changed.
+func (l *Ledger) merge(cur map[string]map[string]SignedData, incoming *Block, now time.Time) (map[string]map[string]SignedData, bool) {
+	health := projectValues(cur[protocol.HealthCheckKey])
+	changed := false
+
+	for bucket, kv := range incoming.Storage {
+		pol := l.registry.Policy(bucket)
+		for key, in := range kv {
+			if cur[bucket] == nil {
+				cur[bucket] = map[string]SignedData{}
+			}
+			ex, ok := cur[bucket][key]
+
+			if !pol.Owned {
+				// Open/legacy bucket: take the highest version, else keep.
+				if !ok || in.Version >= ex.Version {
+					cur[bucket][key] = in
+					changed = true
+				}
+				continue
+			}
+
+			if reason := l.accept(bucket, key, in, ex, ok, pol, health, now); reason != "" {
+				// Rejected by policy. In observe mode we log and accept anyway so
+				// operators can see violations without breaking a live network.
+				if l.mode == OwnershipObserve {
+					l.warn("ownership violation (observe, accepting): %s/%s from %s: %s", bucket, key, in.Owner, reason)
+					cur[bucket][key] = in
+					changed = true
+				} else {
+					l.warn("ownership violation (rejected): %s/%s from %s: %s", bucket, key, in.Owner, reason)
+				}
+				continue
+			}
+			cur[bucket][key] = in
+			changed = true
+		}
+	}
+	return cur, changed
+}
+
+// accept decides whether an authenticated entry may overwrite the existing one.
+// It returns "" to accept, or a short reason describing the rejection.
+func (l *Ledger) accept(bucket, key string, in, ex SignedData, exists bool, pol BucketPolicy, health map[string]Data, now time.Time) string {
+	// Signature must be valid and bound to the claimed owner.
+	if err := Verify(bucket, key, in); err != nil {
+		return "invalid signature"
+	}
+
+	if in.Deleted {
+		// A tombstone may be authored by the current owner, or by anyone once
+		// the current owner's lease has expired (the reaper). It must out-version
+		// what it deletes.
+		if !exists {
+			return "tombstone for unknown key"
+		}
+		if in.Owner != ex.Owner && !l.expired(bucket, key, ex, pol, health, now) {
+			return "tombstone by non-owner of a live entry"
+		}
+		if in.Version <= ex.Version {
+			return "stale tombstone"
+		}
+		return ""
+	}
+
+	// The value must declare the signer as its owner.
+	if pol.OwnerOf(key, in.Value) != in.Owner {
+		return "value owner does not match signer"
+	}
+
+	if !exists {
+		return "" // first claim of a free key
+	}
+
+	// A different owner may only take over an expired (or reclaimable-free) slot.
+	if in.Owner != ex.Owner && !l.expired(bucket, key, ex, pol, health, now) {
+		return "overwrite of a live entry owned by another peer"
+	}
+
+	if in.Version < ex.Version {
+		return "rollback to an older version"
+	}
+	if in.Version == ex.Version {
+		// Deterministic tie-break so every node converges on the same winner.
+		if in.Owner > ex.Owner || (in.Owner == ex.Owner && string(in.Sig) > string(ex.Sig)) {
+			return ""
+		}
+		return "lost deterministic tie-break"
+	}
+	return ""
+}
+
+// expired reports whether the existing entry is past its lease and may be taken
+// over by another owner.
+func (l *Ledger) expired(bucket, key string, ex SignedData, pol BucketPolicy, health map[string]Data, now time.Time) bool {
+	switch pol.Expiry {
+	case Absolute:
+		return time.Unix(ex.UpdatedAt, 0).Add(pol.TTL).Before(now)
+	case Liveness:
+		owner := ex.Owner
+		if owner == "" {
+			owner = pol.OwnerOf(key, ex.Value)
+		}
+		return !IsLive(health, owner, l.ttl, now)
+	default:
+		return false
+	}
 }
 
 // Announce keeps updating async data to the blockchain.
@@ -151,7 +345,6 @@ func (l *Ledger) Update(f *Ledger, h *hub.Message, c chan *hub.Message) (err err
 // blockchain
 func (l *Ledger) Announce(ctx context.Context, d time.Duration, async func()) {
 	go func() {
-		//t := time.NewTicker(t)
 		t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d))
 		defer t.Stop()
 		for {
@@ -232,13 +425,15 @@ func (l *Ledger) GetKey(b, s string) (value Data, exists bool) {
 
 	if l.blockchain.Len() > 0 {
 		last := l.blockchain.Last()
-		if _, exists = last.Storage[b]; !exists {
+		bkt, ok := last.Storage[b]
+		if !ok {
 			return
 		}
-		value, exists = last.Storage[b][s]
-		if exists {
+		e, ok := bkt[s]
+		if !ok || e.Deleted {
 			return
 		}
+		return e.Value, true
 	}
 	return
 }
@@ -249,7 +444,10 @@ func (l *Ledger) Exists(b string, f func(Data) bool) (exists bool) {
 	defer l.Unlock()
 	if l.blockchain.Len() > 0 {
 		for _, bv := range l.blockchain.Last().Storage[b] {
-			if f(bv) {
+			if bv.Deleted {
+				continue
+			}
+			if f(bv.Value) {
 				exists = true
 				return
 			}
@@ -259,12 +457,25 @@ func (l *Ledger) Exists(b string, f func(Data) bool) (exists bool) {
 	return
 }
 
-// CurrentData returns the current ledger data (locking)
+// CurrentData returns the current ledger data (locking). Tombstoned entries are
+// hidden and only the inner Value is exposed, so existing readers are unchanged.
 func (l *Ledger) CurrentData() map[string]map[string]Data {
 	l.Lock()
 	defer l.Unlock()
 
-	return buckets(l.blockchain.Last().Storage).copy()
+	out := map[string]map[string]Data{}
+	for b, kv := range l.blockchain.Last().Storage {
+		out[b] = projectValues(kv)
+	}
+	return out
+}
+
+// CurrentStorage returns a deep copy of the raw signed storage (locking). Used
+// by the reaper, which needs owner/version metadata.
+func (l *Ledger) CurrentStorage() map[string]map[string]SignedData {
+	l.Lock()
+	defer l.Unlock()
+	return copyStorage(l.blockchain.Last().Storage)
 }
 
 // LastBlock returns the last block in the blockchain
@@ -274,79 +485,112 @@ func (l *Ledger) LastBlock() Block {
 	return l.blockchain.Last()
 }
 
-type bucket map[string]Data
-
-func (b bucket) copy() map[string]Data {
-	copy := map[string]Data{}
-	for k, v := range b {
-		copy[k] = v
+func copyStorage(s map[string]map[string]SignedData) map[string]map[string]SignedData {
+	out := map[string]map[string]SignedData{}
+	for b, kv := range s {
+		nb := make(map[string]SignedData, len(kv))
+		for k, v := range kv {
+			nb[k] = v
+		}
+		out[b] = nb
 	}
-	return copy
+	return out
 }
 
-type buckets map[string]map[string]Data
-
-func (b buckets) copy() map[string]map[string]Data {
-	copy := map[string]map[string]Data{}
-	for k, v := range b {
-		copy[k] = bucket(v).copy()
+// projectValues exposes a bucket's live (non-tombstoned) values.
+func projectValues(kv map[string]SignedData) map[string]Data {
+	out := map[string]Data{}
+	for k, v := range kv {
+		if v.Deleted {
+			continue
+		}
+		out[k] = v.Value
 	}
-	return copy
+	return out
+}
+
+// makeEntry builds the SignedData to store for a write. Without a signer it
+// produces a legacy unsigned/unversioned entry (so the wire format is unchanged
+// for default networks). With a signer it bumps the version and re-signs only
+// when the value actually changes (keeping re-announce idempotent).
+func (l *Ledger) makeEntry(bucket, key string, value Data, prev SignedData, now time.Time) SignedData {
+	if l.signer == nil {
+		return SignedData{Value: value}
+	}
+	if prev.Owner == l.signer.ID() && !prev.Deleted && prev.Value == value && prev.Sig != nil {
+		return prev
+	}
+	d := SignedData{Value: value, Version: prev.Version + 1, UpdatedAt: now.Unix(), Owner: l.signer.ID()}
+	d.Sig, _ = l.signer.Sign(canonical(bucket, key, d))
+	return d
+}
+
+func (l *Ledger) makeTombstone(bucket, key string, prev SignedData, now time.Time) SignedData {
+	d := SignedData{Owner: l.signer.ID(), Version: prev.Version + 1, UpdatedAt: now.Unix(), Deleted: true}
+	d.Sig, _ = l.signer.Sign(canonical(bucket, key, d))
+	return d
 }
 
 // Add data to the blockchain
 func (l *Ledger) Add(b string, s map[string]interface{}) {
 	l.Lock()
-	current := buckets(l.blockchain.Last().Storage).copy()
-
-	for s, k := range s {
+	current := copyStorage(l.blockchain.Last().Storage)
+	now := l.clock()
+	for key, val := range s {
 		if _, exists := current[b]; !exists {
-			current[b] = make(map[string]Data)
+			current[b] = make(map[string]SignedData)
 		}
-		dat, _ := json.Marshal(k)
-		current[b][s] = Data(string(dat))
+		dat, _ := json.Marshal(val)
+		current[b][key] = l.makeEntry(b, key, Data(string(dat)), current[b][key], now)
 	}
 	l.Unlock()
 	l.writeData(current)
 }
 
-// Delete data from the ledger (locking)
+// Delete data from the ledger (locking). With a signer this writes a signed
+// tombstone so the deletion survives gossip reconciliation; without one it
+// removes the key (legacy behaviour).
 func (l *Ledger) Delete(b string, k string) {
 	l.Lock()
-	new := make(map[string]map[string]Data)
-	for bb, kk := range l.blockchain.Last().Storage {
-		if _, exists := new[bb]; !exists {
-			new[bb] = make(map[string]Data)
-		}
-		// Copy all keys/v except b/k
-		for kkk, v := range kk {
-			if !(bb == b && kkk == k) {
-				new[bb][kkk] = v
+	current := copyStorage(l.blockchain.Last().Storage)
+	now := l.clock()
+
+	if l.signer != nil {
+		if bkt, ok := current[b]; ok {
+			if prev, ok := bkt[k]; ok && !prev.Deleted {
+				current[b][k] = l.makeTombstone(b, k, prev, now)
 			}
 		}
+		l.Unlock()
+		l.writeData(current)
+		return
 	}
+
+	delete(current[b], k)
 	l.Unlock()
-	l.writeData(new)
+	l.writeData(current)
 }
 
-// DeleteBucket deletes a bucket from the ledger (locking)
+// DeleteBucket deletes a bucket from the ledger (locking).
 func (l *Ledger) DeleteBucket(b string) {
 	l.Lock()
-	new := make(map[string]map[string]Data)
-	for bb, kk := range l.blockchain.Last().Storage {
-		// Copy all except the specified bucket
-		if bb == b {
-			continue
+	current := copyStorage(l.blockchain.Last().Storage)
+	now := l.clock()
+
+	if l.signer != nil {
+		for k, prev := range current[b] {
+			if !prev.Deleted {
+				current[b][k] = l.makeTombstone(b, k, prev, now)
+			}
 		}
-		if _, exists := new[bb]; !exists {
-			new[bb] = make(map[string]Data)
-		}
-		for kkk, v := range kk {
-			new[bb][kkk] = v
-		}
+		l.Unlock()
+		l.writeData(current)
+		return
 	}
+
+	delete(current, b)
 	l.Unlock()
-	l.writeData(new)
+	l.writeData(current)
 }
 
 // String returns the blockchain as string
@@ -360,7 +604,7 @@ func (l *Ledger) Index() int {
 	return l.blockchain.Len()
 }
 
-func (l *Ledger) writeData(s map[string]map[string]Data) {
+func (l *Ledger) writeData(s map[string]map[string]SignedData) {
 	newBlock := l.blockchain.Last().NewBlock(s)
 
 	if newBlock.IsValid(l.blockchain.Last()) {

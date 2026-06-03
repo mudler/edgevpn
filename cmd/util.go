@@ -369,6 +369,18 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:   "Enable peerguard. (Experimental)",
 		EnvVars: []string{"PEERGUARD"},
 	},
+	&cli.StringFlag{
+		Name:    "ownership",
+		Usage:   "Ledger ownership enforcement: off, observe (sign + log violations) or enforce (sign + reject). (Experimental)",
+		EnvVars: []string{"EDGEVPNOWNERSHIP"},
+		Value:   "off",
+	},
+	&cli.IntFlag{
+		Name:    "ownership-ttl",
+		Usage:   "Liveness window in seconds after which an inactive owner's ledger entries may be reclaimed/reaped (0 = default).",
+		EnvVars: []string{"EDGEVPNOWNERSHIPTTL"},
+		Value:   0,
+	},
 	&cli.BoolFlag{
 		Name:    "privkey-cache",
 		Usage:   "Enable privkey caching. (Experimental)",
@@ -547,6 +559,10 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 			Autocleanup:   c.Bool("peergate-autoclean"),
 			SyncInterval:  time.Duration(c.Int("peergate-interval")) * time.Second,
 			AuthProviders: d,
+		},
+		Ownership: config.Ownership{
+			Mode: c.String("ownership"),
+			TTL:  time.Duration(c.Int("ownership-ttl")) * time.Second,
 		},
 	}
 }

@@ -51,8 +51,17 @@ func AliveNetworkService(announcetime, scrubTime, maxtime time.Duration) node.Ne
 					t = time.Now()
 
 					if lead == n.Host().ID().String() {
-						// Automatically scrub after some time passed
-						b.DeleteBucket(protocol.HealthCheckKey)
+						if b.OwnershipEnabled() {
+							// Under ownership enforcement, reap entries of inactive
+							// owners (and stale heartbeats) instead of blindly
+							// wiping the whole healthcheck bucket. Tombstones are
+							// retained for a few liveness windows so every node
+							// observes them before they are pruned.
+							b.Reap(3 * maxtime)
+						} else {
+							// Legacy: automatically scrub after some time passed
+							b.DeleteBucket(protocol.HealthCheckKey)
+						}
 					}
 				}
 			},
@@ -71,7 +80,7 @@ func Alive(announcetime, scrubTime, maxtime time.Duration) []node.Option {
 
 // AvailableNodes returns the available nodes which sent a healthcheck in the last maxTime
 func AvailableNodes(b *blockchain.Ledger, maxTime time.Duration) (active []string) {
-	for u, t := range b.LastBlock().Storage[protocol.HealthCheckKey] {
+	for u, t := range b.CurrentData()[protocol.HealthCheckKey] {
 		var s string
 		t.Unmarshal(&s)
 		parsed, _ := time.Parse(time.RFC3339, s)

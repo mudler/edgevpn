@@ -25,6 +25,7 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/logger"
 	. "github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/protocol"
 )
 
 var _ = Describe("Node", func() {
@@ -83,6 +84,40 @@ var _ = Describe("Node", func() {
 				}
 				return s
 			}, 240*time.Second, 1*time.Second).Should(Equal("baz"))
+		})
+
+		It("propagates owner-signed entries under ownership enforcement", func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			e, _ := New(FromBase64(true, true, token, nil, nil), WithStore(&blockchain.MemoryStore{}), WithDiscoveryInterval(10*time.Second), WithOwnership(blockchain.OwnershipEnforce, 0), l)
+			e2, _ := New(FromBase64(true, true, token, nil, nil), WithStore(&blockchain.MemoryStore{}), WithDiscoveryInterval(10*time.Second), WithOwnership(blockchain.OwnershipEnforce, 0), l)
+
+			e.Start(ctx)
+			e2.Start(ctx)
+
+			ll, err := e.Ledger()
+			Expect(err).ToNot(HaveOccurred())
+			ll2, err := e2.Ledger()
+			Expect(err).ToNot(HaveOccurred())
+
+			owner := e.Host().ID().String()
+			ll.Announce(ctx, 2*time.Second, func() {
+				ll.Add(protocol.MachinesLedgerKey, map[string]interface{}{
+					"10.1.0.1": map[string]string{"PeerID": owner, "Address": "10.1.0.1"},
+				})
+			})
+
+			// e2 only accepts the entry if e's signature verifies and the value
+			// declares e as its owner — proving signing + authorized merge over p2p.
+			Eventually(func() string {
+				var m map[string]string
+				v, exists := ll2.GetKey(protocol.MachinesLedgerKey, "10.1.0.1")
+				if exists {
+					v.Unmarshal(&m)
+				}
+				return m["PeerID"]
+			}, 240*time.Second, 1*time.Second).Should(Equal(owner))
 		})
 	})
 

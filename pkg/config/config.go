@@ -68,7 +68,19 @@ type Config struct {
 	// enable peerguardian and add specific auth options
 	PeerGuard PeerGuard
 
+	// Ownership (experimental) authenticates ledger writes so a leaked token
+	// alone no longer lets a peer overwrite another peer's entries.
+	Ownership Ownership
+
 	Whitelist []multiaddr.Multiaddr
+}
+
+// Ownership configures ledger ownership enforcement.
+// Mode is one of "off" (default), "observe" (sign + log violations) or
+// "enforce" (sign + reject unauthorized writes).
+type Ownership struct {
+	Mode string
+	TTL  time.Duration
 }
 
 type PeerGuard struct {
@@ -281,8 +293,17 @@ func (c Config) ToOpts(l log.StandardLogger) ([]node.Option, []vpn.Option, error
 	d := discovery.NewDHT(dhtOpts...)
 	m := &discovery.MDNS{}
 
+	ownershipMode := blockchain.OwnershipOff
+	switch strings.ToLower(c.Ownership.Mode) {
+	case "observe", "log", "log-only":
+		ownershipMode = blockchain.OwnershipObserve
+	case "enforce", "on":
+		ownershipMode = blockchain.OwnershipEnforce
+	}
+
 	opts := []node.Option{
 		node.ListenAddresses(c.ListenMaddrs...),
+		node.WithOwnership(ownershipMode, c.Ownership.TTL),
 		node.WithDiscoveryInterval(c.Discovery.Interval),
 		node.WithLedgerAnnounceTime(c.Ledger.AnnounceInterval),
 		node.WithLedgerInterval(c.Ledger.SyncInterval),
