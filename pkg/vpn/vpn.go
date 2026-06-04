@@ -237,6 +237,12 @@ func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Nod
 		machine := &types.Machine{}
 		value.Unmarshal(machine)
 
+		// Don't route to an owner that has gone inactive (under ownership
+		// enforcement); this is a no-op when enforcement is disabled.
+		if !ledger.IsOwnerLive(machine.PeerID) {
+			return notFoundErr
+		}
+
 		// Decode the Peer
 		d, err = peer.Decode(machine.PeerID)
 	}

@@ -16,13 +16,15 @@ package blockchain
 import (
 	"encoding/json"
 	"io"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/mudler/edgevpn/pkg/hub"
 )
 
 // msgFor wraps a ledger's last block into the wire form Update expects
-// (gzip-compressed JSON), mirroring what writeData broadcasts.
+// (gzip-compressed JSON), mirroring what the ledger broadcasts.
 func msgFor(l *Ledger) *hub.Message {
 	bb, _ := json.Marshal(l.LastBlock())
 	return hub.NewMessage(compress(bb).String())
@@ -49,87 +51,61 @@ func hasKeys(l *Ledger, keys ...string) bool {
 	return true
 }
 
-// TestUpdateEqualIndexConvergesToUnion is the regression guard for the
-// equal-index split-brain. Two ledgers independently reach the same index with
-// different data (e.g. two peers booted simultaneously, each having advertised
-// once). It asserts the full outcome that matters: after a few exchange +
-// re-announce rounds BOTH ledgers hold BOTH advertisements and agree on the
-// same block.
-//
-// Note the intermediate state: a single Update only makes the loser adopt the
-// winner's block (the loser's key is momentarily gone). The union is reached on
-// the next announce — the loser re-adds its key, Add unions it onto the current
-// (winner's) storage at a higher index, and the winner adopts that via height.
-func TestUpdateEqualIndexConvergesToUnion(t *testing.T) {
-	a := New(io.Discard, &MemoryStore{})
-	b := New(io.Discard, &MemoryStore{})
+var _ = Describe("Legacy merge (ownership off)", func() {
+	// Regression guard for the equal-index split-brain. Two ledgers
+	// independently reach the same index with different data (e.g. two peers
+	// booted simultaneously, each having advertised once). It asserts the full
+	// outcome that matters: after a few exchange + re-announce rounds BOTH
+	// ledgers hold BOTH advertisements and agree on the same block.
+	//
+	// Note the intermediate state: a single Update only makes the loser adopt
+	// the winner's block (the loser's key is momentarily gone). The union is
+	// reached on the next announce — the loser re-adds its key, Add unions it
+	// onto the current (winner's) storage at a higher index, and the winner
+	// adopts that via height.
+	It("converges an equal-index split-brain to the union", func() {
+		a := New(io.Discard, &MemoryStore{})
+		b := New(io.Discard, &MemoryStore{})
 
-	a.Add("nodes", map[string]interface{}{"a": "1"})
-	b.Add("nodes", map[string]interface{}{"b": "1"})
+		a.Add("nodes", map[string]interface{}{"a": "1"})
+		b.Add("nodes", map[string]interface{}{"b": "1"})
 
-	// Precondition: same height, different blocks — the deadlock scenario that
-	// `>`-only rejection could never resolve.
-	if a.LastBlock().Index != b.LastBlock().Index {
-		t.Fatalf("precondition: expected equal index, got %d and %d",
-			a.LastBlock().Index, b.LastBlock().Index)
-	}
-	if a.LastBlock().Hash == b.LastBlock().Hash {
-		t.Fatal("precondition: expected the two blocks to differ")
-	}
+		// Precondition: same height, different blocks — the deadlock scenario
+		// that `>`-only rejection could never resolve.
+		Expect(a.LastBlock().Index).To(Equal(b.LastBlock().Index), "precondition: equal index")
+		Expect(a.LastBlock().Hash).NotTo(Equal(b.LastBlock().Hash), "precondition: differing blocks")
 
-	// Drive a few reconcile rounds (exchange, then each re-announces its own
-	// key). Convergence is reached well within this; extra rounds are no-ops.
-	for i := 0; i < 5; i++ {
-		if err := a.Update(a, msgFor(b), nil); err != nil {
-			t.Fatal(err)
+		// Drive a few reconcile rounds (exchange, then each re-announces its own
+		// key). Convergence is reached well within this; extra rounds are no-ops.
+		for i := 0; i < 5; i++ {
+			Expect(a.Update(a, msgFor(b), nil)).To(Succeed())
+			Expect(b.Update(b, msgFor(a), nil)).To(Succeed())
+			announce(a, "a")
+			announce(b, "b")
 		}
-		if err := b.Update(b, msgFor(a), nil); err != nil {
-			t.Fatal(err)
-		}
-		announce(a, "a")
-		announce(b, "b")
-	}
-	// Final exchange so both observe the latest block.
-	if err := a.Update(a, msgFor(b), nil); err != nil {
-		t.Fatal(err)
-	}
-	if err := b.Update(b, msgFor(a), nil); err != nil {
-		t.Fatal(err)
-	}
+		// Final exchange so both observe the latest block.
+		Expect(a.Update(a, msgFor(b), nil)).To(Succeed())
+		Expect(b.Update(b, msgFor(a), nil)).To(Succeed())
 
-	if !hasKeys(a, "a", "b") {
-		t.Fatalf("node a missing an advertisement: %+v", a.CurrentData()["nodes"])
-	}
-	if !hasKeys(b, "a", "b") {
-		t.Fatalf("node b missing an advertisement: %+v", b.CurrentData()["nodes"])
-	}
-	if a.LastBlock().Hash != b.LastBlock().Hash {
-		t.Fatalf("ledgers did not converge on the same block: a=%s b=%s",
-			a.LastBlock().Hash, b.LastBlock().Hash)
-	}
-}
+		Expect(hasKeys(a, "a", "b")).To(BeTrue(), "node a missing an advertisement")
+		Expect(hasKeys(b, "a", "b")).To(BeTrue(), "node b missing an advertisement")
+		Expect(a.LastBlock().Hash).To(Equal(b.LastBlock().Hash), "ledgers did not converge on the same block")
+	})
 
-// TestUpdateHigherIndexStillWins ensures the height rule (and thus deletion
-// propagation, which works by raising the index) is unchanged by the tie-break.
-func TestUpdateHigherIndexStillWins(t *testing.T) {
-	a := New(io.Discard, &MemoryStore{})
-	b := New(io.Discard, &MemoryStore{})
+	// Ensures the height rule (and thus deletion propagation, which works by
+	// raising the index) is unchanged by the tie-break.
+	It("adopts a strictly higher-index block regardless of hash order", func() {
+		a := New(io.Discard, &MemoryStore{})
+		b := New(io.Discard, &MemoryStore{})
 
-	// b climbs higher than a.
-	a.Add("nodes", map[string]interface{}{"a": "1"})
-	b.Add("nodes", map[string]interface{}{"b": "1"})
-	b.Add("nodes", map[string]interface{}{"b": "2"})
+		// b climbs higher than a.
+		a.Add("nodes", map[string]interface{}{"a": "1"})
+		b.Add("nodes", map[string]interface{}{"b": "1"})
+		b.Add("nodes", map[string]interface{}{"b": "2"})
 
-	if b.LastBlock().Index <= a.LastBlock().Index {
-		t.Fatalf("precondition: expected b higher than a, got %d and %d",
-			b.LastBlock().Index, a.LastBlock().Index)
-	}
+		Expect(b.LastBlock().Index).To(BeNumerically(">", a.LastBlock().Index), "precondition: b higher than a")
 
-	// a receives b's higher block and must adopt it regardless of hash order.
-	if err := a.Update(a, msgFor(b), nil); err != nil {
-		t.Fatal(err)
-	}
-	if a.LastBlock().Hash != b.LastBlock().Hash {
-		t.Fatal("higher-index block was not adopted")
-	}
-}
+		Expect(a.Update(a, msgFor(b), nil)).To(Succeed())
+		Expect(a.LastBlock().Hash).To(Equal(b.LastBlock().Hash), "higher-index block was not adopted")
+	})
+})

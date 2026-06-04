@@ -175,6 +175,16 @@ func SealKeyLength(i int) func(cfg *Config) error {
 	}
 }
 
+// WithOwnership enables ledger ownership enforcement at the given mode and
+// liveness TTL (a zero ttl uses the node default).
+func WithOwnership(mode blockchain.OwnershipMode, ttl time.Duration) func(cfg *Config) error {
+	return func(cfg *Config) error {
+		cfg.OwnershipMode = mode
+		cfg.OwnershipTTL = ttl
+		return nil
+	}
+}
+
 func LibP2PLogLevel(l log.LogLevel) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		log.SetAllLoggers(l)

@@ -76,6 +76,12 @@ type Config struct {
 
 	Sealer    Sealer
 	PeerGater Gater
+
+	// OwnershipMode selects ledger ownership enforcement (off/observe/enforce).
+	// OwnershipTTL is the liveness window after which an inactive owner's
+	// entries may be reclaimed/reaped.
+	OwnershipMode blockchain.OwnershipMode
+	OwnershipTTL  time.Duration
 }
 
 type Gater interface {
