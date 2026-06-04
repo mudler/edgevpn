@@ -239,6 +239,45 @@ before any network service runs. The host private key is read from
 Reaping cadence reuses the existing alive `scrub-interval`, and tombstones are retained for
 `3×maxtime` before pruning (see `pkg/services/alive.go`).
 
+## 11a. Identity, the token, and restarts
+
+Ownership binds every entry to a peer's **libp2p identity** — which is *not* the network token.
+The two are independent secrets:
+
+- The **token** carries only the OTP material (DHT key, crypto exchange key, room/rendezvous).
+  It is shared by every node and contains no private key. It is *admission* control.
+- The **identity** is a per-node Ed25519 keypair (`genHost`, `pkg/node/connection.go`). It is the
+  thing ownership is bound to. A libp2p Ed25519 peer ID **embeds its public key**, which is what
+  lets `Verify` recover the verifying key from the `Owner` peer.ID with no PKI.
+
+By default the identity is **ephemeral**: with no configured key, `GenPrivKey(0)` draws from
+`crypto/rand`, so the peer ID is fresh on every start. Persistence is via `--privkey-cache`
+(binary) or `node.WithPrivKey` (library).
+
+**Why this matters under enforcement.** Because entries are owned by the identity:
+
+- *Stable identity* → a restart is the **same owner**; the node updates its own entries
+  immediately (same-owner write, version kept monotonic by the wall-clock floor in
+  `versionAfter`). No orphans, no reclaim delay.
+- *Ephemeral identity* → a restart is a **new owner**; the node's previous entries are orphaned,
+  reaped after the liveness TTL, and the node re-establishes its footprint under the new identity
+  via cross-owner reclaim (allowed only once the old owner expires). This works but adds churn and
+  a reclaim delay of up to the TTL on every restart.
+
+For this reason the binary **auto-enables identity persistence whenever ownership is on**
+(`enforce`/`observe`): `cmd/util.go` reads/creates `<privkey-cache-dir>/privkey` even without an
+explicit `--privkey-cache`, and warns (rather than failing) if it cannot persist, so an operator
+who has not opted into stable identities still gets clean restarts under enforcement.
+
+**Security boundary.** Token = admission (keeps outsiders out); identity = per-write integrity
+(keeps insiders from impersonating each other — a leaked token still cannot let peer A write peer
+B's entries, since that needs B's private key, which is never shared and never in the token).
+The flip side: identities are free and unlimited, so ownership gives **write-integrity, not
+anti-sybil**. A token-holding attacker can still spin up many identities and *first-claim* free
+IPs / service names / DNS names (ownership stops hijacking *existing* entries, not squatting
+*unclaimed* ones). Anti-sybil needs an identity cost/allowlist — which is what the
+`PeerGuard`/trustzone ECDSA mechanism is for.
+
 ## 12. Backwards compatibility
 
 The signed wire format differs from the legacy bare-value one, so observe/enforce nodes do not

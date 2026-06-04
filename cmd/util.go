@@ -582,31 +582,51 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		}
 	}
 
-	// Check if we have any privkey identity cached already
-	if c.Bool("privkey-cache") {
-		keyFile := filepath.Join(c.String("privkey-cache-dir"), "privkey")
-		dat, err := os.ReadFile(keyFile)
-		if err == nil && len(dat) > 0 {
-			llger.Info("Reading key from", keyFile)
+	// Persist the libp2p identity when explicitly requested, or implicitly when
+	// ledger ownership enforcement is on. Ownership binds entries to the peer ID,
+	// so an ephemeral identity would orphan a node's entries (reaped after the
+	// liveness TTL) and force a cross-owner reclaim on every restart; a stable
+	// identity makes restarts same-owner.
+	ownMode := strings.ToLower(nc.Ownership.Mode)
+	ownershipEnabled := ownMode == "enforce" || ownMode == "on" ||
+		ownMode == "observe" || ownMode == "log" || ownMode == "log-only"
 
+	if c.Bool("privkey-cache") || ownershipEnabled {
+		keyFile := filepath.Join(c.String("privkey-cache-dir"), "privkey")
+		dat, rerr := os.ReadFile(keyFile)
+		if rerr == nil && len(dat) > 0 {
+			llger.Info("Reading key from", keyFile)
 			nc.Privkey = dat
 		} else {
-			// generate, write
 			llger.Info("Generating private key and saving it locally for later use in", keyFile)
 
-			privkey, err := node.GenPrivKey(0)
-			checkErr(err)
-
-			r, err := crypto.MarshalPrivateKey(privkey)
-			checkErr(err)
-
-			err = os.MkdirAll(c.String("privkey-cache-dir"), 0600)
-			checkErr(err)
-
-			err = os.WriteFile(keyFile, r, 0600)
-			checkErr(err)
-
+			privkey, gerr := node.GenPrivKey(0)
+			if gerr != nil {
+				llger.Fatal(gerr.Error())
+			}
+			r, merr := crypto.MarshalPrivateKey(privkey)
+			if merr != nil {
+				llger.Fatal(merr.Error())
+			}
+			// Use the freshly generated key for this run regardless of whether it
+			// can be persisted.
 			nc.Privkey = r
+
+			perr := os.MkdirAll(c.String("privkey-cache-dir"), 0700)
+			if perr == nil {
+				perr = os.WriteFile(keyFile, r, 0600)
+			}
+			switch {
+			case perr == nil:
+				llger.Info("Saved private key in", keyFile)
+			case c.Bool("privkey-cache"):
+				// Explicitly requested: keep the fail-fast behaviour.
+				llger.Fatal(perr.Error())
+			default:
+				// Auto-enabled by ownership: don't block startup, but warn that
+				// the identity will change on restart.
+				llger.Warnf("ownership enforcement is on but the identity could not be persisted to %s (%v); it will change on restart, orphaning this node's ledger entries until the liveness TTL expires. Set --privkey-cache-dir to a writable path to avoid this.", keyFile, perr)
+			}
 		}
 	}
 
