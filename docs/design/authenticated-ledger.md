@@ -338,9 +338,13 @@ A review of the first cut found and fixed several issues:
   heartbeat could otherwise trigger false reaping). The network merge installs
   without re-broadcasting (the Syncronizer propagates state) to avoid gossip
   amplification.
-- **More gated reads.** `IsOwnerLive` now also guards the service-consumer dial
-  (`ConnectNetworkService`) and the file-pull dial (`ReceiveFile`), matching VPN
-  routing. The `egress` bucket is registered (self-owned) so egress
+- **More gated reads.** `IsOwnerLive` guards VPN routing (high-frequency, where
+  acting on a just-departed owner matters and reaper lag is visible). It is
+  deliberately *not* applied to the one-shot service/file dials: those are
+  short-lived transfers where the peer has just announced itself and is actively
+  serving, so gating on heartbeat propagation only adds latency/fragility — the
+  reaper still removes a dead owner's entry within a scrub interval. The `egress`
+  bucket is registered (self-owned) so egress
   advertisements can't be forged for other peers. The `dhcp` leader bucket is
   deliberately left open (its shared key changes owner on handoff; the
   deterministic `utils.Leader` cross-check already bounds a forged value to a

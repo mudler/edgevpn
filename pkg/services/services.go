@@ -150,13 +150,6 @@ func ConnectNetworkService(announcetime time.Duration, serviceID string, srcaddr
 						return
 					}
 
-					// Don't dial a service whose owner has gone inactive (no-op
-					// when ownership enforcement is disabled).
-					if !ledger.IsOwnerLive(service.PeerID) {
-						conn.Close()
-						return
-					}
-
 					// Decode the Peer
 					d, err := peer.Decode(service.PeerID)
 					if err != nil {
