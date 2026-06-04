@@ -14,63 +14,52 @@ limitations under the License.
 package blockchain
 
 import (
-	"testing"
-
 	"github.com/libp2p/go-libp2p/core/crypto"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func newTestSigner(t *testing.T) Signer {
-	t.Helper()
+func newTestSigner() Signer {
 	priv, _, err := crypto.GenerateKeyPair(crypto.Ed25519, 0)
-	if err != nil {
-		t.Fatalf("generate key: %v", err)
-	}
+	Expect(err).NotTo(HaveOccurred())
 	s, err := NewSigner(priv)
-	if err != nil {
-		t.Fatalf("new signer: %v", err)
-	}
+	Expect(err).NotTo(HaveOccurred())
 	return s
 }
 
-func TestSignVerifyRoundTrip(t *testing.T) {
-	s := newTestSigner(t)
-	d := SignedData{Value: "hello", Owner: s.ID(), Version: 1, UpdatedAt: 100}
+var _ = Describe("Signing", func() {
+	It("round-trips a valid signature", func() {
+		s := newTestSigner()
+		d := SignedData{Value: "hello", Owner: s.ID(), Version: 1, UpdatedAt: 100}
 
-	sig, err := s.Sign(canonical("machines", "10.1.0.1", d))
-	if err != nil {
-		t.Fatalf("sign: %v", err)
-	}
-	d.Sig = sig
+		sig, err := s.Sign(canonical("machines", "10.1.0.1", d))
+		Expect(err).NotTo(HaveOccurred())
+		d.Sig = sig
 
-	if err := Verify("machines", "10.1.0.1", d); err != nil {
-		t.Fatalf("expected valid signature, got: %v", err)
-	}
-}
+		Expect(Verify("machines", "10.1.0.1", d)).To(Succeed())
+	})
 
-func TestVerifyRejectsTamperedValue(t *testing.T) {
-	s := newTestSigner(t)
-	d := SignedData{Value: "hello", Owner: s.ID(), Version: 1, UpdatedAt: 100}
-	d.Sig, _ = s.Sign(canonical("machines", "10.1.0.1", d))
+	It("rejects a tampered value", func() {
+		s := newTestSigner()
+		d := SignedData{Value: "hello", Owner: s.ID(), Version: 1, UpdatedAt: 100}
+		d.Sig, _ = s.Sign(canonical("machines", "10.1.0.1", d))
 
-	d.Value = "tampered"
+		d.Value = "tampered"
 
-	if err := Verify("machines", "10.1.0.1", d); err == nil {
-		t.Fatal("expected verification to fail for a tampered value")
-	}
-}
+		Expect(Verify("machines", "10.1.0.1", d)).NotTo(Succeed())
+	})
 
-// A signature is bound to the claimed owner: presenting it under a different
-// Owner peer.ID must not verify (this is what stops impersonation).
-func TestVerifyRejectsWrongOwner(t *testing.T) {
-	s := newTestSigner(t)
-	other := newTestSigner(t)
+	// A signature is bound to the claimed owner: presenting it under a different
+	// Owner peer.ID must not verify (this is what stops impersonation).
+	It("rejects a signature presented under a different owner", func() {
+		s := newTestSigner()
+		other := newTestSigner()
 
-	d := SignedData{Value: "hello", Owner: s.ID(), Version: 1, UpdatedAt: 100}
-	d.Sig, _ = s.Sign(canonical("machines", "10.1.0.1", d))
+		d := SignedData{Value: "hello", Owner: s.ID(), Version: 1, UpdatedAt: 100}
+		d.Sig, _ = s.Sign(canonical("machines", "10.1.0.1", d))
 
-	d.Owner = other.ID()
+		d.Owner = other.ID()
 
-	if err := Verify("machines", "10.1.0.1", d); err == nil {
-		t.Fatal("expected verification to fail when Owner != signing key")
-	}
-}
+		Expect(Verify("machines", "10.1.0.1", d)).NotTo(Succeed())
+	})
+})

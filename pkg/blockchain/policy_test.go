@@ -15,8 +15,10 @@ package blockchain
 
 import (
 	"encoding/json"
-	"testing"
 	"time"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/mudler/edgevpn/pkg/protocol"
 )
@@ -26,37 +28,38 @@ func tsData(t time.Time) Data {
 	return Data(b)
 }
 
-func TestIsLive(t *testing.T) {
+var _ = Describe("Policy & liveness", func() {
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	hd := map[string]Data{
-		"peerA": tsData(now.Add(-10 * time.Second)),
-		"peerB": tsData(now.Add(-10 * time.Minute)),
-	}
 
-	if !IsLive(hd, "peerA", time.Minute, now) {
-		t.Fatal("peerA heartbeat is recent, should be live")
-	}
-	if IsLive(hd, "peerB", time.Minute, now) {
-		t.Fatal("peerB heartbeat is stale, should not be live")
-	}
-	if IsLive(hd, "unknown", time.Minute, now) {
-		t.Fatal("peer with no heartbeat should not be live")
-	}
-}
+	Describe("IsLive", func() {
+		hd := map[string]Data{
+			"peerA": tsData(now.Add(-10 * time.Second)),
+			"peerB": tsData(now.Add(-10 * time.Minute)),
+		}
 
-func TestDefaultRegistryOwnership(t *testing.T) {
-	r := DefaultRegistry(time.Minute)
+		It("reports a peer with a recent heartbeat as live", func() {
+			Expect(IsLive(hd, "peerA", time.Minute, now)).To(BeTrue())
+		})
+		It("reports a peer with a stale heartbeat as not live", func() {
+			Expect(IsLive(hd, "peerB", time.Minute, now)).To(BeFalse())
+		})
+		It("reports a peer with no heartbeat as not live", func() {
+			Expect(IsLive(hd, "unknown", time.Minute, now)).To(BeFalse())
+		})
+	})
 
-	machine, _ := json.Marshal(map[string]string{"PeerID": "peerX", "Address": "10.1.0.1"})
-	if got := r.Policy(protocol.MachinesLedgerKey).OwnerOf("10.1.0.1", Data(machine)); got != "peerX" {
-		t.Fatalf("machine owner = %q, want peerX", got)
-	}
+	Describe("DefaultRegistry ownership", func() {
+		r := DefaultRegistry(time.Minute)
 
-	if got := r.Policy(protocol.UsersLedgerKey).OwnerOf("peerY", ""); got != "peerY" {
-		t.Fatalf("user owner = %q, want peerY (key is owner)", got)
-	}
-
-	if r.Policy("some-unregistered-bucket").Owned {
-		t.Fatal("unregistered bucket must be unowned (open) by default")
-	}
-}
+		It("derives the machine owner from the PeerID field", func() {
+			machine, _ := json.Marshal(map[string]string{"PeerID": "peerX", "Address": "10.1.0.1"})
+			Expect(r.Policy(protocol.MachinesLedgerKey).OwnerOf("10.1.0.1", Data(machine))).To(Equal("peerX"))
+		})
+		It("treats the key as the owner for the users bucket", func() {
+			Expect(r.Policy(protocol.UsersLedgerKey).OwnerOf("peerY", "")).To(Equal("peerY"))
+		})
+		It("leaves unregistered buckets unowned (open)", func() {
+			Expect(r.Policy("some-unregistered-bucket").Owned).To(BeFalse())
+		})
+	})
+})

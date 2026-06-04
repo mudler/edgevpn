@@ -15,46 +15,42 @@ package blockchain
 
 import (
 	"encoding/json"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-// An unsigned entry must serialise to the exact pre-authentication wire format
-// (a bare JSON value), so existing nodes that decode Storage values as plain
-// strings keep working.
-func TestSignedDataLegacyWireFormat(t *testing.T) {
-	d := SignedData{Value: Data(`{"PeerID":"x"}`)}
+var _ = Describe("SignedData wire format", func() {
+	// An unsigned entry must serialise to the exact pre-authentication wire
+	// format (a bare JSON value), so existing nodes that decode Storage values
+	// as plain strings keep working.
+	It("keeps unsigned entries on the legacy bare-value format", func() {
+		d := SignedData{Value: Data(`{"PeerID":"x"}`)}
 
-	got, err := json.Marshal(d)
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-	want, _ := json.Marshal(`{"PeerID":"x"}`) // legacy: Data is a string -> JSON string
-	if string(got) != string(want) {
-		t.Fatalf("legacy marshal = %s, want %s", got, want)
-	}
+		got, err := json.Marshal(d)
+		Expect(err).NotTo(HaveOccurred())
+		want, _ := json.Marshal(`{"PeerID":"x"}`) // legacy: Data is a string -> JSON string
+		Expect(string(got)).To(Equal(string(want)))
 
-	var back SignedData
-	if err := json.Unmarshal(got, &back); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	if back.Value != d.Value || back.Owner != "" || back.Version != 0 {
-		t.Fatalf("legacy round-trip mismatch: %+v", back)
-	}
-}
+		var back SignedData
+		Expect(json.Unmarshal(got, &back)).To(Succeed())
+		Expect(back.Value).To(Equal(d.Value))
+		Expect(back.Owner).To(BeEmpty())
+		Expect(back.Version).To(BeZero())
+	})
 
-func TestSignedDataSignedWireRoundTrip(t *testing.T) {
-	d := SignedData{Value: Data(`"v"`), Owner: "peerX", Version: 3, UpdatedAt: 100, Sig: []byte{1, 2, 3}}
+	It("round-trips a signed entry as the full object", func() {
+		d := SignedData{Value: Data(`"v"`), Owner: "peerX", Version: 3, UpdatedAt: 100, Sig: []byte{1, 2, 3}}
 
-	b, err := json.Marshal(d)
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-	var back SignedData
-	if err := json.Unmarshal(b, &back); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	if back.Owner != "peerX" || back.Version != 3 || back.UpdatedAt != 100 ||
-		string(back.Sig) != string([]byte{1, 2, 3}) || back.Value != d.Value {
-		t.Fatalf("signed round-trip mismatch: %+v", back)
-	}
-}
+		b, err := json.Marshal(d)
+		Expect(err).NotTo(HaveOccurred())
+
+		var back SignedData
+		Expect(json.Unmarshal(b, &back)).To(Succeed())
+		Expect(back.Owner).To(Equal("peerX"))
+		Expect(back.Version).To(Equal(uint64(3)))
+		Expect(back.UpdatedAt).To(Equal(int64(100)))
+		Expect(back.Sig).To(Equal([]byte{1, 2, 3}))
+		Expect(back.Value).To(Equal(d.Value))
+	})
+})
