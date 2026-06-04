@@ -264,10 +264,14 @@ By default the identity is **ephemeral**: with no configured key, `GenPrivKey(0)
   via cross-owner reclaim (allowed only once the old owner expires). This works but adds churn and
   a reclaim delay of up to the TTL on every restart.
 
-For this reason the binary **auto-enables identity persistence whenever ownership is on**
-(`enforce`/`observe`): `cmd/util.go` reads/creates `<privkey-cache-dir>/privkey` even without an
-explicit `--privkey-cache`, and warns (rather than failing) if it cannot persist, so an operator
-who has not opted into stable identities still gets clean restarts under enforcement.
+For long-lived nodes a stable identity is therefore recommended under enforcement
+(`--privkey-cache`). The binary does **not** auto-enable it: the default cache dir is shared
+per-user (`$HOME/.edgevpn`), so auto-persisting would make co-located processes (e.g. `edgevpn
+api` next to the VPN, or `file-send`/`file-receive`) load the *same* key and boot with a
+duplicate peer ID. Instead, `cmd/util.go` emits a one-line warning when ownership is on with an
+ephemeral identity, pointing operators at `--privkey-cache` (with a distinct `--privkey-cache-dir`
+per process). Ephemeral identities still work — restarts just churn (orphan → reclaim after the
+liveness TTL).
 
 **Security boundary.** Token = admission (keeps outsiders out); identity = per-write integrity
 (keeps insiders from impersonating each other — a leaked token still cannot let peer A write peer

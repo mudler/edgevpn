@@ -582,16 +582,14 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		}
 	}
 
-	// Persist the libp2p identity when explicitly requested, or implicitly when
-	// ledger ownership enforcement is on. Ownership binds entries to the peer ID,
-	// so an ephemeral identity would orphan a node's entries (reaped after the
-	// liveness TTL) and force a cross-owner reclaim on every restart; a stable
-	// identity makes restarts same-owner.
-	ownMode := strings.ToLower(nc.Ownership.Mode)
-	ownershipEnabled := ownMode == "enforce" || ownMode == "on" ||
-		ownMode == "observe" || ownMode == "log" || ownMode == "log-only"
-
-	if c.Bool("privkey-cache") || ownershipEnabled {
+	// Persist the libp2p identity only when explicitly requested. We do NOT
+	// auto-enable this under ownership enforcement: the default cache dir is
+	// shared per-user ($HOME/.edgevpn), so co-located edgevpn processes (e.g.
+	// `edgevpn api` alongside `edgevpn` VPN, or file-send/-receive) would all
+	// load the SAME key and boot with the same peer ID — a broken duplicate
+	// identity on the network. Stable identity must be an explicit per-node
+	// choice via --privkey-cache (+ a distinct --privkey-cache-dir per process).
+	if c.Bool("privkey-cache") {
 		keyFile := filepath.Join(c.String("privkey-cache-dir"), "privkey")
 		dat, rerr := os.ReadFile(keyFile)
 		if rerr == nil && len(dat) > 0 {
@@ -608,26 +606,25 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 			if merr != nil {
 				llger.Fatal(merr.Error())
 			}
-			// Use the freshly generated key for this run regardless of whether it
-			// can be persisted.
+			if merr := os.MkdirAll(c.String("privkey-cache-dir"), 0700); merr != nil {
+				llger.Fatal(merr.Error())
+			}
+			if merr := os.WriteFile(keyFile, r, 0600); merr != nil {
+				llger.Fatal(merr.Error())
+			}
 			nc.Privkey = r
-
-			perr := os.MkdirAll(c.String("privkey-cache-dir"), 0700)
-			if perr == nil {
-				perr = os.WriteFile(keyFile, r, 0600)
-			}
-			switch {
-			case perr == nil:
-				llger.Info("Saved private key in", keyFile)
-			case c.Bool("privkey-cache"):
-				// Explicitly requested: keep the fail-fast behaviour.
-				llger.Fatal(perr.Error())
-			default:
-				// Auto-enabled by ownership: don't block startup, but warn that
-				// the identity will change on restart.
-				llger.Warnf("ownership enforcement is on but the identity could not be persisted to %s (%v); it will change on restart, orphaning this node's ledger entries until the liveness TTL expires. Set --privkey-cache-dir to a writable path to avoid this.", keyFile, perr)
-			}
 		}
+	}
+
+	// Under ownership enforcement an ephemeral identity is usable but churny:
+	// on every restart the node's entries are orphaned (reaped after the
+	// liveness TTL) and re-claimed under the new identity. Nudge operators of a
+	// long-lived node toward a stable identity, without forcing it.
+	ownMode := strings.ToLower(nc.Ownership.Mode)
+	ownershipEnabled := ownMode == "enforce" || ownMode == "on" ||
+		ownMode == "observe" || ownMode == "log" || ownMode == "log-only"
+	if ownershipEnabled && len(nc.Privkey) == 0 {
+		llger.Warnf("ownership enforcement is on with an ephemeral identity: this node's ledger entries will be reclaimed after the liveness TTL on each restart. Use --privkey-cache with a per-node --privkey-cache-dir for a stable identity.")
 	}
 
 	for _, pt := range c.StringSlice("static-peertable") {
