@@ -238,6 +238,20 @@ var _ = Describe("Authorized merge (enforced)", func() {
 		Expect(storedOwner(l, protocol.MachinesLedgerKey, ip)).To(Equal(a.ID()))
 	})
 
+	// DeleteBucket tombstones every key; once a bucket has no live keys it must
+	// disappear from CurrentData (matching legacy delete semantics), otherwise
+	// GetBuckets keeps listing it and AnnounceDeleteBucket never terminates.
+	It("drops a fully-tombstoned bucket from CurrentData", func() {
+		l := enforcedLedger(time.Minute, now)
+		l.SetSigner(newTestSigner())
+
+		l.Add("mybucket", map[string]interface{}{"k": "v"})
+		Expect(l.CurrentData()).To(HaveKey("mybucket"))
+
+		l.DeleteBucket("mybucket")
+		Expect(l.CurrentData()).NotTo(HaveKey("mybucket"))
+	})
+
 	It("hides a tombstoned entry", func() {
 		l := enforcedLedger(time.Minute, now)
 		a := newTestSigner()

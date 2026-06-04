@@ -483,7 +483,11 @@ func (l *Ledger) CurrentData() map[string]map[string]Data {
 
 	out := map[string]map[string]Data{}
 	for b, kv := range l.blockchain.Last().Storage {
-		out[b] = projectValues(kv)
+		// Omit buckets with no live keys so a fully-tombstoned bucket disappears,
+		// matching the legacy DeleteBucket semantics (the bucket goes away).
+		if p := projectValues(kv); len(p) > 0 {
+			out[b] = p
+		}
 	}
 	return out
 }
