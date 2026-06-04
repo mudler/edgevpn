@@ -277,6 +277,32 @@ and mode). Notes:
 `pkg/vpn/vpn.go` + `pkg/services/{services,files,dns}.go` (one-line `IsLive` guards on reads),
 `pkg/protocol/protocol.go` (version bump), plus tests.
 
+## 14a. Post-review hardening
+
+A review of the first cut found and fixed several issues:
+
+- **No re-broadcast churn / false warnings.** The merge now skips byte-identical
+  incoming entries (`sameEntry`), so an idle network neither mints a block every
+  sync nor logs spurious ownership-violation warnings; open buckets require a
+  *strictly* higher version to adopt.
+- **Restart-safe versioning.** Versions are floored to the wall clock
+  (`versionAfter`), and an existing tombstone is treated as a reclaimable slot,
+  so an owner that restarts (or returns after being reaped) is not locked out of
+  its own key by a higher-versioned tombstone until GC.
+- **Atomic writes.** `commit` holds the lock across the whole read-modify-write
+  (read → mutate copy → append block), so the concurrent writers — local `Add`,
+  the network merge, and the reaper — can no longer clobber one another (a lost
+  heartbeat could otherwise trigger false reaping). The network merge installs
+  without re-broadcasting (the Syncronizer propagates state) to avoid gossip
+  amplification.
+- **More gated reads.** `IsOwnerLive` now also guards the service-consumer dial
+  (`ConnectNetworkService`) and the file-pull dial (`ReceiveFile`), matching VPN
+  routing. The `egress` bucket is registered (self-owned) so egress
+  advertisements can't be forged for other peers. The `dhcp` leader bucket is
+  deliberately left open (its shared key changes owner on handoff; the
+  deterministic `utils.Leader` cross-check already bounds a forged value to a
+  self-correcting stall, and the assigned IPs in `machines` are signed).
+
 ## 15. Known limitations / follow-ups
 
 - **DNS ownership.** Implemented as a self-owned bucket (first-claim + lease), so

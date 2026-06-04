@@ -145,6 +145,13 @@ func ReceiveFile(ctx context.Context, ledger *blockchain.Ledger, n *node.Node, l
 					return errors.New("file not found")
 				}
 
+				// Don't pull a file from an owner that has gone inactive (no-op
+				// when ownership enforcement is disabled).
+				if !ledger.IsOwnerLive(fi.PeerID) {
+					l.Debug("file owner inactive, retrying in 5 seconds")
+					continue
+				}
+
 				// Decode the Peer
 				d, err := peer.Decode(fi.PeerID)
 				if err != nil {

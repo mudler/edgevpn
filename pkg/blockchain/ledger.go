@@ -216,15 +216,13 @@ func (l *Ledger) Update(f *Ledger, h *hub.Message, c chan *hub.Message) (err err
 		return
 	}
 
-	// Enforced path: authenticated per-key merge.
-	l.Lock()
-	cur := copyStorage(l.blockchain.Last().Storage)
-	now := l.clock()
-	l.Unlock()
-
-	if merged, changed := l.merge(cur, block, now); changed {
-		l.writeData(merged)
-	}
+	// Enforced path: authenticated per-key merge, applied atomically. We do not
+	// re-broadcast on adoption (the Syncronizer propagates state) to avoid gossip
+	// amplification.
+	l.commit(false, func(cur map[string]map[string]SignedData) bool {
+		_, changed := l.merge(cur, block, l.clock())
+		return changed
+	})
 	return
 }
 
@@ -243,9 +241,16 @@ func (l *Ledger) merge(cur map[string]map[string]SignedData, incoming *Block, no
 			}
 			ex, ok := cur[bucket][key]
 
+			// Idle networks re-broadcast the same block every sync interval, so a
+			// byte-identical incoming entry is the common case: skip it silently
+			// (no new block, no warning).
+			if ok && sameEntry(ex, in) {
+				continue
+			}
+
 			if !pol.Owned {
-				// Open/legacy bucket: take the highest version, else keep.
-				if !ok || in.Version >= ex.Version {
+				// Open/legacy bucket: take the strictly higher version, else keep.
+				if !ok || in.Version > ex.Version {
 					cur[bucket][key] = in
 					changed = true
 				}
@@ -304,6 +309,17 @@ func (l *Ledger) accept(bucket, key string, in, ex SignedData, exists bool, pol 
 
 	if !exists {
 		return "" // first claim of a free key
+	}
+
+	// An existing tombstone is a cleared slot, not a live entry: any valid owner
+	// (incl. the original owner returning after a reap) may re-claim it, subject
+	// only to version monotonicity. Without this, a leader-authored tombstone
+	// would lock the returning owner out until tombstone GC.
+	if ex.Deleted {
+		if in.Version <= ex.Version {
+			return "stale re-claim over tombstone"
+		}
+		return ""
 	}
 
 	// A different owner may only take over an expired (or reclaimable-free) slot.
@@ -499,6 +515,29 @@ func copyStorage(s map[string]map[string]SignedData) map[string]map[string]Signe
 	return out
 }
 
+// sameEntry reports whether two entries are byte-identical (the common case for
+// re-broadcast/relay), so the merge can skip them without churn or warnings.
+func sameEntry(a, b SignedData) bool {
+	return a.Owner == b.Owner &&
+		a.Version == b.Version &&
+		a.UpdatedAt == b.UpdatedAt &&
+		a.Deleted == b.Deleted &&
+		a.Value == b.Value &&
+		bytes.Equal(a.Sig, b.Sig)
+}
+
+// versionAfter returns the next version for a write. It is monotonic per key
+// (prev+1) but also floored to the wall clock, so an owner that restarts with a
+// fresh ledger (version counter reset) still out-versions any stale entry or
+// tombstone other peers retained, rather than being rejected as a rollback.
+func versionAfter(prev uint64, now time.Time) uint64 {
+	v := prev + 1
+	if n := uint64(now.UnixNano()); n > v {
+		return n
+	}
+	return v
+}
+
 // projectValues exposes a bucket's live (non-tombstoned) values.
 func projectValues(kv map[string]SignedData) map[string]Data {
 	out := map[string]Data{}
@@ -522,77 +561,80 @@ func (l *Ledger) makeEntry(bucket, key string, value Data, prev SignedData, now 
 	if prev.Owner == l.signer.ID() && !prev.Deleted && prev.Value == value && prev.Sig != nil {
 		return prev
 	}
-	d := SignedData{Value: value, Version: prev.Version + 1, UpdatedAt: now.Unix(), Owner: l.signer.ID()}
+	d := SignedData{Value: value, Version: versionAfter(prev.Version, now), UpdatedAt: now.Unix(), Owner: l.signer.ID()}
 	d.Sig, _ = l.signer.Sign(canonical(bucket, key, d))
 	return d
 }
 
 func (l *Ledger) makeTombstone(bucket, key string, prev SignedData, now time.Time) SignedData {
-	d := SignedData{Owner: l.signer.ID(), Version: prev.Version + 1, UpdatedAt: now.Unix(), Deleted: true}
+	d := SignedData{Owner: l.signer.ID(), Version: versionAfter(prev.Version, now), UpdatedAt: now.Unix(), Deleted: true}
 	d.Sig, _ = l.signer.Sign(canonical(bucket, key, d))
 	return d
 }
 
 // Add data to the blockchain
 func (l *Ledger) Add(b string, s map[string]interface{}) {
-	l.Lock()
-	current := copyStorage(l.blockchain.Last().Storage)
-	now := l.clock()
-	for key, val := range s {
-		if _, exists := current[b]; !exists {
-			current[b] = make(map[string]SignedData)
+	l.commit(true, func(cur map[string]map[string]SignedData) bool {
+		now := l.clock()
+		if cur[b] == nil {
+			cur[b] = make(map[string]SignedData)
 		}
-		dat, _ := json.Marshal(val)
-		current[b][key] = l.makeEntry(b, key, Data(string(dat)), current[b][key], now)
-	}
-	l.Unlock()
-	l.writeData(current)
+		changed := false
+		for key, val := range s {
+			dat, _ := json.Marshal(val)
+			ne := l.makeEntry(b, key, Data(string(dat)), cur[b][key], now)
+			if prev, ok := cur[b][key]; !ok || !sameEntry(prev, ne) {
+				cur[b][key] = ne
+				changed = true
+			}
+		}
+		return changed
+	})
 }
 
-// Delete data from the ledger (locking). With a signer this writes a signed
-// tombstone so the deletion survives gossip reconciliation; without one it
-// removes the key (legacy behaviour).
+// Delete data from the ledger. With a signer this writes a signed tombstone so
+// the deletion survives gossip reconciliation; without one it removes the key
+// (legacy behaviour).
 func (l *Ledger) Delete(b string, k string) {
-	l.Lock()
-	current := copyStorage(l.blockchain.Last().Storage)
-	now := l.clock()
-
-	if l.signer != nil {
-		if bkt, ok := current[b]; ok {
-			if prev, ok := bkt[k]; ok && !prev.Deleted {
-				current[b][k] = l.makeTombstone(b, k, prev, now)
+	l.commit(true, func(cur map[string]map[string]SignedData) bool {
+		now := l.clock()
+		if l.signer != nil {
+			if bkt, ok := cur[b]; ok {
+				if prev, ok := bkt[k]; ok && !prev.Deleted {
+					cur[b][k] = l.makeTombstone(b, k, prev, now)
+					return true
+				}
 			}
+			return false
 		}
-		l.Unlock()
-		l.writeData(current)
-		return
-	}
-
-	delete(current[b], k)
-	l.Unlock()
-	l.writeData(current)
+		if _, ok := cur[b][k]; ok {
+			delete(cur[b], k)
+			return true
+		}
+		return false
+	})
 }
 
-// DeleteBucket deletes a bucket from the ledger (locking).
+// DeleteBucket deletes a bucket from the ledger.
 func (l *Ledger) DeleteBucket(b string) {
-	l.Lock()
-	current := copyStorage(l.blockchain.Last().Storage)
-	now := l.clock()
-
-	if l.signer != nil {
-		for k, prev := range current[b] {
-			if !prev.Deleted {
-				current[b][k] = l.makeTombstone(b, k, prev, now)
+	l.commit(true, func(cur map[string]map[string]SignedData) bool {
+		now := l.clock()
+		if l.signer != nil {
+			changed := false
+			for k, prev := range cur[b] {
+				if !prev.Deleted {
+					cur[b][k] = l.makeTombstone(b, k, prev, now)
+					changed = true
+				}
 			}
+			return changed
 		}
-		l.Unlock()
-		l.writeData(current)
-		return
-	}
-
-	delete(current, b)
-	l.Unlock()
-	l.writeData(current)
+		if _, ok := cur[b]; ok {
+			delete(cur, b)
+			return true
+		}
+		return false
+	})
 }
 
 // String returns the blockchain as string
@@ -606,19 +648,35 @@ func (l *Ledger) Index() int {
 	return l.blockchain.Len()
 }
 
-func (l *Ledger) writeData(s map[string]map[string]SignedData) {
-	newBlock := l.blockchain.Last().NewBlock(s)
-
-	if newBlock.IsValid(l.blockchain.Last()) {
-		l.Lock()
-		l.blockchain.Add(newBlock)
-		l.Unlock()
+// commit runs mutate under the lock against a copy of the current storage and,
+// iff mutate reports a change, installs the result as a new block. The whole
+// read-modify-write is atomic (holding the lock across read, mutate and append),
+// so concurrent writers — local Add, the network merge and the reaper — cannot
+// clobber each other. The broadcast happens after the lock is released (writing
+// to the message channel under the lock could deadlock against the hub
+// consumer, which drives ledger.Update).
+func (l *Ledger) commit(broadcast bool, mutate func(cur map[string]map[string]SignedData) bool) {
+	l.Lock()
+	cur := copyStorage(l.blockchain.Last().Storage)
+	changed := mutate(cur)
+	if changed {
+		newBlock := l.blockchain.Last().NewBlock(cur)
+		if newBlock.IsValid(l.blockchain.Last()) {
+			l.blockchain.Add(newBlock)
+		}
 	}
-
-	bytes, err := json.Marshal(l.blockchain.Last())
-	if err != nil {
-		log.Println(err)
+	var payload []byte
+	if broadcast && changed {
+		b, err := json.Marshal(l.blockchain.Last())
+		if err != nil {
+			log.Println(err)
+		} else {
+			payload = compress(b).Bytes()
+		}
 	}
+	l.Unlock()
 
-	l.channel.Write(compress(bytes).Bytes())
+	if payload != nil {
+		l.channel.Write(payload)
+	}
 }

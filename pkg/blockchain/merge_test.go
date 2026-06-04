@@ -181,6 +181,63 @@ var _ = Describe("Authorized merge (enforced)", func() {
 		Expect(got["1"]).To(Equal("10.0.0.5"))
 	})
 
+	It("does not churn or warn on byte-identical re-broadcast (owned bucket)", func() {
+		warnings := 0
+		l := New(io.Discard, &MemoryStore{},
+			WithEnforcedOwnership(DefaultRegistry(time.Minute), time.Minute),
+			WithClock(func() time.Time { return now }),
+			WithViolationLogger(func(string, ...interface{}) { warnings++ }))
+		a := newTestSigner()
+		entry := mkSignedEntry(a, protocol.MachinesLedgerKey, ip, machine(a.ID(), ip), 1, now)
+
+		feed(l, map[string]map[string]SignedData{protocol.MachinesLedgerKey: {ip: entry}})
+		idx := l.LastBlock().Index
+		warnings = 0
+
+		// The Syncronizer re-broadcasts the same block every interval; that must
+		// neither mint a new block nor log a false violation.
+		feed(l, map[string]map[string]SignedData{protocol.MachinesLedgerKey: {ip: entry}})
+		Expect(l.LastBlock().Index).To(Equal(idx))
+		Expect(warnings).To(BeZero())
+	})
+
+	It("does not churn on byte-identical re-broadcast (open bucket)", func() {
+		l := enforcedLedger(time.Minute, now)
+		a := newTestSigner()
+		entry := mkSignedEntry(a, "nodes", "k", "v", 1, now)
+
+		feed(l, map[string]map[string]SignedData{"nodes": {"k": entry}})
+		idx := l.LastBlock().Index
+
+		feed(l, map[string]map[string]SignedData{"nodes": {"k": entry}})
+		Expect(l.LastBlock().Index).To(Equal(idx))
+	})
+
+	It("lets a valid owner reclaim a key cleared by a foreign tombstone", func() {
+		l := enforcedLedger(time.Minute, now)
+		a := newTestSigner()
+		reaper := newTestSigner()
+
+		// reaper is live; A is not (no heartbeat) so its entry is reapable.
+		feed(l, heartbeat(reaper, now))
+		feed(l, map[string]map[string]SignedData{
+			protocol.MachinesLedgerKey: {ip: mkSignedEntry(a, protocol.MachinesLedgerKey, ip, machine(a.ID(), ip), 1, now)},
+		})
+
+		// reaper tombstones A's entry (cross-owner allowed: A expired).
+		tomb := SignedData{Owner: reaper.ID(), Version: 2, UpdatedAt: now.Unix(), Deleted: true}
+		tomb.Sig, _ = reaper.Sign(canonical(protocol.MachinesLedgerKey, ip, tomb))
+		feed(l, map[string]map[string]SignedData{protocol.MachinesLedgerKey: {ip: tomb}})
+		_, found := l.GetKey(protocol.MachinesLedgerKey, ip)
+		Expect(found).To(BeFalse())
+
+		// A returns and reclaims its own key with a higher version.
+		feed(l, map[string]map[string]SignedData{
+			protocol.MachinesLedgerKey: {ip: mkSignedEntry(a, protocol.MachinesLedgerKey, ip, machine(a.ID(), ip), 3, now)},
+		})
+		Expect(storedOwner(l, protocol.MachinesLedgerKey, ip)).To(Equal(a.ID()))
+	})
+
 	It("hides a tombstoned entry", func() {
 		l := enforcedLedger(time.Minute, now)
 		a := newTestSigner()

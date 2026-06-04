@@ -24,7 +24,7 @@ import (
 )
 
 // msgFor wraps a ledger's last block into the wire form Update expects
-// (gzip-compressed JSON), mirroring what writeData broadcasts.
+// (gzip-compressed JSON), mirroring what the ledger broadcasts.
 func msgFor(l *Ledger) *hub.Message {
 	bb, _ := json.Marshal(l.LastBlock())
 	return hub.NewMessage(compress(bb).String())

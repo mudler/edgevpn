@@ -27,46 +27,39 @@ import (
 //
 // See docs/design/authenticated-ledger.md (section 9).
 func (l *Ledger) Reap(tombstoneTTL time.Duration) {
-	l.Lock()
-	if l.mode == OwnershipOff || l.signer == nil {
-		l.Unlock()
-		return
-	}
-	cur := copyStorage(l.blockchain.Last().Storage)
-	registry := l.registry
-	now := l.clock()
-	l.Unlock()
+	l.commit(true, func(cur map[string]map[string]SignedData) bool {
+		if l.mode == OwnershipOff || l.signer == nil {
+			return false
+		}
+		now := l.clock()
+		health := projectValues(cur[protocol.HealthCheckKey])
+		changed := false
 
-	health := projectValues(cur[protocol.HealthCheckKey])
-	changed := false
+		for bucket, kv := range cur {
+			pol := l.registry.Policy(bucket)
+			for key, e := range kv {
+				// Prune tombstones that everyone has had time to observe.
+				if e.Deleted {
+					if time.Unix(e.UpdatedAt, 0).Add(tombstoneTTL).Before(now) {
+						delete(cur[bucket], key)
+						changed = true
+					}
+					continue
+				}
 
-	for bucket, kv := range cur {
-		pol := registry.Policy(bucket)
-		for key, e := range kv {
-			// Prune tombstones that everyone has had time to observe.
-			if e.Deleted {
-				if time.Unix(e.UpdatedAt, 0).Add(tombstoneTTL).Before(now) {
-					delete(cur[bucket], key)
+				if !pol.Owned || pol.Expiry == NoExpiry {
+					continue
+				}
+				// Tombstone any entry past its lease (inactive Liveness owner, or
+				// Absolute-expired such as a stale heartbeat).
+				if l.expired(bucket, key, e, pol, health, now) {
+					cur[bucket][key] = l.makeTombstone(bucket, key, e, now)
 					changed = true
 				}
-				continue
-			}
-
-			if !pol.Owned || pol.Expiry == NoExpiry {
-				continue
-			}
-			// Tombstone any entry past its lease (inactive Liveness owner, or
-			// Absolute-expired such as a stale heartbeat).
-			if l.expired(bucket, key, e, pol, health, now) {
-				cur[bucket][key] = l.makeTombstone(bucket, key, e, now)
-				changed = true
 			}
 		}
-	}
-
-	if changed {
-		l.writeData(cur)
-	}
+		return changed
+	})
 }
 
 // LivenessBuckets returns the buckets whose entries expire with owner liveness.

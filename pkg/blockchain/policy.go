@@ -78,6 +78,16 @@ func DefaultRegistry(ttl time.Duration) Registry {
 		// names/targets a peer may register (e.g. rejecting ".*" catch-alls) is
 		// further hardening tracked separately.
 		protocol.DNSKey: {Owned: true, OwnerOf: nil, Expiry: Liveness, Reclaimable: true},
+		// egress advertises a node as an HTTP egress; the key is the peer.ID, so
+		// the owner is the key. Signing it stops a peer from forging egress
+		// entries for others (which would let it intercept proxied traffic).
+		protocol.EgressService: {Owned: true, OwnerOf: ownerIsKey, Expiry: Liveness},
+		// NOTE: the "dhcp" bucket (IP-lease leader election) is intentionally left
+		// open. Its single shared "leader" key changes owner as leadership hands
+		// off, so self-owning it would stall handoff for a TTL; and the reader
+		// already cross-checks the recorded leader against the deterministic
+		// utils.Leader election, bounding a forged value to a self-correcting
+		// stall (no IP hijack — the machines bucket that assigns IPs is signed).
 	}
 }
 
