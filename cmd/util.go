@@ -371,9 +371,9 @@ var CommonFlags []cli.Flag = []cli.Flag{
 	},
 	&cli.StringFlag{
 		Name:    "ownership",
-		Usage:   "Ledger ownership enforcement: off, observe (sign + log violations) or enforce (sign + reject). (Experimental)",
+		Usage:   "Ledger ownership enforcement: enforce (sign + reject unauthorized writes, default), observe (sign + log violations) or off (legacy, opt-out). All nodes on a network must run the same mode/wire format, so flip the whole network together.",
 		EnvVars: []string{"EDGEVPNOWNERSHIP"},
-		Value:   "off",
+		Value:   "enforce",
 	},
 	&cli.IntFlag{
 		Name:    "ownership-ttl",

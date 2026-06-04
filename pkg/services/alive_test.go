@@ -69,6 +69,37 @@ var _ = Describe("Alive service", func() {
 		})
 	})
 
+	Context("Aliveness check under ownership enforcement", func() {
+		It("detects both nodes alive with signed healthchecks", func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			eopts := append(
+				Alive(5*time.Second, 100*time.Second, 15*time.Minute),
+				node.WithDiscoveryInterval(10*time.Second),
+				node.WithOwnership(blockchain.OwnershipEnforce, 15*time.Minute),
+				node.FromBase64(true, true, token, nil, nil),
+				l)
+
+			e1, _ := node.New(append(eopts, node.WithStore(&blockchain.MemoryStore{}))...)
+			e2, _ := node.New(append(eopts, node.WithStore(&blockchain.MemoryStore{}))...)
+
+			e1.Start(ctx)
+			e2.Start(ctx)
+
+			matches := And(ContainElement(e2.Host().ID().String()),
+				ContainElement(e1.Host().ID().String()))
+
+			Eventually(func() []string {
+				ll, err := e1.Ledger()
+				if err != nil {
+					return []string{}
+				}
+				return AvailableNodes(ll, 15*time.Minute)
+			}, 120*time.Second, 1*time.Second).Should(matches)
+		})
+	})
+
 	Context("Aliveness Scrub", func() {
 		BeforeEach(func() {
 			opts = append(

@@ -1,6 +1,6 @@
 # Authenticated, per-owner ledger entries
 
-Status: **proposed** · Target: single PR · Default behaviour: **unchanged** until `--enforce-ownership` is set.
+Status: **proposed** · Target: single PR · The `edgevpn` binary defaults to `--ownership=enforce`; operators opt out with `--ownership=off` (`EDGEVPNOWNERSHIP`). The library default (`node.New` without the option) stays off so embedders opt in deliberately.
 
 ## 1. Problem
 
@@ -174,9 +174,9 @@ for each (bucket, key, incoming) in block.Storage:
 - **Cross-owner writes are allowed iff the current owner's lease has expired.** This single
   rule powers both *reclaim* (peer B takes a dead peer's IP) and *reaping* (the leader
   tombstones a dead peer's entry).
-- **`--enforce-ownership` dual mode**: when **off** (default), every `drop` above is instead
-  a `WARN` log + accept (so operators can observe violations on a live network without
-  breaking it); when **on**, drops are enforced. Verification and signing always run.
+- **Modes**: `off` skips this merge entirely (legacy height-wins path, no signing). `observe`
+  runs the merge but turns every `drop` above into a `WARN` log + accept (observe violations on
+  a live network without breaking it). `enforce` (the binary default) drops invalid writes.
 
 ## 8. Write path
 
@@ -231,24 +231,28 @@ before any network service runs. The host private key is read from
 
 ## 11. Configuration
 
-| Flag / field          | Default     | Meaning                                            |
-|-----------------------|-------------|----------------------------------------------------|
-| `--enforce-ownership` | `false`     | off = sign+verify but log-only; on = drop invalid  |
-| `--ownership-ttl`     | `maxTime`   | liveness window (reuse the existing alive maxtime)  |
-| `--reaper-interval`   | `scrubTime` | how often the leader reaps                          |
-| `--tombstone-ttl`     | `3×ttl`     | how long tombstones are retained before pruning     |
+| Flag / field             | Default   | Meaning                                               |
+|--------------------------|-----------|-------------------------------------------------------|
+| `--ownership` (`EDGEVPNOWNERSHIP`) | `enforce` | `enforce` = sign + reject; `observe` = sign + log-only; `off` = legacy/opt-out |
+| `--ownership-ttl`        | node default (2m) | liveness window after which an inactive owner's entries may be reclaimed/reaped |
+
+Reaping cadence reuses the existing alive `scrub-interval`, and tombstones are retained for
+`3×maxtime` before pruning (see `pkg/services/alive.go`).
 
 ## 12. Backwards compatibility
 
-The wire format gains fields, so a new node and an old node will not agree on the affected
-buckets. Strategy for a single PR:
+The signed wire format differs from the legacy bare-value one, so observe/enforce nodes do not
+interoperate with pre-authentication nodes on the owned buckets. Because the binary now
+defaults to `enforce`, **a network must be upgraded together** (all nodes on the same version
+and mode). Notes:
 
-- New nodes **always sign** their writes and **always verify**, but **enforce only when the
-  flag is on**. With the flag off, an old (unsigned) entry is treated as an unregistered/legacy
-  entry and accepted; a new signed entry is also accepted by old nodes (they ignore the extra
-  fields). This lets a network upgrade node-by-node, observe `WARN`s, then flip enforcement on
-  network-wide.
-- A protocol/version constant is bumped for observability, but it does not hard-gate joining.
+- The library default (`node.New` without `WithOwnership`) stays `off`, emitting the exact
+  legacy bare-value encoding, so embedders (e.g. LocalAI, Kairos) are unaffected until they
+  opt in — and they must ensure the alive service is running, since cross-owner protection
+  relies on heartbeats.
+- `observe` is the safe rollout step: it signs and logs violations without dropping, so a
+  network can move legacy → observe → enforce while watching the warnings.
+- Operators opt out with `--ownership=off` (`EDGEVPNOWNERSHIP=off`).
 
 ## 13. Testing
 
