@@ -127,8 +127,13 @@ Default registry:
 | `files`         | yes   | `PeerID` field     | Liveness        | yes         |
 | `users`         | yes   | key == peer.ID     | Liveness        | no          |
 | `healthcheck`   | yes   | key == peer.ID     | Absolute(maxTime) | no        |
-| `dns`           | *(follow-up)* | `PeerID` field | Liveness    | yes (first-claim) |
+| `dns`           | yes   | self-owned (nil OwnerOf) | Liveness  | yes (first-claim) |
 | *(unregistered)*| no    | —                  | NoExpiry        | —           |
+
+A `nil` `OwnerOf` marks a **self-owned** bucket: the value carries no owner field,
+so the first signer to claim a key owns it (first-claim), and the normal
+cross-owner/expiry rules then protect it. `dns` uses this so it needs no change to
+the `types.DNS` record shape.
 
 An unregistered bucket is the zero value: open + never expires → unchanged behaviour, which
 is what keeps the change backwards compatible for any bucket we have not opted in.
@@ -213,10 +218,9 @@ targeted, registry-driven reaping across all TTL buckets.
 
 > Implementation note: layers (2) and (3) are implemented (`Ledger.Reap`, wired into the
 > alive service's leader path), and tombstoned entries already read as absent via
-> `GetKey`/`CurrentData`. Layer (1), an explicit `IsLive(owner)` guard inlined at each
-> read site (routing/dial/resolve) for sub-scrub-interval immediacy, is a follow-up — until
-> then a dead owner's entry is skipped as soon as the reaper tombstones it (within one scrub
-> interval), and routing to an already-gone peer simply fails in the meantime.
+> `GetKey`/`CurrentData`. Layer (1) is implemented for VPN routing via
+> `Ledger.IsOwnerLive` (a no-op when ownership is off); applying the same guard at the
+> service/file dial sites is a small further addition.
 
 ## 10. Wiring
 
@@ -271,13 +275,14 @@ buckets. Strategy for a single PR:
 
 ## 15. Known limitations / follow-ups
 
-- **DNS ownership.** `types.DNS` carries no owner field, so the `dns` bucket is left
-  open (unauthenticated) in this iteration. Closing the DNS-poisoning vector under
-  enforcement requires adding an owner peer.ID to the record, having the dns service
-  stamp it, and (per the chosen policy) first-claim + lease semantics. The registry is
-  the single place to opt it in once that lands.
-- **Reader-side lazy `IsLive` guards.** Implemented reaping + tombstone hiding; the
-  inlined per-read `IsLive(owner)` guard (sub-scrub-interval immediacy) is a follow-up.
+- **DNS ownership.** Implemented as a self-owned bucket (first-claim + lease), so
+  hijacking an *existing* DNS name owned by a live peer is blocked and dead owners'
+  records are reaped. Still open as further hardening: constraining *which* names a
+  peer may register (e.g. rejecting `.*` catch-alls) and binding a record's targets to
+  the owner's own address.
+- **Reader-side `IsLive` guards.** Implemented for VPN routing (`Ledger.IsOwnerLive`),
+  in addition to reaping + tombstone hiding. The same guard at the service/file dial
+  sites is a small further addition.
 - **Wire format.** Observe/enforce modes change the on-wire entry encoding to the signed
   object form; a network running observe/enforce must have all nodes on this version.
   The default (`off`) keeps the exact legacy bare-value encoding, so mixed old/new nodes

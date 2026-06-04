@@ -295,8 +295,10 @@ func (l *Ledger) accept(bucket, key string, in, ex SignedData, exists bool, pol 
 		return ""
 	}
 
-	// The value must declare the signer as its owner.
-	if pol.OwnerOf(key, in.Value) != in.Owner {
+	// For buckets whose value declares an owner, it must match the signer. A
+	// nil OwnerOf marks a self-owned bucket (e.g. dns): the value carries no
+	// owner, so the signer is the owner and the key is claimed first-come.
+	if pol.OwnerOf != nil && pol.OwnerOf(key, in.Value) != in.Owner {
 		return "value owner does not match signer"
 	}
 
@@ -330,7 +332,7 @@ func (l *Ledger) expired(bucket, key string, ex SignedData, pol BucketPolicy, he
 		return time.Unix(ex.UpdatedAt, 0).Add(pol.TTL).Before(now)
 	case Liveness:
 		owner := ex.Owner
-		if owner == "" {
+		if owner == "" && pol.OwnerOf != nil {
 			owner = pol.OwnerOf(key, ex.Value)
 		}
 		return !IsLive(health, owner, l.ttl, now)

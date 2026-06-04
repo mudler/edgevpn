@@ -72,10 +72,12 @@ func DefaultRegistry(ttl time.Duration) Registry {
 		protocol.FilesLedgerKey:    {Owned: true, OwnerOf: ownerFromPeerIDField, Expiry: Liveness, Reclaimable: true},
 		protocol.UsersLedgerKey:    {Owned: true, OwnerOf: ownerIsKey, Expiry: Liveness},
 		protocol.HealthCheckKey:    {Owned: true, OwnerOf: ownerIsKey, Expiry: Absolute, TTL: ttl},
-		// NOTE: the dns bucket is intentionally left open for now. Its value
-		// type (types.DNS) carries no owner, so "first-claim + lease" ownership
-		// needs an owner field on the record plus the dns service stamping it.
-		// Tracked as a follow-up; see docs/design/authenticated-ledger.md.
+		// dns is self-owned: the value (types.DNS) carries no owner field, so a
+		// nil OwnerOf means the first signer to claim a name owns it (first-claim
+		// + lease). This blocks hijacking an existing name; constraining which
+		// names/targets a peer may register (e.g. rejecting ".*" catch-alls) is
+		// further hardening tracked separately.
+		protocol.DNSKey: {Owned: true, OwnerOf: nil, Expiry: Liveness, Reclaimable: true},
 	}
 }
 

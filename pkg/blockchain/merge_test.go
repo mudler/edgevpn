@@ -175,6 +175,37 @@ func TestMergeAllowsReclaimAfterOwnerExpired(t *testing.T) {
 	}
 }
 
+// DNS records carry no owner field, so the dns bucket is "self-owned": the first
+// signer to claim a name owns it, and (while it is live) no other peer may take
+// it over. This blocks hijacking an existing DNS name and enables reaping.
+func TestMergeDNSFirstClaimBlocksHijack(t *testing.T) {
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	l := enforcedLedger(time.Minute, now)
+	a := newTestSigner(t)
+	b := newTestSigner(t)
+	name := "foo.internal"
+
+	feed(l, heartbeat(t, a, now)) // A is live
+	feed(l, map[string]map[string]SignedData{
+		protocol.DNSKey: {name: mkSignedEntry(t, a, protocol.DNSKey, name, map[string]string{"1": "10.0.0.5"}, 1, now)},
+	})
+	if _, found := l.GetKey(protocol.DNSKey, name); !found {
+		t.Fatal("first claim of a DNS name should be accepted")
+	}
+
+	// B tries to repoint the name with a higher version while A is live.
+	feed(l, map[string]map[string]SignedData{
+		protocol.DNSKey: {name: mkSignedEntry(t, b, protocol.DNSKey, name, map[string]string{"1": "6.6.6.6"}, 2, now)},
+	})
+
+	v, _ := l.GetKey(protocol.DNSKey, name)
+	var got map[string]string
+	v.Unmarshal(&got)
+	if got["1"] != "10.0.0.5" {
+		t.Fatalf("DNS hijack of a live owner succeeded: %v", got)
+	}
+}
+
 func TestMergeTombstoneHidesEntry(t *testing.T) {
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	l := enforcedLedger(time.Minute, now)

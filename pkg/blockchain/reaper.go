@@ -89,3 +89,20 @@ func (l *Ledger) OwnershipEnabled() bool {
 	defer l.Unlock()
 	return l.mode != OwnershipOff
 }
+
+// IsOwnerLive reports whether owner currently has a fresh heartbeat. When
+// ownership is disabled it always returns true, so existing readers behave
+// exactly as before; under observe/enforce it lets readers skip entries whose
+// owner has gone inactive without waiting for the reaper to tombstone them.
+func (l *Ledger) IsOwnerLive(owner string) bool {
+	l.Lock()
+	if l.mode == OwnershipOff {
+		l.Unlock()
+		return true
+	}
+	health := projectValues(l.blockchain.Last().Storage[protocol.HealthCheckKey])
+	ttl := l.ttl
+	now := l.clock()
+	l.Unlock()
+	return IsLive(health, owner, ttl, now)
+}

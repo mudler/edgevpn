@@ -14,11 +14,34 @@ limitations under the License.
 package blockchain
 
 import (
+	"io"
 	"testing"
 	"time"
 
 	"github.com/mudler/edgevpn/pkg/protocol"
 )
+
+func TestIsOwnerLive(t *testing.T) {
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	// With ownership disabled, liveness is not tracked: everyone is "live" so
+	// readers keep their current behaviour.
+	off := New(io.Discard, &MemoryStore{})
+	if !off.IsOwnerLive("anyone") {
+		t.Fatal("ownership off should treat any owner as live")
+	}
+
+	l := enforcedLedger(time.Minute, now)
+	a := newTestSigner(t)
+	feed(l, heartbeat(t, a, now))
+
+	if !l.IsOwnerLive(a.ID()) {
+		t.Fatal("owner with a fresh heartbeat should be live")
+	}
+	if l.IsOwnerLive("ghost") {
+		t.Fatal("owner with no heartbeat should not be live")
+	}
+}
 
 func TestReapTombstonesInactiveOwners(t *testing.T) {
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
