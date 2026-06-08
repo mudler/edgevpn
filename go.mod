@@ -31,7 +31,7 @@ require (
 	github.com/wlynxg/anet v0.0.5
 	go.uber.org/zap v1.28.0
 	golang.org/x/sys v0.45.0
-	golang.zx2c4.com/wireguard/windows v0.6.1
+	golang.zx2c4.com/wireguard/windows v1.0.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
