@@ -33,7 +33,7 @@ require (
 	github.com/vishvananda/netlink v1.3.1
 	github.com/wlynxg/anet v0.0.5
 	go.uber.org/zap v1.28.0
-	golang.org/x/sys v0.46.0
+	golang.org/x/sys v0.47.0
 	golang.zx2c4.com/wireguard/windows v1.0.1
 	gopkg.in/yaml.v2 v2.4.0
 )
