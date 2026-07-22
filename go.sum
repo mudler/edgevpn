@@ -391,6 +391,8 @@ github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3Rllmb
 github.com/mr-tron/base58 v1.1.2/go.mod h1:BinMc/sQntlIE1frQmRFPUoPA1Zkr8VRgBdjWI2mNwc=
 github.com/mr-tron/base58 v1.3.0 h1:K6Y13R2h+dku0wOqKtecgRnBUBPrZzLZy5aIj8lCcJI=
 github.com/mr-tron/base58 v1.3.0/go.mod h1:2BuubE67DCSWwVfx37JWNG8emOC0sHEU4/HpcYgCLX8=
+github.com/mudler/go-libp2p-pubsub v0.0.0-20260530000827-2a31b5e202c2 h1:vZlj8Li79FAHeNsCpxFaElI8XB6UsieZYkrmd8fTviA=
+github.com/mudler/go-libp2p-pubsub v0.0.0-20260530000827-2a31b5e202c2/go.mod h1:l00Tc/MXTM/dK69HFxKWIe0yaNwMy5OuU0dyuZaWJa0=
 github.com/mudler/go-libp2p-pubsub v0.0.0-20260530201618-205ded1f9cf4 h1:16g+PcAASRkdTO/rnU0epcZgdHz9xX8yVZAA2AbWbWI=
 github.com/mudler/go-libp2p-pubsub v0.0.0-20260530201618-205ded1f9cf4/go.mod h1:l00Tc/MXTM/dK69HFxKWIe0yaNwMy5OuU0dyuZaWJa0=
 github.com/mudler/go-processmanager v0.1.1 h1:c/1NRZOZpW8HuFv9RhBG57nQu1oDMRomEHedwBFMlrw=
