@@ -28,12 +28,19 @@ brew install edgevpn
 Requirements:
 
 - [Golang](https://golang.org/) installed in your system.
+- [Node.js](https://nodejs.org/) 20.19 or newer. The web interface is a React application which is compiled and embedded into the binary.
 - make
 
 ```bash
 $> git clone https://github.com/mudler/edgevpn
 $> cd edgevpn
-$> go build
+$> make build
+```
+
+`make build` compiles the web interface first, and the Go binary afterwards. Running `go build` on its own works only if `api/react-ui/dist` already exists: the web interface is embedded with `//go:embed`, so a missing directory is a compile error. If you are working on the Go side only and don't need the web interface, you can stub it out:
+
+```bash
+$> mkdir -p api/react-ui/dist && touch api/react-ui/dist/index.html
 ```
 
 ### Using Docker Compose
