@@ -1,0 +1,47 @@
+/* EdgeVPN design system — Direction A "Multiaddr".
+   Dark-committed by design. Every colour in the app comes from here;
+   no component may contain a literal colour value. */
+:root {
+  /* Ground and surfaces. Graphite is blue-biased, never neutral grey. */
+  --ev-bg:      #14181D;
+  --ev-panel:   #1A2026;
+  --ev-rule:    #2B333C;
+  --ev-code:    #10141A;
+
+  /* Text */
+  --ev-ink:     #DFE3E8;
+  --ev-muted:   #8A939E;
+  --ev-faint:   #646D78;
+
+  /* The single accent. Active path, current nav, focus ring. */
+  --ev-signal:   #F2542D;
+  --ev-signal-2: #FFB35C;
+
+  /* Semantic state. Separate from the accent; never decorative. */
+  --ev-ok:      #6FBF8B;
+  --ev-warn:    #FFB35C;
+  --ev-crit:    #E5484D;
+
+  /* Type */
+  --ev-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo,
+             Consolas, "Liberation Mono", monospace;
+  --ev-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+             Arial, sans-serif;
+
+  --ev-step--1: 0.78rem;
+  --ev-step-0:  0.92rem;
+  --ev-step-1:  1.1rem;
+  --ev-step-2:  1.45rem;
+  --ev-step-3:  2rem;
+
+  /* Space, 4px base */
+  --ev-1: 4px;
+  --ev-2: 8px;
+  --ev-3: 12px;
+  --ev-4: 16px;
+  --ev-5: 24px;
+  --ev-6: 32px;
+  --ev-7: 48px;
+
+  --ev-radius: 2px;
+}
