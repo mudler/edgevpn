@@ -39,27 +39,29 @@ export function usePolling<T>(
   const [error, setError] = useState<Error | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const inFlight = useRef(false)
   const mounted = useRef(true)
-  // The controller for the request currently in flight, so the effect cleanup
-  // can cancel it on unmount or route change.
-  const controllerRef = useRef<AbortController | null>(null)
+  // The controller of the request currently in flight, doubling as the
+  // non-overlap guard: non-null means busy. One ref rather than a separate
+  // boolean, so the guard is *owned* by a single invocation and can only ever
+  // be released by whoever still holds it. A shared boolean cleared
+  // unconditionally would let an abandoned request release its replacement's
+  // guard and reopen the stacking this hook exists to prevent.
+  const activeRun = useRef<AbortController | null>(null)
   // Keep the latest fetcher in a ref so callers can pass an inline arrow
   // function without resetting the interval on every render.
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher
 
   const run = useCallback(async () => {
-    if (inFlight.current || document.hidden) return
-    inFlight.current = true
+    if (activeRun.current || document.hidden) return
     setLoading(true)
 
     const controller = new AbortController()
-    controllerRef.current = controller
+    activeRun.current = controller
 
-    // Bound every request, otherwise one connection that never answers latches
-    // inFlight forever and the loop is dead — a frozen spinner over stale data,
-    // worse than the old UI, which at least kept retrying. The budget scales
+    // Bound every request, otherwise one connection that never answers holds
+    // the guard forever and the loop is dead — a frozen spinner over stale
+    // data, worse than the old UI, which at least kept retrying. The budget scales
     // with the caller's cadence because pages poll anywhere from 1500ms to
     // 5500ms: a fixed constant would either cut off the slow endpoints or leave
     // the fast ones wedged for far longer than they should be. Three intervals
@@ -81,14 +83,19 @@ export function usePolling<T>(
       })
     })
 
+    // True once this invocation has been abandoned — unmounted, or superseded
+    // by an effect re-run. Its result is stale by definition, so it must not
+    // touch state and must not release whatever guard is current now.
+    const superseded = () => activeRun.current !== controller
+
     try {
       const result = await Promise.race([fetcherRef.current(controller.signal), abandoned])
-      if (!mounted.current) return
+      if (!mounted.current || superseded()) return
       setData(result)
       setError(null)
     } catch (e) {
       // Aborted because the component went away: nobody is left to tell.
-      if (!mounted.current) return
+      if (!mounted.current || superseded()) return
       // A timeout is a real failure the user needs to see, so it must be
       // distinguished from the abort above rather than swallowed with it.
       if (timedOut) {
@@ -99,9 +106,14 @@ export function usePolling<T>(
       setError(e as Error)
     } finally {
       clearTimeout(timer)
-      if (controllerRef.current === controller) controllerRef.current = null
-      inFlight.current = false
-      if (mounted.current) setLoading(false)
+      // Release the guard only while still holding it. An abandoned invocation
+      // reaches here *after* its replacement has already taken the guard, and
+      // clearing unconditionally would leave the replacement unguarded.
+      if (!superseded()) activeRun.current = null
+      // Whoever ends up leaving nothing in flight owns turning the spinner off,
+      // including an invocation abandoned with no replacement behind it — a
+      // hook disabled mid-request would otherwise sit at loading forever.
+      if (mounted.current && activeRun.current === null) setLoading(false)
     }
   }, [intervalMs])
 
@@ -125,7 +137,21 @@ export function usePolling<T>(
     // hook that was disabled for its whole life.
     return () => {
       mounted.current = false
-      controllerRef.current?.abort()
+
+      const abandoned = activeRun.current
+      if (abandoned) {
+        // Release the guard *synchronously*, before aborting. This invocation
+        // is dead the moment cleanup runs, and nothing downstream depends on
+        // its `finally` — which is a microtask away, whereas a re-run of this
+        // effect is synchronous. StrictMode's development double-invoke is the
+        // common case (cleanup and re-mount happen back to back, so the remount
+        // would find the guard still held and skip its fetch, leaving the page
+        // blank until the first tick), but the same shape applies to any
+        // `enabled` or `intervalMs` change mid-flight.
+        activeRun.current = null
+        abandoned.abort()
+      }
+
       if (id !== undefined) clearInterval(id)
       if (onVisibility) document.removeEventListener('visibilitychange', onVisibility)
     }

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { StrictMode } from 'react'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { usePolling } from './usePolling'
 
@@ -116,7 +117,7 @@ describe('usePolling', () => {
     // At the timeout the request is abandoned and the failure becomes visible.
     await act(async () => { await vi.advanceTimersByTimeAsync(1000) })
     await waitFor(() => expect(result.current.error).not.toBeNull())
-    expect(result.current.error?.message).toMatch(/timed out/i)
+    expect(result.current.error?.message).toMatch(/timed out after 10000ms/)
     // The spinner must not be left stuck on.
     expect(result.current.loading).toBe(false)
 
@@ -143,5 +144,67 @@ describe('usePolling', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
     expect(fetcher).toHaveBeenCalledTimes(1)
     expect(result.current.error).toBeNull()
+  })
+
+  it('keeps the mount fetch when StrictMode double-invokes the effect', async () => {
+    // Any real request takes at least a tick to come back, which is what makes
+    // the double-invoke lossy: the abort beats the response.
+    const fetcher = vi.fn(() => new Promise<string>((resolve) => {
+      setTimeout(() => resolve('fresh'), 10)
+    }))
+    const { result } = renderHook(() => usePolling(fetcher, 1500), { wrapper: StrictMode })
+
+    // Only 50ms of clock, far short of the 1500ms interval, so data arriving
+    // here can only have come from the remounted effect's own fetch and not
+    // from a later tick bailing the hook out.
+    await act(async () => { await vi.advanceTimersByTimeAsync(50) })
+    expect(result.current.data).toBe('fresh')
+  })
+
+  it('does not reopen request stacking when an effect re-run abandons a request', async () => {
+    const fetcher = vi.fn(() => new Promise<string>(() => {})) // never settles
+    const { rerender } = renderHook(
+      ({ ms }) => usePolling(fetcher, ms),
+      { initialProps: { ms: 100 } },
+    )
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1))
+
+    // Changing the cadence re-runs the effect, abandoning the open request.
+    // The replacement must go out immediately rather than being blocked by the
+    // abandoned request's guard.
+    await act(async () => { rerender({ ms: 200 }) })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+
+    // ...and the abandoned request settling must not release the *replacement's*
+    // guard, which would let the next ticks stack requests all over again.
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000) })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('clears loading when disabled mid-request, with nothing left to replace it', async () => {
+    const fetcher = vi.fn(() => new Promise<string>(() => {})) // never settles
+    const { result, rerender } = renderHook(
+      ({ on }) => usePolling(fetcher, 1000, { enabled: on }),
+      { initialProps: { on: true } },
+    )
+    await waitFor(() => expect(result.current.loading).toBe(true))
+
+    await act(async () => { rerender({ on: false }) })
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.error).toBeNull()
+  })
+
+  it('scales the request timeout with the interval once it clears the floor', async () => {
+    const fetcher = vi.fn(() => new Promise<string>(() => {})) // always hangs
+    const { result } = renderHook(() => usePolling(fetcher, 5000))
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1))
+
+    // 3 x 5000ms clears the 10s floor, so nothing has given up yet here.
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000) })
+    expect(result.current.error).toBeNull()
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
+    await waitFor(() => expect(result.current.error).not.toBeNull())
+    expect(result.current.error?.message).toMatch(/timed out after 15000ms/)
   })
 })
