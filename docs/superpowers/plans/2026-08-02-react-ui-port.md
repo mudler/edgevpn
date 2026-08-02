@@ -2070,11 +2070,15 @@ export default function PeerGraph({ peers, selfId }: Props) {
     let raf = 0
     let running = true
 
+    // Canvas cannot read CSS custom properties directly, so resolve them
+    // once here. No literal fallbacks: tokens.css is imported by base.css
+    // before this ever mounts, and a silent hardcoded fallback would let
+    // the canvas drift out of the design system unnoticed.
     const css = getComputedStyle(document.documentElement)
-    const colSignal = css.getPropertyValue('--ev-signal').trim() || '#F2542D'
-    const colMuted = css.getPropertyValue('--ev-muted').trim() || '#8A939E'
-    const colRule = css.getPropertyValue('--ev-rule').trim() || '#2B333C'
-    const colOk = css.getPropertyValue('--ev-ok').trim() || '#6FBF8B'
+    const colSignal = css.getPropertyValue('--ev-signal').trim()
+    const colMuted = css.getPropertyValue('--ev-muted').trim()
+    const colRule = css.getPropertyValue('--ev-rule').trim()
+    const colOk = css.getPropertyValue('--ev-ok').trim()
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
