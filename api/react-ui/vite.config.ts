@@ -5,10 +5,13 @@ const backendUrl = process.env.EDGEVPN_URL || 'http://localhost:8080'
 
 export default defineConfig({
   plugins: [react()],
-  // Relative base so generated URLs resolve against the referencing file
-  // rather than the origin root. Keeps the door open for reverse-proxy
-  // subpath support later without a routing rewrite.
-  base: './',
+  // Absolute base. A relative base ('./') breaks every deep link: at
+  // /app/nodes the browser resolves "./assets/index.js" to
+  // /app/assets/index.js, which the SPA fallback answers with index.html
+  // as text/html, so the module is rejected and the page renders blank.
+  // The router already hardcodes a /app basename, so there is no subpath
+  // portability to preserve here.
+  base: '/',
   server: {
     port: 3000,
     proxy: {

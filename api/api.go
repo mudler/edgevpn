@@ -17,10 +17,8 @@ package api
 
 import (
 	"context"
-	"embed"
 	"errors"
 	"fmt"
-	"io/fs"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -45,18 +43,6 @@ import (
 	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/mudler/edgevpn/pkg/types"
 )
-
-//go:embed public
-var embededFiles embed.FS
-
-func getFileSystem() http.FileSystem {
-	fsys, err := fs.Sub(embededFiles, "public")
-	if err != nil {
-		panic(err)
-	}
-
-	return http.FS(fsys)
-}
 
 const (
 	MachineURL    = "/api/machines"
@@ -235,8 +221,8 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 	ec := echo.New()
 
 	var (
-		unixSocketPath  string
-		ownsSocketFile  bool // true iff WE created the file; false for systemd-passed FDs
+		unixSocketPath string
+		ownsSocketFile bool // true iff WE created the file; false for systemd-passed FDs
 	)
 	if strings.HasPrefix(l, UnixSocketScheme) {
 		unixSocketPath = strings.TrimPrefix(l, UnixSocketScheme)
@@ -262,7 +248,6 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		ec.Listener = unixListener
 	}
 
-	assetHandler := http.FileServer(getFileSystem())
 	if debugMode {
 		ec.GET("/debug/pprof/*", echo.WrapHandler(http.DefaultServeMux))
 	}
@@ -442,7 +427,10 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 		return c.JSON(http.StatusOK, list)
 	})
 
-	ec.GET("/*", echo.WrapHandler(http.StripPrefix("/", assetHandler)))
+	if err := registerUI(ec); err != nil {
+		// A binary built without the React UI must still serve the API.
+		fmt.Printf("web UI not available: %v\n", err)
+	}
 
 	ec.GET(BlockchainURL, func(c echo.Context) error {
 		return c.JSON(http.StatusOK, ledger.LastBlock())
