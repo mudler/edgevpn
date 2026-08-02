@@ -26,7 +26,6 @@ jobs:
       - name: Build
         run: go build
 
-
       - name: Generate edgevpnconfig
         run: |
               ./edgevpn -g > config.yaml

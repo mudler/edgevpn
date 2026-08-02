@@ -1,8 +1,10 @@
 # Define argument for linker flags
 ARG LDFLAGS=-s -w
 
-# Build the React UI in a Node stage so the Go builder can embed it
-FROM node:22-alpine AS react-ui-builder
+# Build the React UI in a Node stage so the Go builder can embed it.
+# Pinned to $BUILDPLATFORM: the bundle is arch-independent, so building it
+# once natively beats rebuilding it under QEMU for every target platform.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS react-ui-builder
 WORKDIR /ui
 COPY api/react-ui/package.json api/react-ui/package-lock.json ./
 RUN npm ci
