@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
-import { getMachines, getNodes, getPeerMetrics, getPeerstore } from '../lib/api'
+import { getMachines, getNodes, getPeerMetrics, getPeerstore, getSummary } from '../lib/api'
 import { usePolling } from '../hooks/usePolling'
 import { formatRate, truncateID } from '../lib/format'
 import DataTable, { type Column } from '../components/DataTable'
+import PeerGraph from '../components/PeerGraph'
 import Pill from '../components/Pill'
 
 export type PeerRow = {
@@ -78,22 +79,34 @@ const COLUMNS: Column<PeerRow>[] = [
 
 export default function PeersPage() {
   const { rows, error } = usePeerRows()
+  const summary = usePolling((s) => getSummary(s), 5500)
 
   return (
-    <section className="ev-panel">
-      <h2 className="ev-panel-title">Peers</h2>
-      {error && <p className="ev-error">{error.message}</p>}
-      <p style={{ margin: 0, color: 'var(--ev-faint)', fontSize: 'var(--ev-step--1)' }}>
-        <b style={{ color: 'var(--ev-muted)' }}>connected</b> peers are ones this node
-        {' '}reports as live: a current session, or a healthcheck announced on the ledger
-        {' '}in the last 10 minutes.
-        {' '}<b style={{ color: 'var(--ev-muted)' }}>address book</b> peers come from this
-        {' '}node&apos;s peerstore, which carries no liveness at all.
-        {' '}<b style={{ color: 'var(--ev-muted)' }}>VPN machine</b> marks the peers that
-        {' '}also announced a machine entry, i.e. hold an address on this network.
-      </p>
-      <DataTable columns={COLUMNS} rows={rows} rowKey={(p) => p.id}
-                 emptyText="No peers discovered yet" />
-    </section>
+    <>
+      <section className="ev-panel">
+        <h2 className="ev-panel-title">Topology</h2>
+        <PeerGraph peers={rows} selfId={summary.data?.NodeID ?? ''} />
+        <p style={{ margin: 0, color: 'var(--ev-faint)', fontSize: 'var(--ev-step--1)' }}>
+          This node and its direct peers. Edge width is live per-peer bandwidth.
+          Links between other peers are not shown — no endpoint reports them.
+        </p>
+      </section>
+
+      <section className="ev-panel">
+        <h2 className="ev-panel-title">Peers</h2>
+        {error && <p className="ev-error">{error.message}</p>}
+        <p style={{ margin: 0, color: 'var(--ev-faint)', fontSize: 'var(--ev-step--1)' }}>
+          <b style={{ color: 'var(--ev-muted)' }}>connected</b> peers are ones this node
+          {' '}reports as live: a current session, or a healthcheck announced on the ledger
+          {' '}in the last 10 minutes.
+          {' '}<b style={{ color: 'var(--ev-muted)' }}>address book</b> peers come from this
+          {' '}node&apos;s peerstore, which carries no liveness at all.
+          {' '}<b style={{ color: 'var(--ev-muted)' }}>VPN machine</b> marks the peers that
+          {' '}also announced a machine entry, i.e. hold an address on this network.
+        </p>
+        <DataTable columns={COLUMNS} rows={rows} rowKey={(p) => p.id}
+                   emptyText="No peers discovered yet" />
+      </section>
+    </>
   )
 }
