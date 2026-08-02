@@ -15,14 +15,20 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/ipfs/go-log"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/metrics"
+	"github.com/libp2p/go-libp2p/core/peer"
+	p2pprotocol "github.com/libp2p/go-libp2p/core/protocol"
 	. "github.com/mudler/edgevpn/api"
 	client "github.com/mudler/edgevpn/api/client"
 	"github.com/mudler/edgevpn/pkg/blockchain"
@@ -145,6 +151,76 @@ var _ = Describe("API", func() {
 				return c.Put("stale", "key", "v")
 			}, 5*time.Second, 100*time.Millisecond).ShouldNot(HaveOccurred())
 			_ = started
+		})
+	})
+
+	Context("Bandwidth metrics", func() {
+		It("keys per-peer bandwidth by a base58 peer ID", func() {
+			d, _ := ioutil.TempDir("", "xxx-metrics")
+			defer os.RemoveAll(d)
+			socket := filepath.Join(d, "socket")
+
+			token := node.GenerateNewConnectionData().Base64()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			l := node.Logger(logger.New(log.LevelFatal))
+			e, _ := node.New(node.FromBase64(true, true, token, nil, nil), node.WithStore(&blockchain.MemoryStore{}), l)
+			e.Start(ctx)
+
+			// Record traffic for one known peer on one known protocol, so both
+			// metrics maps have a key we can predict exactly.
+			priv, _, err := crypto.GenerateKeyPair(crypto.Ed25519, -1)
+			Expect(err).ToNot(HaveOccurred())
+			pid, err := peer.IDFromPrivateKey(priv)
+			Expect(err).ToNot(HaveOccurred())
+
+			bwc := metrics.NewBandwidthCounter()
+			bwc.LogSentMessageStream(1024, p2pprotocol.ID("/edgevpn/0.1"), pid)
+			bwc.LogRecvMessageStream(2048, p2pprotocol.ID("/edgevpn/0.1"), pid)
+
+			go func() {
+				_ = API(ctx, "unix://"+socket, 10*time.Second, 20*time.Second, e, bwc, false)
+			}()
+
+			httpc := &http.Client{Transport: &http.Transport{
+				DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+					return (&net.Dialer{}).DialContext(ctx, "unix", socket)
+				},
+			}}
+			get := func(path string) (map[string]json.RawMessage, error) {
+				resp, err := httpc.Get("http://unix" + path)
+				if err != nil {
+					return nil, err
+				}
+				defer resp.Body.Close()
+				out := map[string]json.RawMessage{}
+				return out, json.NewDecoder(resp.Body).Decode(&out)
+			}
+
+			peers := map[string]json.RawMessage{}
+			Eventually(func() error {
+				var err error
+				peers, err = get("/api/metrics/peer")
+				return err
+			}, 10*time.Second, 200*time.Millisecond).ShouldNot(HaveOccurred())
+
+			// peer.ID is a string type holding raw multihash bytes, so a map
+			// keyed by it marshals to unreadable, lossy keys unless the handler
+			// converts them. Every key must be a peer ID the rest of the API
+			// (and the UI) can match against.
+			Expect(peers).To(HaveKey(pid.String()))
+			for k := range peers {
+				decoded, decodeErr := peer.Decode(k)
+				Expect(decodeErr).ToNot(HaveOccurred(), "key %q is not a peer ID", k)
+				Expect(decoded).To(Equal(pid))
+			}
+
+			// protocol.ID is a string type too, but its value already *is* the
+			// readable protocol path, so those keys need no conversion.
+			protos, err := get("/api/metrics/protocol")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(protos).To(HaveKey("/edgevpn/0.1"))
 		})
 	})
 })

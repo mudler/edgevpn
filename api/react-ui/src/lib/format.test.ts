@@ -20,6 +20,16 @@ describe('bytesToSize', () => {
   it('treats negative input as zero', () => {
     expect(bytesToSize(-1)).toBe('0 B')
   })
+  it('keeps a unit for fractional values', () => {
+    // A negative exponent used to index past the start of UNITS, printing
+    // "424.4 undefined". Live per-peer rates are routinely below 1 B/s.
+    expect(bytesToSize(0.4145)).toBe('0 B')
+    expect(bytesToSize(0.9)).toBe('1 B')
+    expect(bytesToSize(0.001)).toBe('0 B')
+  })
+  it('caps at the largest known unit', () => {
+    expect(bytesToSize(Math.pow(1024, 7))).toContain('PB')
+  })
 })
 
 describe('truncateID', () => {
@@ -37,5 +47,9 @@ describe('truncateID', () => {
 describe('formatRate', () => {
   it('appends a per-second suffix', () => {
     expect(formatRate(1536)).toBe('1.5 kB/s')
+  })
+  it('never emits an undefined unit for a sub-byte rate', () => {
+    expect(formatRate(0.4145)).toBe('0 B/s')
+    expect(formatRate(36.6 / 1024)).not.toContain('undefined')
   })
 })

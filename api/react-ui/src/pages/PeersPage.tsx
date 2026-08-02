@@ -9,7 +9,11 @@ export type PeerRow = {
   id: string
   /** True only when a source that actually reports liveness says so. */
   online: boolean
-  /** True when the peer is on the ledger, i.e. more than a peerstore entry. */
+  /**
+   * True when the peer announced a VPN machine entry, i.e. holds an address on
+   * this network. Narrower than "on the ledger": peers reported by /api/nodes
+   * are on the ledger too, in the healthcheck bucket.
+   */
   known: boolean
   rateIn: number
   rateOut: number
@@ -18,9 +22,10 @@ export type PeerRow = {
 /**
  * Merge the three peer sources into one view.
  *
- * /api/nodes reports real liveness. /api/peerstore is a bare address book
- * and always reports Online:false, so its entries contribute identity only.
- * /api/machines tells us which peers are on the ledger.
+ * /api/nodes reports real liveness — a current session or a healthcheck
+ * announced on the ledger in the last 10 minutes. /api/peerstore is a bare
+ * address book and always reports Online:false, so its entries contribute
+ * identity only. /api/machines tells us which peers hold a VPN address.
  */
 export function usePeerRows(): { rows: PeerRow[]; error: Error | null } {
   const nodes = usePolling((s) => getNodes(s), 1500)
@@ -61,9 +66,9 @@ const COLUMNS: Column<PeerRow>[] = [
   { key: 'state', header: 'State',
     render: (p) => p.online
       ? <Pill tone="ok">connected</Pill>
-      : <Pill tone="warn">known</Pill>,
+      : <Pill tone="warn">address book</Pill>,
     sortValue: (p) => (p.online ? 1 : 0) },
-  { key: 'ledger', header: 'On ledger',
+  { key: 'ledger', header: 'VPN machine',
     render: (p) => (p.known ? 'yes' : '—'), sortValue: (p) => (p.known ? 1 : 0) },
   { key: 'in', header: 'Rate in',
     render: (p) => (p.rateIn ? formatRate(p.rateIn) : '—'), sortValue: (p) => p.rateIn },
@@ -79,9 +84,13 @@ export default function PeersPage() {
       <h2 className="ev-panel-title">Peers</h2>
       {error && <p className="ev-error">{error.message}</p>}
       <p style={{ margin: 0, color: 'var(--ev-faint)', fontSize: 'var(--ev-step--1)' }}>
-        <b style={{ color: 'var(--ev-muted)' }}>connected</b> peers have a live session.
-        {' '}<b style={{ color: 'var(--ev-muted)' }}>known</b> peers are address-book entries
-        {' '}whose liveness this node does not track.
+        <b style={{ color: 'var(--ev-muted)' }}>connected</b> peers are ones this node
+        {' '}reports as live: a current session, or a healthcheck announced on the ledger
+        {' '}in the last 10 minutes.
+        {' '}<b style={{ color: 'var(--ev-muted)' }}>address book</b> peers come from this
+        {' '}node&apos;s peerstore, which carries no liveness at all.
+        {' '}<b style={{ color: 'var(--ev-muted)' }}>VPN machine</b> marks the peers that
+        {' '}also announced a machine entry, i.e. hold an address on this network.
       </p>
       <DataTable columns={COLUMNS} rows={rows} rowKey={(p) => p.id}
                  emptyText="No peers discovered yet" />

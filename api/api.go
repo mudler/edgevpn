@@ -275,7 +275,19 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 			return c.JSON(http.StatusOK, bwc.GetBandwidthByProtocol())
 		})
 		ec.GET(filepath.Join(MetricsURL, "peer"), func(c echo.Context) error {
-			return c.JSON(http.StatusOK, bwc.GetBandwidthByPeer())
+			// The counter keys by peer.ID, which is a *string* type holding raw
+			// multihash bytes. encoding/json resolves a map key by its String
+			// kind before consulting its TextMarshaler, so marshalling that map
+			// directly never calls peer.ID.String() and emits the raw bytes —
+			// mangled to U+FFFD on the way out, since they are not valid UTF-8.
+			// The result cannot be matched against the peer IDs every other
+			// endpoint reports, so key by the base58 form explicitly.
+			byPeer := bwc.GetBandwidthByPeer()
+			out := make(map[string]metrics.Stats, len(byPeer))
+			for p, stats := range byPeer {
+				out[p.String()] = stats
+			}
+			return c.JSON(http.StatusOK, out)
 		})
 		ec.GET(filepath.Join(MetricsURL, "peer", ":peer"), func(c echo.Context) error {
 			return c.JSON(http.StatusOK, bwc.GetBandwidthForPeer(peer.ID(c.Param("peer"))))

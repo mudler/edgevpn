@@ -3,8 +3,11 @@ const UNITS = ['B', 'kB', 'MB', 'GB', 'TB', 'PB'] as const
 /** Human-readable byte size. Ported from index.tmpl's bytesToSize. */
 export function bytesToSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
+  // Clamp low as well as high: a fractional input (bandwidth rates are often
+  // well under 1 B/s) gives a negative exponent, and UNITS[-1] is undefined —
+  // which rendered literally as "424.4 undefined/s" in the peers table.
   const i = Math.min(
-    Math.floor(Math.log(bytes) / Math.log(1024)),
+    Math.max(Math.floor(Math.log(bytes) / Math.log(1024)), 0),
     UNITS.length - 1,
   )
   const value = bytes / Math.pow(1024, i)
