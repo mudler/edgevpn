@@ -139,6 +139,54 @@ func TestUnknownAPIPathWithHTMLAcceptStillReturnsJSON(t *testing.T) {
 	}
 }
 
+// TestUnnormalisedAPIPathReturnsJSON covers request paths that only reach the
+// API after normalisation. curl and browsers collapse "." and ".." before
+// sending, and our own client uses hard-coded absolute paths, so these are not
+// reachable from the app itself — but a reverse proxy that does not normalise
+// slashes makes "//api/..." reachable, and serving HTML where the caller
+// expects JSON is precisely what this guard exists to prevent.
+func TestUnnormalisedAPIPathReturnsJSON(t *testing.T) {
+	for _, path := range []string{
+		"//api/nope",
+		"/./api/nope",
+		"/app/../api/nope",
+		"//debug/nope",
+	} {
+		t.Run(path, func(t *testing.T) {
+			ec := newUIEcho(t)
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			req.Header.Set("Accept", "text/html,application/xhtml+xml")
+			rec := httptest.NewRecorder()
+			ec.ServeHTTP(rec, req)
+			if rec.Code != http.StatusNotFound {
+				t.Fatalf("got %d, want 404", rec.Code)
+			}
+			if ct := rec.Header().Get("Content-Type"); ct == "text/html; charset=utf-8" {
+				t.Fatalf("404 for %s was swallowed by the SPA fallback", path)
+			}
+		})
+	}
+}
+
+// TestAPILookalikePathGetsFallback is the opposite-direction guard: a plain
+// prefix test denies the SPA fallback to any path merely starting with the
+// letters "/api", so /apiary would wrongly 404 in a browser. The check must be
+// segment-aware.
+func TestAPILookalikePathGetsFallback(t *testing.T) {
+	for _, path := range []string{"/apiary/nope", "/apis", "/debugger/x"} {
+		t.Run(path, func(t *testing.T) {
+			ec := newUIEcho(t)
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			req.Header.Set("Accept", "text/html,application/xhtml+xml")
+			rec := httptest.NewRecorder()
+			ec.ServeHTTP(rec, req)
+			if rec.Code != http.StatusOK {
+				t.Fatalf("got %d, want 200 (SPA fallback)", rec.Code)
+			}
+		})
+	}
+}
+
 // TestBrowserDeepLinkOutsideAppFallsBackToIndex is the positive counterpart:
 // a browser navigation to an unrouted, non-API path must still get the index
 // so client-side routing can take over.

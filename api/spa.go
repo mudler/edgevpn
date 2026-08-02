@@ -20,6 +20,7 @@ import (
 	"io/fs"
 	"mime"
 	"net/http"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -33,6 +34,23 @@ var reactUI embed.FS
 // filenames: a changed file always has a changed name.
 const immutableAssetCacheControl = "public, max-age=31536000, immutable"
 
+// isUnder reports whether p addresses base or something beneath it.
+//
+// It normalises first: a request path is attacker-controlled and reaches us
+// verbatim, so "//api/x", "/./api/x" and "/app/../api/x" all name the API
+// without literally starting with "/api". It then compares whole segments, so
+// "/apiary" is not treated as living under "/api".
+func isUnder(p, base string) bool {
+	if p == "" {
+		return false
+	}
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	p = path.Clean(p)
+	return p == base || strings.HasPrefix(p, base+"/")
+}
+
 // registerUI wires the embedded React application into ec.
 //
 // It returns an error only when the embedded filesystem is unusable. The
@@ -44,7 +62,24 @@ func registerUI(ec *echo.Echo) error {
 		return err
 	}
 
+	// reserved reports whether this request names the JSON API or the pprof
+	// endpoints, and so must never be answered with the index page.
+	reserved := func(c echo.Context) bool {
+		for _, base := range []string{"/api", "/debug"} {
+			if isUnder(c.Path(), base) || isUnder(c.Request().URL.Path, base) {
+				return true
+			}
+		}
+		return false
+	}
+
 	serveIndex := func(c echo.Context) error {
+		// "/app/../api/x" matches the /app/* route below yet names the API
+		// once normalised, so the guard has to sit here too, not only in
+		// the error handler.
+		if reserved(c) {
+			return echo.NewHTTPError(http.StatusNotFound)
+		}
 		index, err := fs.ReadFile(uiFS, "index.html")
 		if err != nil {
 			return c.String(http.StatusNotFound, "React UI not built")
@@ -93,9 +128,7 @@ func registerUI(ec *echo.Echo) error {
 		he, ok := err.(*echo.HTTPError)
 		if ok && he.Code == http.StatusNotFound &&
 			c.Request().Method == http.MethodGet &&
-			!strings.HasPrefix(c.Path(), "/api") &&
-			!strings.HasPrefix(c.Request().URL.Path, "/api") &&
-			!strings.HasPrefix(c.Request().URL.Path, "/debug") &&
+			!reserved(c) &&
 			strings.Contains(c.Request().Header.Get("Accept"), "text/html") {
 			if serveErr := serveIndex(c); serveErr == nil {
 				return
