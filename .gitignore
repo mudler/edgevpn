@@ -9,3 +9,5 @@
 /docs/.hugo_build.lock
 /docs/package-lock.json
 /docs/package.json
+/api/react-ui/dist
+/api/react-ui/node_modules
