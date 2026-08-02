@@ -4,6 +4,19 @@ import type { PeerRow } from '../pages/PeersPage'
 type Props = { peers: PeerRow[]; selfId: string }
 
 /**
+ * The peers the ring actually plots: ones this node has a relationship with.
+ *
+ * A peerstore entry is an address the DHT handed us, not a connection. On a
+ * real node there are hundreds to thousands of them, and drawing a spoke to
+ * each would both bury the graph under a solid disc and claim a connectivity
+ * this node does not have. Exported so the page can name the excluded count
+ * instead of quietly dropping it.
+ */
+export function plottedPeers(peers: PeerRow[]): PeerRow[] {
+  return peers.filter((p) => p.online || p.known)
+}
+
+/**
  * Ego graph: this node at the centre, its peers on a ring.
  *
  * Edge thickness encodes real per-peer bandwidth from /api/metrics/peer.
@@ -15,8 +28,10 @@ type Props = { peers: PeerRow[]; selfId: string }
  */
 export default function PeerGraph({ peers, selfId }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const peersRef = useRef(peers)
-  peersRef.current = peers
+  const plotted = plottedPeers(peers)
+  const excluded = peers.length - plotted.length
+  const peersRef = useRef(plotted)
+  peersRef.current = plotted
   // Set only under reduced motion, where a single frame is drawn instead of a
   // loop and therefore has to be re-issued by hand when the data changes.
   const redrawRef = useRef<(() => void) | null>(null)
@@ -41,24 +56,42 @@ export default function PeerGraph({ peers, selfId }: Props) {
     const colRule = css.getPropertyValue('--ev-rule').trim()
     const colOk = css.getPropertyValue('--ev-ok').trim()
 
-    function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      const rect = canvas!.getBoundingClientRect()
-      canvas!.width = Math.round(rect.width * dpr)
-      canvas!.height = Math.round(rect.height * dpr)
-      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0)
-      return rect
+    // Current CSS size and device pixel ratio of the canvas. Assigning
+    // canvas.width resets the bitmap, so it must happen only when one of these
+    // actually changed — otherwise every frame wipes itself and the clearRect
+    // below is dead code. Measured once here, then kept current by the
+    // ResizeObserver: this canvas sits above a table of ~1000 rows that
+    // re-renders on every poll, and a getBoundingClientRect per frame would
+    // force a synchronous layout each time.
+    let cssW = 0, cssH = 0, ratio = 0
+
+    function applySize(w: number, h: number, r: number) {
+      cssW = w; cssH = h; ratio = r
+      canvas!.width = Math.round(w * r)
+      canvas!.height = Math.round(h * r)
+      ctx!.setTransform(r, 0, 0, r, 0, 0)
     }
 
+    const dpr = () => Math.min(window.devicePixelRatio || 1, 2)
+    const first = canvas.getBoundingClientRect()
+    applySize(first.width, first.height, dpr())
+
     function draw(t: number) {
-      const rect = resize()
-      const w = rect.width, h = rect.height
+      // devicePixelRatio is free to read and forces no layout, so zoom changes
+      // — which leave the CSS size alone — are still picked up.
+      const r = dpr()
+      if (r !== ratio) applySize(cssW, cssH, r)
+
+      const w = cssW, h = cssH
       const cx = w / 2, cy = h / 2
       const radius = Math.min(w, h) / 2 - 26
       ctx!.clearRect(0, 0, w, h)
 
       const list = peersRef.current
-      const maxRate = Math.max(1, ...list.map((p) => p.rateIn + p.rateOut))
+      // Reduced, not Math.max(1, ...list): spreading an array as arguments
+      // throws RangeError once it gets large, which would kill the loop for
+      // good on a node with a big peer set.
+      const maxRate = list.reduce((m, p) => Math.max(m, p.rateIn + p.rateOut), 1)
 
       list.forEach((p, i) => {
         const angle = (i / Math.max(1, list.length)) * Math.PI * 2 - Math.PI / 2
@@ -100,8 +133,12 @@ export default function PeerGraph({ peers, selfId }: Props) {
 
     raf = requestAnimationFrame(draw)
 
-    // Stop burning frames when the graph scrolls out of view.
-    const io = new IntersectionObserver(([entry]) => {
+    // Stop burning frames when the graph scrolls out of view. Read the *last*
+    // entry, not the first: a batch can carry more than one crossing, and
+    // acting on the stale one would either stall the loop while visible or
+    // leave it running off-screen.
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[entries.length - 1]
       if (entry.isIntersecting) {
         if (!running) { running = true; raf = requestAnimationFrame(draw) }
       } else {
@@ -111,15 +148,23 @@ export default function PeerGraph({ peers, selfId }: Props) {
     }, { threshold: 0.05 })
     io.observe(canvas)
 
-    const onResize = () => { if (reduced) draw(0) }
-    window.addEventListener('resize', onResize)
+    // Replaces a window resize listener: this fires for element size changes
+    // from any cause, and it is the only thing that touches the bitmap size.
+    const ro = new ResizeObserver((entries) => {
+      const box = entries[entries.length - 1].contentRect
+      if (box.width === cssW && box.height === cssH) return
+      applySize(box.width, box.height, ratio)
+      if (reduced) draw(0)
+    })
+    ro.observe(canvas)
+
     if (reduced) redrawRef.current = () => draw(0)
 
     return () => {
       running = false
       cancelAnimationFrame(raf)
       io.disconnect()
-      window.removeEventListener('resize', onResize)
+      ro.disconnect()
       redrawRef.current = null
     }
   }, [])
@@ -135,7 +180,15 @@ export default function PeerGraph({ peers, selfId }: Props) {
     <canvas
       ref={canvasRef}
       role="img"
-      aria-label={`Network graph: this node connected to ${peers.length} peers. The table below lists them.`}
+      aria-label={
+        `Network graph: this node and the ${plotted.length} ` +
+        `${plotted.length === 1 ? 'peer' : 'peers'} it is connected to or shares a ` +
+        'VPN address with.' +
+        (excluded > 0
+          ? ` ${excluded} address-book ${excluded === 1 ? 'entry is' : 'entries are'} not drawn.`
+          : '') +
+        ' The table below lists every peer.'
+      }
       style={{ display: 'block', width: '100%', height: '260px' }}
       data-self={selfId}
     />

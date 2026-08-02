@@ -3,7 +3,7 @@ import { getMachines, getNodes, getPeerMetrics, getPeerstore, getSummary } from 
 import { usePolling } from '../hooks/usePolling'
 import { formatRate, truncateID } from '../lib/format'
 import DataTable, { type Column } from '../components/DataTable'
-import PeerGraph from '../components/PeerGraph'
+import PeerGraph, { plottedPeers } from '../components/PeerGraph'
 import Pill from '../components/Pill'
 
 export type PeerRow = {
@@ -80,6 +80,8 @@ const COLUMNS: Column<PeerRow>[] = [
 export default function PeersPage() {
   const { rows, error } = usePeerRows()
   const summary = usePolling((s) => getSummary(s), 5500)
+  const drawn = plottedPeers(rows).length
+  const hidden = rows.length - drawn
 
   return (
     <>
@@ -87,8 +89,12 @@ export default function PeersPage() {
         <h2 className="ev-panel-title">Topology</h2>
         <PeerGraph peers={rows} selfId={summary.data?.NodeID ?? ''} />
         <p style={{ margin: 0, color: 'var(--ev-faint)', fontSize: 'var(--ev-step--1)' }}>
-          This node and its direct peers. Edge width is live per-peer bandwidth.
-          Links between other peers are not shown — no endpoint reports them.
+          This node and the {drawn} {drawn === 1 ? 'peer' : 'peers'} it is connected to
+          {' '}or shares a VPN address with. Edge width is live per-peer bandwidth.
+          {hidden > 0 && (hidden === 1
+            ? ' 1 address-book entry from the DHT is not drawn — it is listed in the table below.'
+            : ` ${hidden} address-book entries from the DHT are not drawn — they are listed in the table below.`)}
+          {' '}Links between other peers are not shown either — no endpoint reports them.
         </p>
       </section>
 
