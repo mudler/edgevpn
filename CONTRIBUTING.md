@@ -5,11 +5,21 @@ documentation lives at <https://mudler.github.io/edgevpn/docs/>.
 
 ## Build
 
-EdgeVPN is a single Go binary. You need Go 1.26 (the version in `go.mod`) and
-nothing else:
+EdgeVPN ships as a single binary, but the web interface is a React application
+compiled into it, so you need Go 1.26 (the version in `go.mod`) **and** Node.js
+20.19 or newer:
 
 ```bash
-make build      # go build -o edgevpn ./
+make build            # compiles the web interface, then the Go binary
+make react-ui-force   # force a clean rebuild of the interface
+```
+
+`go build` on its own works only when `api/react-ui/dist` already exists — the
+interface is embedded with `//go:embed`, so a missing directory is a compile
+error. Working on the Go side only? Stub it:
+
+```bash
+mkdir -p api/react-ui/dist && touch api/react-ui/dist/index.html
 ```
 
 Building the **documentation site** additionally needs Hugo and Node/npm —

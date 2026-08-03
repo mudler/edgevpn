@@ -172,14 +172,25 @@ sudo docker compose up --detach
 
 ## Build from source
 
-You need [Go](https://golang.org/) 1.26 (the version in `go.mod`) and `make`.
-Nothing else — the web UI assets are embedded in the repository, so no
-JavaScript toolchain is involved in building the binary.
+You need [Go](https://golang.org/) 1.26 (the version in `go.mod`), `make`, and
+[Node.js](https://nodejs.org/) 20.19 or newer. The web interface is a React
+application that is compiled and then embedded into the binary, so a JavaScript
+toolchain is part of a full build.
 
 ```bash
 git clone https://github.com/mudler/edgevpn
 cd edgevpn
-make build        # go build -o edgevpn ./
+make build        # compiles the web interface, then the Go binary
+```
+
+`make build` compiles the web interface first and the Go binary afterwards.
+Running `go build` on its own works only when `api/react-ui/dist` already
+exists — the interface is embedded with `//go:embed`, so a missing directory is
+a compile error rather than a warning. If you are working on the Go side only,
+you can stub it out:
+
+```bash
+mkdir -p api/react-ui/dist && touch api/react-ui/dist/index.html
 ```
 
 Building the **documentation site** is the one thing that needs more: Hugo and
