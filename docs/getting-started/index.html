@@ -30,8 +30,8 @@
 
   <meta itemprop="name" content="Getting Started">
   <meta itemprop="description" content="First steps with EdgeVPN">
-  <meta itemprop="dateModified" content="2026-07-18T01:10:26+02:00">
-  <meta itemprop="wordCount" content="164">
+  <meta itemprop="dateModified" content="2026-08-03T23:58:38+02:00">
+  <meta itemprop="wordCount" content="249">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Getting Started">
   <meta name="twitter:description" content="First steps with EdgeVPN">
@@ -77,7 +77,7 @@
     aria-label="Search this site…"
     autocomplete="off"
     
-    data-offline-search-index-json-src="/edgevpn/offline-search-index.41cb1f0f209b63e0ef932aec0d25c97f.json"
+    data-offline-search-index-json-src="/edgevpn/offline-search-index.16c7b3581958f5598a3a7cfbfc397e22.json"
     data-offline-search-base-href="/"
     data-offline-search-max-results="10"
   >
@@ -101,7 +101,7 @@
     aria-label="Search this site…"
     autocomplete="off"
     
-    data-offline-search-index-json-src="/edgevpn/offline-search-index.41cb1f0f209b63e0ef932aec0d25c97f.json"
+    data-offline-search-index-json-src="/edgevpn/offline-search-index.16c7b3581958f5598a3a7cfbfc397e22.json"
     data-offline-search-base-href="/"
     data-offline-search-max-results="10"
   >
@@ -211,11 +211,14 @@
 <p>Requirements:</p>
 <ul>
 <li><a href="https://golang.org/">Golang</a> installed in your system.</li>
+<li><a href="https://nodejs.org/">Node.js</a> 20.19 or newer. The web interface is a React application which is compiled and embedded into the binary.</li>
 <li>make</li>
 </ul>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; git clone https://github.com/mudler/edgevpn
 </span></span><span style="display:flex;"><span>$&gt; <span style="color:#204a87">cd</span> edgevpn
-</span></span><span style="display:flex;"><span>$&gt; go build
+</span></span><span style="display:flex;"><span>$&gt; make build
+</span></span></code></pre></div><p><code>make build</code> compiles the web interface first, and the Go binary afterwards. Running <code>go build</code> on its own works only if <code>api/react-ui/dist</code> already exists: the web interface is embedded with <code>//go:embed</code>, so a missing directory is a compile error. If you are working on the Go side only and don&rsquo;t need the web interface, you can stub it out:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; mkdir -p api/react-ui/dist <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span> touch api/react-ui/dist/index.html
 </span></span></code></pre></div><h3 id="using-docker-compose">Using Docker Compose</h3>
 <p>Using docker is still experimental as setups can vary wildly.
 An example <a href="https://github.com/mudler/edgevpn/blob/master/docker-compose.yml">docker-compose.yml</a> file is provided for convenience but you&rsquo;ll likely need to edit it.</p>
@@ -311,7 +314,7 @@ An example <a href="https://github.com/mudler/edgevpn/blob/master/docker-compose
 </script>
 <br />
 <div class="td-page-meta__lastmod">
-  Last modified July 18, 2026: <a data-proofer-ignore href="https://github.com/mudler/edgevpn/commit/3a6954aab6383ba3ba9b072a563822c48a3ebf38">fix(deps): update module golang.org/x/sys to v0.47.0 (#1055) (3a6954a)</a>
+  Last modified August 3, 2026: <a data-proofer-ignore href="https://github.com/mudler/edgevpn/commit/bc94eadac60a92ece0193d83fe9c677f5df5882c">react UI design system (#1063) (bc94ead)</a>
 </div>
 </div>
 
