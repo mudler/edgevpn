@@ -18,9 +18,11 @@ package services
 import (
 	"bufio"
 	"context"
+	"errors"
 	"io"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -119,7 +121,20 @@ func ProxyService(announceTime time.Duration, listenAddr string, deadtime time.D
 			},
 		)
 
-		go ps.Serve()
+		// Bind synchronously: a failure here (a privileged port, an address
+		// already in use) has to reach the caller, otherwise the node comes
+		// up reporting success with nothing listening.
+		l, err := ps.listen()
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			if err := ps.Serve(l); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Printf("proxy server stopped: %v", err)
+			}
+		}()
+
 		return nil
 	}
 }
@@ -130,8 +145,29 @@ type proxyService struct {
 	deadTime   time.Duration
 }
 
-func (p *proxyService) Serve() error {
-	return http.ListenAndServe(p.listenAddr, p)
+// listen binds the proxy's HTTP listener.
+func (p *proxyService) listen() (net.Listener, error) {
+	return net.Listen("tcp", p.listenAddr)
+}
+
+func (p *proxyService) Serve(l net.Listener) error {
+	return http.Serve(l, p)
+}
+
+// pickEgress selects at random one of the available egress nodes.
+// It reports false when there is no egress node to choose from.
+func pickEgress(available []string) (string, bool) {
+	if len(available) == 0 {
+		return "", false
+	}
+	return available[rand.Intn(len(available))], true
+}
+
+// egressPeerID resolves the peer ID an egress node announced in the ledger.
+// The ledger stores the base58 form (peer.ID.String()), so it has to be
+// decoded - a plain peer.ID() conversion yields an unreachable peer.
+func egressPeerID(announced string) (peer.ID, error) {
+	return peer.Decode(announced)
 }
 
 func (p *proxyService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -154,12 +190,23 @@ func (p *proxyService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	chosen := availableEgresses[rand.Intn(len(availableEgresses)-1)]
+	chosen, ok := pickEgress(availableEgresses)
+	if !ok {
+		http.Error(w, "no egress nodes available", http.StatusServiceUnavailable)
+		return
+	}
 
 	//fmt.Printf("proxying request for %s to peer %s\n", r.URL, chosen)
 	// We need to send the request to the remote libp2p peer, so
 	// we open a stream to it
-	stream, err := p.host.Host().NewStream(context.Background(), peer.ID(chosen), protocol.EgressProtocol.ID())
+	chosenID, err := egressPeerID(chosen)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	stream, err := p.host.Host().NewStream(context.Background(), chosenID, protocol.EgressProtocol.ID())
 	// If an error happens, we write an error for response.
 	if err != nil {
 		log.Println(err)

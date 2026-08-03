@@ -42,9 +42,9 @@ func Peergate() *cli.Command {
 						fmt.Printf("Private key: %s\n", string(priv))
 						fmt.Printf("Public key: %s\n", string(pub))
 					} else if c.Bool("privkey") {
-						fmt.Printf(string(priv))
+						fmt.Print(string(priv))
 					} else if c.Bool("pubkey") {
-						fmt.Printf(string(pub))
+						fmt.Print(string(pub))
 					}
 					return err
 				},
