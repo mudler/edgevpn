@@ -1,4 +1,7 @@
-baseURL = "https://mudler.github.io/edgevpn/docs/"
+# Must match the -b value passed by scripts/build.sh, which is what production
+# is actually built with. The site root is https://mudler.github.io/edgevpn/;
+# /docs/ is a content section inside it, not the base.
+baseURL = "https://mudler.github.io/edgevpn/"
 title = "EdgeVPN"
 
 enableRobotsTXT = true
@@ -42,10 +45,9 @@ resampleFilter = "CatmullRom"
 quality = 75
 anchor = "smart"
 
-[services]
-[services.googleAnalytics]
-# Comment out the next line to disable GA tracking. Also disables the feature described in [params.ui.feedback].
-id = "UA-00000000-0"
+# No analytics property is configured. The Docsy template ships a placeholder
+# "UA-00000000-0" here; leaving it in place sent page views and the
+# [params.ui.feedback] events to a property that does not exist.
 
 # Language configuration
 
@@ -118,8 +120,9 @@ offlineSearch = true
 [params.ui]
 # Enable to show the side bar menu in its compact state.
 sidebar_menu_compact = false
-#  Set to true to disable breadcrumb navigation.
-breadcrumb_disable = true
+#  Set to true to disable breadcrumb navigation. The docs tree is three levels
+#  deep (docs / section / page), so breadcrumbs earn their keep.
+breadcrumb_disable = false
 #  Set to true to hide the sidebar search box (the top nav search box will still be displayed if search is enabled)
 sidebar_search_disable = false
 #  Set to false if you don't want to display a logo (/assets/icons/logo.svg) in the top nav bar
@@ -131,8 +134,11 @@ footer_about_disable = false
 # This feature depends on [services.googleAnalytics] and will be disabled if "services.googleAnalytics.id" is not set.
 # If you want this feature, but occasionally need to remove the "Feedback" section from a single page,
 # add "hide_feedback: true" to the page's front matter.
+# Disabled along with the analytics property above: the responses are delivered
+# as Google Analytics events, so with no property configured the widget would
+# only collect clicks and drop them. Re-enable once a GA4 property exists.
 [params.ui.feedback]
-enable = true
+enable = false
 # The responses that the user sees after clicking "yes" (the page was helpful) or "no" (the page was not helpful).
 yes = 'Glad to hear it! Please <a href="https://github.com/mudler/edgevpn/issues/new">tell us how we can improve</a>.'
 no = 'Sorry to hear that. Please <a href="https://github.com/mudler/edgevpn/issues/new">tell us how we can improve</a>.'

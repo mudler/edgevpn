@@ -1,0 +1,33 @@
+name: Docs reference drift
+
+on:
+  # Narrowed to master: an unfiltered `push` also fires on every topic branch
+  # and every tag, duplicating the run each pull request already performs.
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  docs-gen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.26
+      - name: Regenerate the reference
+        run: make docs-gen
+      - name: Fail if the generated reference is stale
+        # The output is staged before diffing because `git diff --exit-code`
+        # ignores untracked paths: a brand-new command makes the generator emit
+        # a new cli/<name>.md, and an unstaged diff would pass while that page
+        # went uncommitted. Diffing the index catches additions alongside
+        # modifications and deletions.
+        run: |
+          git add -A docs/content/en/docs/reference/
+          if ! git diff --cached --exit-code docs/content/en/docs/reference/; then
+            echo "::error::The generated CLI reference is out of date. Run 'make docs-gen' and commit the result."
+            exit 1
+          fi

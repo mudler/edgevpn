@@ -1,4 +1,3 @@
-
 ---
 title: "Documentation"
 linkTitle: "Documentation"
@@ -8,28 +7,36 @@ menu:
     weight: 20
 ---
 
+EdgeVPN uses libp2p to build private, decentralized networks that are accessed
+with a shared secret (a *token*). There is no VPN server and no central
+coordinator: every peer that holds the token joins the same network and
+discovers the others over p2p.
 
-EdgeVPN uses libp2p to build private decentralized networks that can be accessed via shared secrets.
+A single statically compiled binary can:
 
-It can:
+- **Create a VPN** between peers. Each node takes its virtual address from
+  `--address`; an experimental `--dhcp` mode lets peers negotiate addresses
+  among themselves instead.
+- **Serve DNS** for the network, if you enable it with `--dns`. It answers from
+  the records peers announce on the shared ledger, and forwards anything it
+  does not have to an upstream resolver.
+- **Act as a reverse proxy**, exposing a TCP service to the network the way
+  `ngrok` would, without bringing up a VPN interface.
+- **Send files** directly between peers, again without a VPN interface.
+- **Be used as a Go library**, so you can embed the same distributed ledger and
+  p2p connectivity in your own program.
 
-- **Create a VPN** :  
-  - Secure VPN between p2p peers
-  - Automatically assign IPs to nodes
-  - Embedded tiny DNS server to resolve internal/external IPs
+## Where to go next
 
-- **Act as a reverse Proxy**
-  - Share a tcp service like you would do with `ngrok` to the p2p network nodes without establishing a VPN connection
+- **[Tutorials](tutorials/)** — start here if you are new. End-to-end
+  walkthroughs that get you from nothing to a working network.
+- **[How-to guides](how-to/)** — task-oriented recipes: expose a service, proxy
+  traffic through another peer, lock a network down.
+- **[Reference](reference/)** — every command, flag, environment variable and
+  API endpoint.
+- **[Explanation](explanation/)** — how EdgeVPN works and why, including the
+  security model you should read before deploying it.
 
-- **Send files via p2p**
-  - Send files over p2p between nodes without establishing a VPN connection.
-
-- **Be used as a library**
-  - Plug a distributed p2p ledger easily in your golang code!
-
-Check out the docs below for further example and reference, have a look at our [getting started guide]({{< relref "/docs">}}/getting-started), the [cli interface]({{< relref "/docs">}}/getting-started/cli), [gui desktop app]({{< relref "/docs">}}/getting-started/gui), and the embedded [WebUI/API]({{< relref "/docs">}}/getting-started/api/).
-
-
-| [WebUI]({{< relref "/docs">}}/getting-started/api)            | [Desktop](https://github.com/mudler/edgevpn-gui)                                          |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| ![img](https://user-images.githubusercontent.com/2420543/163020448-8e9238c1-3b6d-435d-9b25-7729d8779ebd.png) | ![](https://user-images.githubusercontent.com/2420543/147854909-a223a7c1-5caa-4e90-b0ac-0ae04dc0949d.png) |
+There is also a web UI and HTTP API for inspecting a running network
+([WebUI/API](reference/api/)), and an alpha
+[desktop GUI](tools/desktop-gui/) for Linux.

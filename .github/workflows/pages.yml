@@ -2,6 +2,11 @@ name: Github Pages
 on:
   push:
     branches: [ master ]
+  # Pull requests build the docs so breakage is caught before merge. They must
+  # never deploy: the Deploy step below is guarded on a push to master.
+  pull_request:
+    paths:
+      - 'docs/**'
 
 jobs:
   build:
