@@ -52,9 +52,44 @@ type Node struct {
 
 const defaultChanSize = 3000
 
-// defaultOwnershipTTL is the liveness window used when ownership enforcement is
-// enabled without an explicit TTL.
-const defaultOwnershipTTL = 2 * time.Minute
+// ownershipTTLHeartbeats is how many nominal heartbeat intervals of silence
+// mark an owner inactive.
+//
+// The alive service announces heartbeats from utils.NewBackoffTicker, whose
+// steady-state interval is jittered by up to utils.MaxIntervalJitterFactor
+// (1.5x), so a perfectly healthy node can go 1.5 nominal intervals between
+// heartbeats. Surviving one entirely lost heartbeat therefore needs to cover
+// 2 * 1.5 = 3 nominal intervals of silence.
+//
+// The factor is 4 rather than 3 because that bound has to be cleared strictly,
+// not met. IsLive tests parsed.Add(ttl).After(now), so an entry whose heartbeat
+// is exactly ttl old is already expired: a factor of 3 would put the worst case
+// precisely on the expiry boundary and expire the node the moment jitter is
+// maximal twice in a row. Four leaves a full nominal interval of headroom.
+//
+// This margin matters because "inactive" is not advisory: packets stop being
+// routed to the owner (Ledger.IsOwnerLive), its keys become claimable by other
+// peers, and a leader scrub landing in the gap tombstones its entries.
+const ownershipTTLHeartbeats = 4
+
+// OwnershipTTLFor returns the liveness window to use for a network whose alive
+// service heartbeats every heartbeat. Callers that let the operator tune the
+// heartbeat interval must derive the TTL through this function rather than
+// using DefaultOwnershipTTL, or raising the heartbeat alone will start expiring
+// healthy nodes.
+func OwnershipTTLFor(heartbeat time.Duration) time.Duration {
+	return ownershipTTLHeartbeats * heartbeat
+}
+
+// DefaultOwnershipTTL is the liveness window used when ownership is enabled
+// without an explicit TTL. It is OwnershipTTLFor(services.DefaultHealthcheckInterval)
+// — four 120s heartbeats, so 8 minutes — spelled out as a constant because
+// pkg/services imports this package and cannot be imported back.
+//
+// This was 2 minutes, which was exactly the nominal heartbeat interval and so
+// below the 180s a healthy node can actually take: live nodes were routinely
+// treated as inactive on stock settings.
+const DefaultOwnershipTTL = ownershipTTLHeartbeats * 120 * time.Second
 
 var defaultLibp2pOptions = []libp2p.Option{
 	libp2p.EnableNATService(),
@@ -183,11 +218,11 @@ func (e *Node) startNetwork(ctx context.Context) error {
 			}
 			ttl := e.config.OwnershipTTL
 			if ttl == 0 {
-				ttl = defaultOwnershipTTL
+				ttl = DefaultOwnershipTTL
 			}
 			ledger.SetSigner(signer)
 			ledger.SetOwnership(e.config.OwnershipMode, blockchain.DefaultRegistry(ttl), ttl)
-			e.config.Logger.Infof("ledger ownership enforcement: mode=%d ttl=%s", e.config.OwnershipMode, ttl)
+			e.config.Logger.Infof("ledger ownership enforcement: mode=%s ttl=%s", e.config.OwnershipMode, ttl)
 		} else {
 			e.config.Logger.Warn("ownership enforcement requested but host private key is unavailable; running unsigned")
 		}

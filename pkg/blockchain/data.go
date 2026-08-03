@@ -30,7 +30,7 @@ func (d Data) Unmarshal(i interface{}) error {
 // original JSON payload (readers still call Value.Unmarshal); the remaining
 // fields bind that value to the owning peer and a monotonic version so that
 // only the owner can update it and an older value cannot be replayed over a
-// newer one. See docs/design/authenticated-ledger.md.
+// newer one. See docs/content/en/docs/explanation/authenticated-ledger.md.
 type SignedData struct {
 	Value     Data   // original JSON payload
 	Owner     string // peer.ID (base58) of the author

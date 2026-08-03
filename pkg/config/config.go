@@ -212,6 +212,13 @@ func (c Config) Validate() error {
 		c.NetworkToken == "" {
 		return fmt.Errorf("EDGEVPNCONFIG or EDGEVPNTOKEN not supplied. At least a config file is required")
 	}
+	// Reject an unknown ownership mode here rather than defaulting it to off.
+	// Validate runs at the top of ToOpts, before any option is built and long
+	// before the host exists, so a typo fails the process instead of silently
+	// starting a node with ledger authentication disabled.
+	if _, err := blockchain.ParseOwnershipMode(c.Ownership.Mode); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -293,12 +300,10 @@ func (c Config) ToOpts(l log.StandardLogger) ([]node.Option, []vpn.Option, error
 	d := discovery.NewDHT(dhtOpts...)
 	m := &discovery.MDNS{}
 
-	ownershipMode := blockchain.OwnershipOff
-	switch strings.ToLower(c.Ownership.Mode) {
-	case "observe", "log", "log-only":
-		ownershipMode = blockchain.OwnershipObserve
-	case "enforce", "on":
-		ownershipMode = blockchain.OwnershipEnforce
+	// Already validated above; the error cannot fire here.
+	ownershipMode, err := blockchain.ParseOwnershipMode(c.Ownership.Mode)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	opts := []node.Option{

@@ -20,7 +20,7 @@ import (
 )
 
 // ExpiryKind selects how a bucket's entries are aged out. See
-// docs/design/authenticated-ledger.md.
+// docs/content/en/docs/explanation/authenticated-ledger.md.
 type ExpiryKind int
 
 const (

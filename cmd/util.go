@@ -30,6 +30,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	"github.com/mudler/edgevpn/internal"
+	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/config"
 	"github.com/multiformats/go-multiaddr"
 
@@ -280,7 +281,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 	},
 	&cli.IntFlag{
 		Name:    "relay-service-max-circuits",
-		Usage:   "Maximum number of concurrent relay circuits per peer. Higher values let more peers tunnel through this node simultaneously at the cost of a larger memory footprint. Set lower for resource-constrained deployments.",
+		Usage:   "Maximum number of concurrent relay circuits per peer. Higher values let a single peer hold more simultaneous circuits through this node at the cost of a larger memory footprint; the number of peers that may relay through us is bounded separately by the reservation limits. Set lower for resource-constrained deployments.",
 		EnvVars: []string{"EDGEVPN_RELAY_MAX_CIRCUITS"},
 		Value:   config.DefaultRelayServiceMaxCircuits,
 	},
@@ -377,7 +378,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 	},
 	&cli.IntFlag{
 		Name:    "ownership-ttl",
-		Usage:   "Liveness window in seconds after which an inactive owner's ledger entries may be reclaimed/reaped (0 = default).",
+		Usage:   "Liveness window in seconds after which an inactive owner's ledger entries may be reclaimed/reaped. 0 derives it from --aliveness-healthcheck-interval (4x, so 8 minutes on defaults), which keeps healthy nodes from expiring when the heartbeat is retuned.",
 		EnvVars: []string{"EDGEVPNOWNERSHIPTTL"},
 		Value:   0,
 	},
@@ -562,9 +563,58 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 		},
 		Ownership: config.Ownership{
 			Mode: c.String("ownership"),
-			TTL:  time.Duration(c.Int("ownership-ttl")) * time.Second,
+			TTL: resolveOwnershipTTL(
+				time.Duration(c.Int("ownership-ttl"))*time.Second,
+				time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second,
+			),
 		},
 	}
+}
+
+// resolveOwnershipTTL turns `--ownership-ttl 0` into a window derived from the
+// heartbeat interval actually in use, instead of a fixed number.
+//
+// Ownership decides that an owner is inactive purely from the age of its last
+// heartbeat, so the two settings are not independent: raising
+// --aliveness-healthcheck-interval without raising --ownership-ttl would start
+// expiring healthy nodes. Deriving it means the operator only has to get one of
+// them right. An explicitly configured TTL is always used as-is.
+func resolveOwnershipTTL(configured, heartbeat time.Duration) time.Duration {
+	if configured > 0 {
+		return configured
+	}
+	if heartbeat <= 0 {
+		return node.DefaultOwnershipTTL
+	}
+	return node.OwnershipTTLFor(heartbeat)
+}
+
+// parsePeerTable turns --static-peertable entries ("<ip>:<peer id>") into the
+// static address-to-peer map the VPN routes with.
+//
+// The peer ID must be decoded, not converted. peer.ID holds the raw bytes of a
+// multihash, so peer.ID(s) over the base58 text yields an ID made of that
+// text's ASCII, which never equals a real peer's ID: pkg/vpn would reset every
+// inbound stream (vpn.go's PeerTable match) and dial an invalid ID. A malformed
+// entry is returned as an error so the node fails at startup rather than
+// booting with a table that blackholes traffic.
+func parsePeerTable(entries []string) (map[string]peer.ID, error) {
+	var table map[string]peer.ID
+	for _, pt := range entries {
+		dat := strings.Split(pt, ":")
+		if len(dat) != 2 {
+			return nil, fmt.Errorf("wrong format for peertable entry %q. Want a list of ip/peerid separated by `:`. e.g. 10.1.0.1:12D3KooW... ", pt)
+		}
+		id, err := peer.Decode(dat[1])
+		if err != nil {
+			return nil, fmt.Errorf("invalid peer ID %q in peertable entry %q: %w", dat[1], pt, err)
+		}
+		if table == nil {
+			table = make(map[string]peer.ID)
+		}
+		table[dat[0]] = id
+	}
+	return table, nil
 }
 
 func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
@@ -576,9 +626,12 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 	}
 	llger := logger.New(lvl)
 
+	// Reports the error it is handed. This used to test the enclosing `err`
+	// instead of its argument, which made every call a no-op unless the log
+	// level had failed to parse.
 	checkErr := func(e error) {
-		if err != nil {
-			llger.Fatal(err.Error())
+		if e != nil {
+			llger.Fatal(e.Error())
 		}
 	}
 
@@ -620,23 +673,25 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 	// on every restart the node's entries are orphaned (reaped after the
 	// liveness TTL) and re-claimed under the new identity. Nudge operators of a
 	// long-lived node toward a stable identity, without forcing it.
-	ownMode := strings.ToLower(nc.Ownership.Mode)
-	ownershipEnabled := ownMode == "enforce" || ownMode == "on" ||
-		ownMode == "observe" || ownMode == "log" || ownMode == "log-only"
-	if ownershipEnabled && len(nc.Privkey) == 0 {
+	//
+	// This used to keep its own copy of the accepted spellings, which could
+	// drift from the one the config layer applied. Both now go through
+	// blockchain.ParseOwnershipMode. An invalid mode is reported by
+	// Config.Validate a few lines below (inside ToOpts), so it is ignored here.
+	ownMode, ownErr := blockchain.ParseOwnershipMode(nc.Ownership.Mode)
+	if ownErr == nil && ownMode != blockchain.OwnershipOff && len(nc.Privkey) == 0 {
 		llger.Warnf("ownership enforcement is on with an ephemeral identity: this node's ledger entries will be reclaimed after the liveness TTL on each restart. Use --privkey-cache with a per-node --privkey-cache-dir for a stable identity.")
 	}
 
-	for _, pt := range c.StringSlice("static-peertable") {
-		dat := strings.Split(pt, ":")
-		if len(dat) != 2 {
-			checkErr(fmt.Errorf("wrong format for peertable entries. Want a list of ip/peerid separated by `:`. e.g. 10.1.0.1:... "))
-		}
+	table, tableErr := parsePeerTable(c.StringSlice("static-peertable"))
+	checkErr(tableErr)
+	if len(table) > 0 {
 		if nc.Connection.PeerTable == nil {
 			nc.Connection.PeerTable = make(map[string]peer.ID)
 		}
-
-		nc.Connection.PeerTable[dat[0]] = peer.ID(dat[1])
+		for ip, id := range table {
+			nc.Connection.PeerTable[ip] = id
+		}
 	}
 
 	nodeOpts, vpnOpts, err := nc.ToOpts(llger)

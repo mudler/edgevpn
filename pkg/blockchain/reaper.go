@@ -25,7 +25,7 @@ import (
 // unless ownership is enabled and a signer is set; callers should run it only
 // on the elected leader to avoid redundant writes.
 //
-// See docs/design/authenticated-ledger.md (section 9).
+// See docs/content/en/docs/explanation/authenticated-ledger.md (section 9).
 func (l *Ledger) Reap(tombstoneTTL time.Duration) {
 	l.commit(true, func(cur map[string]map[string]SignedData) bool {
 		if l.mode == OwnershipOff || l.signer == nil {

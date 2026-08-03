@@ -26,6 +26,13 @@ import (
 	"github.com/mudler/edgevpn/pkg/blockchain"
 )
 
+// DefaultHealthcheckInterval is how often a node re-announces its heartbeat to
+// the ledger. It is the number the `--aliveness-healthcheck-interval` flag
+// defaults to, and the one node.DefaultOwnershipTTL is derived from: ownership
+// decides liveness purely from heartbeat age, so the two cannot be tuned
+// independently. See node.OwnershipTTLFor.
+const DefaultHealthcheckInterval = 120 * time.Second
+
 func AliveNetworkService(announcetime, scrubTime, maxtime time.Duration) node.NetworkService {
 	return func(ctx context.Context, c node.Config, n *node.Node, b *blockchain.Ledger) error {
 		t := time.Now()

@@ -37,7 +37,7 @@ type Ledger struct {
 
 	channel io.Writer
 
-	// Authentication / ownership (see docs/design/authenticated-ledger.md).
+	// Authentication / ownership (see docs/content/en/docs/explanation/authenticated-ledger.md).
 	// When signer is set, writes are signed; the mode controls whether Update
 	// runs the authorized merge and whether violations are dropped or logged.
 	signer   Signer
@@ -288,10 +288,17 @@ func (l *Ledger) accept(bucket, key string, in, ex SignedData, exists bool, pol 
 		// A tombstone may be authored by the current owner, or by anyone once
 		// the current owner's lease has expired (the reaper). It must out-version
 		// what it deletes.
+		//
+		// The owner is resolved through ownerOf for the same reason the overwrite
+		// path below does it: a legacy unsigned entry names its owner only in its
+		// value. Comparing the raw ex.Owner here would let the rightful owner
+		// update such an entry but never delete it — and because Delete always
+		// succeeds locally, its node and every peer would then disagree
+		// permanently, with nothing logged on the node that issued the delete.
 		if !exists {
 			return "tombstone for unknown key"
 		}
-		if in.Owner != ex.Owner && !l.expired(bucket, key, ex, pol, health, now) {
+		if in.Owner != l.ownerOf(key, ex, pol) && !l.expired(bucket, key, ex, pol, health, now) {
 			return "tombstone by non-owner of a live entry"
 		}
 		if in.Version <= ex.Version {
@@ -323,7 +330,7 @@ func (l *Ledger) accept(bucket, key string, in, ex SignedData, exists bool, pol 
 	}
 
 	// A different owner may only take over an expired (or reclaimable-free) slot.
-	if in.Owner != ex.Owner && !l.expired(bucket, key, ex, pol, health, now) {
+	if in.Owner != l.ownerOf(key, ex, pol) && !l.expired(bucket, key, ex, pol, health, now) {
 		return "overwrite of a live entry owned by another peer"
 	}
 
@@ -340,6 +347,31 @@ func (l *Ledger) accept(bucket, key string, in, ex SignedData, exists bool, pol 
 	return ""
 }
 
+// ownerOf returns the peer an existing entry belongs to.
+//
+// Normally that is the signed Owner field. A legacy entry written before
+// ownership existed has no Owner and no signature, and can only be in storage
+// because it was loaded from a persisted ledger (--ledger-state) written under
+// off/observe — the merge never admits an unsigned entry into an owned bucket
+// under enforcement. Such an entry carries no signed claim, so we fall back to
+// the owner its value declares.
+//
+// Without this fallback the entry named an owner of "" that matched nobody,
+// while still counting as live, so it could never be replaced — not even by the
+// peer it named. That peer was permanently locked out of its own key.
+//
+// This is deliberately not "treat it as unclaimed": resolving the implied owner
+// keeps a legacy entry exactly as defensible as a signed one. Another peer must
+// still wait for the implied owner's lease to expire, so nothing that was
+// protected before becomes claimable now. Buckets with a nil OwnerOf (dns) have
+// no implied owner and keep their existing first-claim-after-expiry behaviour.
+func (l *Ledger) ownerOf(key string, ex SignedData, pol BucketPolicy) string {
+	if ex.Owner != "" || pol.OwnerOf == nil {
+		return ex.Owner
+	}
+	return pol.OwnerOf(key, ex.Value)
+}
+
 // expired reports whether the existing entry is past its lease and may be taken
 // over by another owner.
 func (l *Ledger) expired(bucket, key string, ex SignedData, pol BucketPolicy, health map[string]Data, now time.Time) bool {
@@ -347,11 +379,7 @@ func (l *Ledger) expired(bucket, key string, ex SignedData, pol BucketPolicy, he
 	case Absolute:
 		return time.Unix(ex.UpdatedAt, 0).Add(pol.TTL).Before(now)
 	case Liveness:
-		owner := ex.Owner
-		if owner == "" && pol.OwnerOf != nil {
-			owner = pol.OwnerOf(key, ex.Value)
-		}
-		return !IsLive(health, owner, l.ttl, now)
+		return !IsLive(health, l.ownerOf(key, ex, pol), l.ttl, now)
 	default:
 		return false
 	}
