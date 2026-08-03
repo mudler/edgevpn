@@ -75,8 +75,8 @@ func registerUI(ec *echo.Echo) error {
 
 	serveIndex := func(c echo.Context) error {
 		// "/app/../api/x" matches the /app/* route below yet names the API
-		// once normalised, so the guard has to sit here too, not only in
-		// the error handler.
+		// once normalised, so it arrives here and must not be answered with
+		// an HTML page where the caller is expecting JSON.
 		if reserved(c) {
 			return echo.NewHTTPError(http.StatusNotFound)
 		}
@@ -120,22 +120,12 @@ func registerUI(ec *echo.Echo) error {
 		return c.Blob(http.StatusOK, "image/svg+xml", body)
 	})
 
-	// SPA fallback. A browser navigating to a client-side route gets the
-	// index; anything asking for JSON, and anything under /api, keeps the
-	// real 404 so API errors are never masked by an HTML page.
-	defaultHandler := ec.HTTPErrorHandler
-	ec.HTTPErrorHandler = func(err error, c echo.Context) {
-		he, ok := err.(*echo.HTTPError)
-		if ok && he.Code == http.StatusNotFound &&
-			c.Request().Method == http.MethodGet &&
-			!reserved(c) &&
-			strings.Contains(c.Request().Header.Get("Accept"), "text/html") {
-			if serveErr := serveIndex(c); serveErr == nil {
-				return
-			}
-		}
-		defaultHandler(err, c)
-	}
-
+	// No catch-all SPA fallback on the error handler. Client-side routing
+	// needs none: /app and /app/* are real routes, so every deep link the
+	// router can match is already served above. A fallback would instead
+	// answer the *old* UI's URLs — /index.html, /js/alpine.min.js — with the
+	// React index, so a stale bookmark or a cached page would load the app at
+	// a path the /app basename cannot route and surface react-router's raw
+	// "Unexpected Application Error! 404 Not Found" instead of a clean 404.
 	return nil
 }

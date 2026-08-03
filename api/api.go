@@ -429,7 +429,7 @@ func API(ctx context.Context, l string, defaultInterval, timeout time.Duration, 
 
 	if err := registerUI(ec); err != nil {
 		// A binary built without the React UI must still serve the API.
-		fmt.Printf("web UI not available: %v\n", err)
+		ec.Logger.Errorf("web UI not available: %v", err)
 	}
 
 	ec.GET(BlockchainURL, func(c echo.Context) error {

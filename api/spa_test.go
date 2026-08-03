@@ -168,12 +168,13 @@ func TestUnnormalisedAPIPathReturnsJSON(t *testing.T) {
 	}
 }
 
-// TestAPILookalikePathGetsFallback is the opposite-direction guard: a plain
-// prefix test denies the SPA fallback to any path merely starting with the
-// letters "/api", so /apiary would wrongly 404 in a browser. The check must be
-// segment-aware.
-func TestAPILookalikePathGetsFallback(t *testing.T) {
-	for _, path := range []string{"/apiary/nope", "/apis", "/debugger/x"} {
+// TestAPILookalikePathIsStillServed is the opposite-direction guard: a plain
+// prefix test would deny the index to any path merely starting with the letters
+// "/api", so a client route under a name like "apiary" would wrongly 404. The
+// check must be segment-aware. These go through the /app/* route because that
+// is the only way into serveIndex now that the error-handler fallback is gone.
+func TestAPILookalikePathIsStillServed(t *testing.T) {
+	for _, path := range []string{"/app/../apiary/nope", "/app/../apis", "/app/debugger/x"} {
 		t.Run(path, func(t *testing.T) {
 			ec := newUIEcho(t)
 			req := httptest.NewRequest(http.MethodGet, path, nil)
@@ -181,25 +182,29 @@ func TestAPILookalikePathGetsFallback(t *testing.T) {
 			rec := httptest.NewRecorder()
 			ec.ServeHTTP(rec, req)
 			if rec.Code != http.StatusOK {
-				t.Fatalf("got %d, want 200 (SPA fallback)", rec.Code)
+				t.Fatalf("got %d, want 200", rec.Code)
 			}
 		})
 	}
 }
 
-// TestBrowserDeepLinkOutsideAppFallsBackToIndex is the positive counterpart:
-// a browser navigation to an unrouted, non-API path must still get the index
-// so client-side routing can take over.
-func TestBrowserDeepLinkOutsideAppFallsBackToIndex(t *testing.T) {
-	ec := newUIEcho(t)
-	req := httptest.NewRequest(http.MethodGet, "/some/client/route", nil)
-	req.Header.Set("Accept", "text/html,application/xhtml+xml")
-	rec := httptest.NewRecorder()
-	ec.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("got %d, want 200", rec.Code)
-	}
-	if cc := rec.Header().Get("Cache-Control"); cc != "no-cache" {
-		t.Fatalf("Cache-Control = %q, want no-cache", cc)
+// TestOldUIPathsReturn404 pins the removal of the error-handler SPA fallback.
+// It used to answer any GET with Accept: text/html, which meant the previous
+// Alpine UI's own URLs kept returning 200 — with the React index as the body.
+// A stale bookmark or a cached page would then boot the app at a path the
+// /app basename cannot route, and the user would see react-router's raw
+// "Unexpected Application Error! 404 Not Found" rather than a clean 404.
+func TestOldUIPathsReturn404(t *testing.T) {
+	for _, path := range []string{"/index.html", "/js/alpine.min.js", "/some/client/route"} {
+		t.Run(path, func(t *testing.T) {
+			ec := newUIEcho(t)
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			req.Header.Set("Accept", "text/html,application/xhtml+xml")
+			rec := httptest.NewRecorder()
+			ec.ServeHTTP(rec, req)
+			if rec.Code != http.StatusNotFound {
+				t.Fatalf("got %d, want 404", rec.Code)
+			}
+		})
 	}
 }
