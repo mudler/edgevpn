@@ -1,5 +1,8 @@
 # Make sure to check the documentation at http://goreleaser.com
 version: 2
+before:
+  hooks:
+    - make react-ui-force
 builds:
   - ldflags:
       - -w -s

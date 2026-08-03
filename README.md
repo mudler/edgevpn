@@ -75,6 +75,26 @@ Check out [Kairos](https://github.com/kairos-io/kairos) for seeing EdgeVPN in ac
 
 Download the precompiled static release in the [releases page](https://github.com/mudler/edgevpn/releases). You can either install it in your system or just run it.
 
+# :hammer: Building from source
+
+The web UI is a React application compiled into the binary, so a Node
+toolchain (**Node 20.19+**) is required for a full build:
+
+```bash
+make build            # builds the UI if needed, then the Go binary
+make react-ui-force   # force a clean UI rebuild
+```
+
+`go build` alone works only when `api/react-ui/dist` already exists —
+the UI is embedded with `//go:embed`, and a missing directory is a
+compile error. For Go-only work you can stub it:
+
+```bash
+mkdir -p api/react-ui/dist && touch api/react-ui/dist/index.html
+```
+
+See [`api/react-ui/README.md`](api/react-ui/README.md) for frontend development.
+
 # :computer: Usage
 
 EdgeVPN works by generating tokens (or a configuration file) that can be shared between different machines, hosts or peers to access to a decentralized secured network between them.

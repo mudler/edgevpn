@@ -1,0 +1,34 @@
+@import './tokens.css';
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ev-bg);
+  color: var(--ev-ink);
+  font-family: var(--ev-mono);
+  font-size: var(--ev-step-0);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--ev-signal);
+  outline-offset: 2px;
+}
+
+/* Digits that appear in columns must line up. */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* The slash separator, drawn from multiaddr notation. Structural, not
+   decorative: it always separates real path segments. */
+.slash { color: var(--ev-signal); padding-inline: 0.15em; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

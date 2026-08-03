@@ -1,0 +1,57 @@
+.ev-shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+.ev-header {
+  display: flex; align-items: center; gap: var(--ev-5);
+  padding: var(--ev-3) var(--ev-5);
+  border-bottom: 1px solid var(--ev-rule);
+  flex-wrap: wrap;
+}
+
+.ev-brand { display: flex; align-items: center; gap: var(--ev-2); font-weight: 600; }
+
+.ev-nav { display: flex; gap: var(--ev-1); flex-wrap: wrap; }
+.ev-nav a {
+  text-decoration: none; color: var(--ev-muted);
+  font-size: var(--ev-step--1); letter-spacing: 0.06em; text-transform: uppercase;
+  padding: var(--ev-2) var(--ev-3);
+  border-bottom: 2px solid transparent;
+}
+.ev-nav a:hover { color: var(--ev-ink); }
+.ev-nav a.active { color: var(--ev-ink); border-bottom-color: var(--ev-signal); }
+
+.ev-main { flex: 1; padding: var(--ev-5); display: flex; flex-direction: column; gap: var(--ev-5); }
+
+.ev-panel {
+  background: var(--ev-panel);
+  border: 1px solid var(--ev-rule);
+  border-radius: var(--ev-radius);
+  padding: var(--ev-4);
+  display: flex; flex-direction: column; gap: var(--ev-3);
+}
+.ev-panel-title {
+  margin: 0; font-size: var(--ev-step--1); font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ev-faint);
+}
+
+.ev-tiles { display: grid; gap: var(--ev-2); grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.ev-tile {
+  border: 1px solid var(--ev-rule); border-radius: var(--ev-radius);
+  padding: var(--ev-2) var(--ev-3); display: flex; flex-direction: column; gap: var(--ev-1);
+}
+.ev-tile-k { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ev-faint); }
+.ev-tile-v { font-size: var(--ev-step-2); font-weight: 600; line-height: 1.1; }
+
+.ev-pill {
+  display: inline-flex; align-items: center;
+  font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0 var(--ev-2); border-radius: 99px; border: 1px solid currentColor;
+}
+.ev-pill--ok { color: var(--ev-ok); }
+.ev-pill--warn { color: var(--ev-warn); }
+.ev-pill--crit { color: var(--ev-crit); }
+
+.ev-error {
+  color: var(--ev-crit); font-size: var(--ev-step--1);
+  border: 1px solid currentColor; border-radius: var(--ev-radius);
+  padding: var(--ev-2) var(--ev-3);
+}
