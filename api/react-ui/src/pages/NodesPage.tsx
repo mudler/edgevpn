@@ -50,6 +50,9 @@ export default function NodesPage() {
   return (
     <section className="ev-panel">
       <h2 className="ev-panel-title">Nodes</h2>
+      {machines.error && (
+        <p className="ev-error">Cannot reach the node: {machines.error.message}</p>
+      )}
       {err && <p className="ev-error">{err}</p>}
       <DataTable columns={columns} rows={machines.data ?? []}
                  rowKey={(m) => m.Address} emptyText="No machines on the ledger yet" />

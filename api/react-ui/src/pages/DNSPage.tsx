@@ -48,6 +48,7 @@ export default function DNSPage() {
   return (
     <section className="ev-panel">
       <h2 className="ev-panel-title">DNS</h2>
+      {dns.error && <p className="ev-error">Cannot reach the node: {dns.error.message}</p>}
       {err && <p className="ev-error">{err}</p>}
       <DataTable columns={columns} rows={dns.data ?? []}
                  rowKey={(e) => e.Regex} emptyText="No DNS entries announced" />

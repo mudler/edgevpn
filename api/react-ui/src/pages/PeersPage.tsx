@@ -2,23 +2,10 @@ import { useMemo } from 'react'
 import { getMachines, getNodes, getPeerMetrics, getPeerstore, getSummary } from '../lib/api'
 import { usePolling } from '../hooks/usePolling'
 import { formatRate, truncateID } from '../lib/format'
+import type { PeerRow } from '../types/api'
 import DataTable, { type Column } from '../components/DataTable'
 import PeerGraph, { plottedPeers } from '../components/PeerGraph'
 import Pill from '../components/Pill'
-
-export type PeerRow = {
-  id: string
-  /** True only when a source that actually reports liveness says so. */
-  online: boolean
-  /**
-   * True when the peer announced a VPN machine entry, i.e. holds an address on
-   * this network. Narrower than "on the ledger": peers reported by /api/nodes
-   * are on the ledger too, in the healthcheck bucket.
-   */
-  known: boolean
-  rateIn: number
-  rateOut: number
-}
 
 /**
  * Merge the three peer sources into one view.

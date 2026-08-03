@@ -26,12 +26,16 @@ export default function ServicesPage() {
     <>
       <section className="ev-panel">
         <h2 className="ev-panel-title">TCP tunnels</h2>
+        {services.error && (
+          <p className="ev-error">Cannot reach the node: {services.error.message}</p>
+        )}
         <DataTable columns={SERVICE_COLUMNS} rows={services.data ?? []}
                    rowKey={(s) => `${s.PeerID}/${s.Name}`}
                    emptyText="No services advertised" />
       </section>
       <section className="ev-panel">
         <h2 className="ev-panel-title">Files</h2>
+        {files.error && <p className="ev-error">Cannot reach the node: {files.error.message}</p>}
         <DataTable columns={FILE_COLUMNS} rows={files.data ?? []}
                    rowKey={(f) => `${f.PeerID}/${f.Name}`}
                    emptyText="No files shared" />

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { PeerRow } from '../pages/PeersPage'
+import type { PeerRow } from '../types/api'
 
 type Props = { peers: PeerRow[]; selfId: string }
 

@@ -31,6 +31,7 @@ export default function BlockchainPage() {
     <>
       <section className="ev-panel">
         <h2 className="ev-panel-title">Last block</h2>
+        {block.error && <p className="ev-error">Cannot reach the node: {block.error.message}</p>}
         <div className="ev-tiles">
           <Tile label="Index" value={block.data?.Index ?? '—'} />
           <Tile label="Buckets" value={rows.length} />

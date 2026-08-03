@@ -73,6 +73,26 @@ export interface Stats {
 /** GET /api/metrics/peer — keyed by peer ID */
 export type PeerStats = Record<string, Stats>
 
+/**
+ * A peer as the UI presents it: the merge of /api/nodes, /api/peerstore,
+ * /api/machines and /api/metrics/peer. Not a wire type — it is assembled by
+ * usePeerRows in PeersPage — but it lives here because both the page and the
+ * PeerGraph component consume it, and a component must not import from a page.
+ */
+export interface PeerRow {
+  id: string
+  /** True only when a source that actually reports liveness says so. */
+  online: boolean
+  /**
+   * True when the peer announced a VPN machine entry, i.e. holds an address on
+   * this network. Narrower than "on the ledger": peers reported by /api/nodes
+   * are on the ledger too, in the healthcheck bucket.
+   */
+  known: boolean
+  rateIn: number
+  rateOut: number
+}
+
 /** blockchain.Block */
 export interface Block {
   Index: number

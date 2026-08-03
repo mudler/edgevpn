@@ -1,4 +1,4 @@
-import { getMetrics, getSummary, getUsers } from '../lib/api'
+import { ApiError, getMetrics, getSummary, getUsers } from '../lib/api'
 import { usePolling } from '../hooks/usePolling'
 import { bytesToSize, formatRate, truncateID } from '../lib/format'
 import type { User } from '../types/api'
@@ -20,6 +20,16 @@ export default function SummaryPage() {
   const metrics = usePolling((s) => getMetrics(s), 1500)
 
   const s = summary.data
+
+  // Only a 404 means "the node has no bandwidth counter", because that is the
+  // one status the missing route produces. Any other failure — a 500, a
+  // timeout, an unreachable node — is a real error and must not be reported as
+  // a fact about the user's configuration. And until the first response lands
+  // there is no evidence for either, so neither line is rendered: showing the
+  // "not enabled" text while the request is still in flight would flash a false
+  // statement about the node on every mount.
+  const metricsUnavailable = metrics.error instanceof ApiError && metrics.error.status === 404
+  const metricsFailed = metrics.error !== null && !metricsUnavailable
 
   return (
     <>
@@ -45,17 +55,21 @@ export default function SummaryPage() {
 
       <section className="ev-panel">
         <h2 className="ev-panel-title">Bandwidth</h2>
-        {metrics.data ? (
+        {metrics.data && (
           <div className="ev-tiles">
             <Tile label="Rate in" value={formatRate(metrics.data.RateIn)} />
             <Tile label="Rate out" value={formatRate(metrics.data.RateOut)} />
             <Tile label="Total in" value={bytesToSize(metrics.data.TotalIn)} />
             <Tile label="Total out" value={bytesToSize(metrics.data.TotalOut)} />
           </div>
-        ) : (
+        )}
+        {!metrics.data && metricsUnavailable && (
           <p style={{ margin: 0, color: 'var(--ev-faint)', fontSize: 'var(--ev-step--1)' }}>
             Bandwidth metrics are not enabled on this node.
           </p>
+        )}
+        {metricsFailed && (
+          <p className="ev-error">Cannot reach the node: {metrics.error?.message}</p>
         )}
       </section>
 
