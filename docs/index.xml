@@ -8,10 +8,17 @@
     <language>en</language>
     <atom:link href="https://mudler.github.io/edgevpn/docs/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Contributing</title>
-      <link>https://mudler.github.io/edgevpn/docs/contribution-guidelines/</link>
+      <title>Troubleshooting</title>
+      <link>https://mudler.github.io/edgevpn/docs/troubleshooting/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>https://mudler.github.io/edgevpn/docs/contribution-guidelines/</guid>
+      <guid>https://mudler.github.io/edgevpn/docs/troubleshooting/</guid>
+      <description>&lt;h2 id=&#34;slow-bootstrap-or-poor-network-performance&#34;&gt;Slow bootstrap or poor network performance&lt;/h2&gt;&#xA;&lt;p&gt;If during bootstrap you see messages like:&lt;/p&gt;&#xA;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;edgevpn[3679]:             * [/ip4/104.131.131.82/tcp/4001] failed to negotiate stream multiplexer: context deadline exceeded&#xA;&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;or&lt;/p&gt;&#xA;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;edgevpn[9971]: 2021/12/16 20:56:34 failed to sufficiently increase receive buffer size (was: 208 kiB, wanted: 2048 kiB, got: 416 kiB). See https://github.com/lucas-clemente/quic-go/wiki/UDP-Receive-Buffer-Size for details.&#xA;&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;or generally experiencing poor network performance, it is recommended to&#xA;increase the maximum buffer size by running:&lt;/p&gt;&#xA;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sysctl -w net.core.rmem_max=2500000&#xA;&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;That setting does not survive a reboot. To make it permanent, drop it into&#xA;&lt;code&gt;/etc/sysctl.d/&lt;/code&gt;:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Contributing</title>
+      <link>https://mudler.github.io/edgevpn/docs/contributing/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/contributing/</guid>
       <description>&lt;h2 id=&#34;contributing-to-edgevpn&#34;&gt;Contributing to EdgeVPN&lt;/h2&gt;&#xA;&lt;p&gt;Contribution guidelines for the EdgeVPN project are on the &lt;a href=&#34;https://github.com/mudler/edgevpn/blob/master/CONTRIBUTING.md&#34;&gt;Github repository&lt;/a&gt;. Here you can find some heads up for contributing to the documentation website.&lt;/p&gt;&#xA;&lt;h2 id=&#34;contributing-to-the-docs-website&#34;&gt;Contributing to the Docs website&lt;/h2&gt;&#xA;&lt;h3 id=&#34;we-develop-with-github&#34;&gt;We Develop with Github&lt;/h3&gt;&#xA;&lt;p&gt;We use &lt;a href=&#34;https://github.com/mudler/edgevpn&#34;&gt;github to host code&lt;/a&gt;, to track issues and feature requests, as well as accept pull requests.&lt;/p&gt;&#xA;&lt;p&gt;We use &lt;a href=&#34;https://gohugo.io/&#34;&gt;Hugo&lt;/a&gt; to format and generate our website, the&#xA;&lt;a href=&#34;https://github.com/google/docsy&#34;&gt;Docsy&lt;/a&gt; theme for styling and site structure,&#xA;and Github Actions to manage the deployment of the site.&#xA;Hugo is an open-source static site generator that provides us with templates,&#xA;content organisation in a standard directory structure, and a website generation&#xA;engine. You write the pages in Markdown (or HTML if you want), and Hugo wraps them up into a website.&lt;/p&gt;</description>
     </item>
   </channel>

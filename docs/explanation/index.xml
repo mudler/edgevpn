@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Explanation on EdgeVPN</title>
+    <link>https://mudler.github.io/edgevpn/docs/explanation/</link>
+    <description>Recent content in Explanation on EdgeVPN</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <atom:link href="https://mudler.github.io/edgevpn/docs/explanation/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Architecture</title>
+      <link>https://mudler.github.io/edgevpn/docs/explanation/architecture/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/explanation/architecture/</guid>
+      <description>&lt;h2 id=&#34;introduction&#34;&gt;Introduction&lt;/h2&gt;&#xA;&lt;p&gt;EdgeVPN uses &lt;a href=&#34;https://github.com/libp2p/go-libp2p&#34;&gt;libp2p&lt;/a&gt; to establish a&#xA;decentralized, asymmetrically encrypted gossip network which propagates a&#xA;(symmetrically encrypted) ledger state between nodes.&lt;/p&gt;&#xA;&lt;p&gt;The ledger is a hash-linked chain of blocks, and it is deliberately minimal:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;There is no proof of work and no consensus protocol. A block is just&#xA;&lt;code&gt;Index&lt;/code&gt;, &lt;code&gt;Timestamp&lt;/code&gt;, &lt;code&gt;Storage&lt;/code&gt;, &lt;code&gt;Hash&lt;/code&gt; and &lt;code&gt;PrevHash&lt;/code&gt;, where &lt;code&gt;Hash&lt;/code&gt; is a&#xA;SHA256 over the other four — &lt;code&gt;Index&lt;/code&gt;, &lt;code&gt;Timestamp&lt;/code&gt;, &lt;code&gt;Storage&lt;/code&gt; and &lt;code&gt;PrevHash&lt;/code&gt;.&lt;/li&gt;&#xA;&lt;li&gt;There is no DAG, CARv2 or GraphSync. The chain holds metadata only —&#xA;service and file names, machine records, DNS entries, IP allocations,&#xA;heartbeats — never addressable content.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;Because there is no consensus round, &amp;ldquo;blockchain&amp;rdquo; here means &lt;em&gt;hash-chained&#xA;gossiped state&lt;/em&gt;, not a distributed ledger with agreement guarantees. Nodes&#xA;converge because every node keeps re-announcing its own entries and merges what&#xA;it receives; a node that has just joined, or one that has restarted with an&#xA;empty chain, is refilled by those re-announcements.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>The security model</title>
+      <link>https://mudler.github.io/edgevpn/docs/explanation/security-model/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/explanation/security-model/</guid>
+      <description>&lt;div class=&#34;pageinfo pageinfo-warning&#34;&gt;&#xA;&lt;p&gt;&lt;strong&gt;EdgeVPN&amp;rsquo;s security model is perimeter-only.&lt;/strong&gt; Anyone holding the network&#xA;token is a fully trusted member of the network. There is no per-peer&#xA;authorization on the data plane, and no audit trail of which peer did what.&#xA;The token &lt;em&gt;is&lt;/em&gt; the security boundary.&lt;/p&gt;&#xA;&#xA;&lt;/div&gt;&#xA;&#xA;&lt;p&gt;Everything else on this page — ledger ownership, trust zones, relay ACLs,&#xA;socket permissions — narrows &lt;em&gt;specific&lt;/em&gt; abuses by someone who is already&#xA;inside, or protects the machine you are running on. None of it changes the&#xA;sentence above. Read this before you decide who gets a copy of your token,&#xA;because that decision is the security design.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>The ledger</title>
+      <link>https://mudler.github.io/edgevpn/docs/explanation/the-ledger/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/explanation/the-ledger/</guid>
+      <description>&lt;p&gt;EdgeVPN have a simplified model of a blockchain embedded. The model is actually simplified on purpose as the blockchain is used to store merely network and services metadata and not transaction, or content addressable network.&lt;/p&gt;&#xA;&lt;p&gt;The only data stored in the blockchain is:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Network Peer IDs, Service IDs, File IDs&lt;/li&gt;&#xA;&lt;li&gt;Healthchecks, DNS records and IP allocation&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;However, the ledger is freely accessible via API, allowing for external coordination to use the blockchain mechanism as a shared memory access (which can be optionally persisted on disk).&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>The authenticated ledger</title>
+      <link>https://mudler.github.io/edgevpn/docs/explanation/authenticated-ledger/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/explanation/authenticated-ledger/</guid>
+      <description>&lt;div class=&#34;alert alert-info&#34; role=&#34;alert&#34;&gt;&lt;div class=&#34;h4 alert-heading&#34; role=&#34;heading&#34;&gt;This is the design document&lt;/div&gt;&#xA;&lt;p&gt;This is the design note for ledger ownership: why entries are signed, and how&#xA;the merge, the policy registry and the reaper work. For the operator-facing side&#xA;— which mode to run, and how to move a live network between modes without&#xA;splitting it — see &lt;a href=&#34;../../how-to/ledger-ownership/&#34;&gt;Ledger ownership&lt;/a&gt;.&lt;/p&gt;&#xA;&lt;/div&gt;&#xA;&lt;p&gt;Status: &lt;strong&gt;implemented&lt;/strong&gt;. The &lt;code&gt;edgevpn&lt;/code&gt; binary defaults to &lt;code&gt;--ownership=enforce&lt;/code&gt;; operators opt out with &lt;code&gt;--ownership=off&lt;/code&gt; (&lt;code&gt;EDGEVPNOWNERSHIP&lt;/code&gt;). The library default (&lt;code&gt;node.New&lt;/code&gt; without the option) stays off so embedders opt in deliberately.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Discovery and NAT traversal</title>
+      <link>https://mudler.github.io/edgevpn/docs/explanation/discovery-and-nat/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/explanation/discovery-and-nat/</guid>
+      <description>&lt;div class=&#34;pageinfo pageinfo-warning&#34;&gt;&#xA;&lt;p&gt;&lt;strong&gt;This page has not been written.&lt;/strong&gt; &lt;a href=&#34;../architecture/&#34;&gt;Architecture&lt;/a&gt; sketches&#xA;the three bootstrap phases in a few paragraphs, and&#xA;&lt;a href=&#34;../../how-to/relays-and-hop-nodes/&#34;&gt;relays and hop nodes&lt;/a&gt; covers the relay case&#xA;from the operator&amp;rsquo;s side. Nothing explains the mechanism as a whole, or what to&#xA;expect when a given piece of it fails.&lt;/p&gt;&#xA;&lt;p&gt;What is missing, and where the source is:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;strong&gt;The OTP rendezvous.&lt;/strong&gt; &lt;code&gt;pkg/discovery/dht.go&lt;/code&gt; derives the DHT rendezvous&#xA;string from a TOTP over the token&amp;rsquo;s OTP key (&lt;code&gt;Rendezvous()&lt;/code&gt;: TOTP-SHA256, then&#xA;MD5), so the point peers meet at rotates on the token&amp;rsquo;s &lt;code&gt;otp.dht.interval&lt;/code&gt;&#xA;(see &lt;a href=&#34;../../reference/network-config/&#34;&gt;network config&lt;/a&gt;). A two-entry ring&#xA;(&lt;code&gt;rendezvousHistory&lt;/code&gt;, &lt;code&gt;pkg/discovery/ring.go&lt;/code&gt;) keeps the previous rendezvous&#xA;announced across a rotation so nodes do not lose each other at the boundary.&#xA;The consequences — clock skew between peers, and what a node sees when it&#xA;drifts — are undocumented.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;DHT versus mDNS.&lt;/strong&gt; &lt;code&gt;--dht&lt;/code&gt; and &lt;code&gt;--mdns&lt;/code&gt; are both on by default&#xA;(&lt;code&gt;cmd/util.go&lt;/code&gt;), and they solve different problems: &lt;code&gt;pkg/discovery/mdns.go&lt;/code&gt;&#xA;finds peers on the same LAN and dials them directly, while the DHT&#xA;(&lt;code&gt;pkg/discovery/dht.go&lt;/code&gt;) is the internet-wide path and needs bootstrap peers.&#xA;What happens with only one of them enabled is not written down.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Hole punching and reachability.&lt;/strong&gt; &lt;code&gt;--holepunch&lt;/code&gt;, &lt;code&gt;--natservice&lt;/code&gt; and&#xA;&lt;code&gt;--natmap&lt;/code&gt; (all default on) map onto libp2p&amp;rsquo;s DCUtR, AutoNAT and UPnP&#xA;respectively — see the wiring in &lt;code&gt;pkg/config/config.go&lt;/code&gt;. Hole punching needs a&#xA;third party both peers can already reach, which is why it interacts with the&#xA;relay settings.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Relay fallback.&lt;/strong&gt; &lt;code&gt;--autorelay&lt;/code&gt;, &lt;code&gt;--autorelay-static-peer&lt;/code&gt;,&#xA;&lt;code&gt;--autorelay-static-only&lt;/code&gt;, &lt;code&gt;--autorelay-discovery-interval&lt;/code&gt; and&#xA;&lt;code&gt;--relay-service&lt;/code&gt;, and the order in which a node tries direct, hole-punched&#xA;and relayed connections.&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Diagnosing it.&lt;/strong&gt; Which of the above a stuck &amp;ldquo;0 peers&amp;rdquo; state actually points&#xA;at. See &lt;a href=&#34;../../troubleshooting/&#34;&gt;troubleshooting&lt;/a&gt; for what exists today.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;Contributions welcome — see &lt;a href=&#34;../../contributing/&#34;&gt;contributing&lt;/a&gt;.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>When not to use EdgeVPN</title>
+      <link>https://mudler.github.io/edgevpn/docs/explanation/when-not-to-use-edgevpn/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://mudler.github.io/edgevpn/docs/explanation/when-not-to-use-edgevpn/</guid>
+      <description>&lt;h2 id=&#34;is-it-for-me&#34;&gt;Is it for me?&lt;/h2&gt;&#xA;&lt;p&gt;EdgeVPN makes VPN decentralization a first strong requirement.&lt;/p&gt;&#xA;&lt;p&gt;Its main use is for edge and low-end devices and especially for development.&lt;/p&gt;&#xA;&lt;p&gt;The decentralized approach has few cons:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;The underlying network is chatty. It uses a Gossip protocol for synchronizing&#xA;the routing table and p2p. Every blockchain message is broadcasted to all&#xA;peers, while the traffic is to the host only.&lt;/li&gt;&#xA;&lt;li&gt;Might be not suited for low latency workload.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;Keep that in mind before using it for your prod networks!&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

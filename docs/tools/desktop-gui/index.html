@@ -4,7 +4,6 @@
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-<link rel="alternate" type="application/rss&#43;xml" href="https://mudler.github.io/edgevpn/community/index.xml">
 <meta name="robots" content="index, follow">
 
 
@@ -19,18 +18,24 @@
 <link rel="icon" type="image/png" href="/edgevpn/favicons/android-144x144.png" sizes="144x144">
 <link rel="icon" type="image/png" href="/edgevpn/favicons/android-192x192.png" sizes="192x192">
 
-<title>Community | EdgeVPN</title>
-<meta name="description" content="">
-<meta property="og:url" content="https://mudler.github.io/edgevpn/community/">
+<title>Desktop GUI | EdgeVPN</title>
+<meta name="description" content="The alpha desktop GUI application for Linux.">
+<meta property="og:url" content="https://mudler.github.io/edgevpn/docs/tools/desktop-gui/">
   <meta property="og:site_name" content="EdgeVPN">
-  <meta property="og:title" content="Community">
+  <meta property="og:title" content="Desktop GUI">
+  <meta property="og:description" content="The alpha desktop GUI application for Linux.">
   <meta property="og:locale" content="en">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="docs">
+    <meta property="article:modified_time" content="2026-08-04T00:22:42+02:00">
 
-  <meta itemprop="name" content="Community">
-  <meta itemprop="dateModified" content="2026-08-04T00:05:31+02:00">
+  <meta itemprop="name" content="Desktop GUI">
+  <meta itemprop="description" content="The alpha desktop GUI application for Linux.">
+  <meta itemprop="dateModified" content="2026-08-04T00:22:42+02:00">
+  <meta itemprop="wordCount" content="39">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Community">
+  <meta name="twitter:title" content="Desktop GUI">
+  <meta name="twitter:description" content="The alpha desktop GUI application for Linux.">
 <link rel="preload" href="/edgevpn/scss/main.min.9ea1d9ad9092d5ce667951c365dc3d7ab05b414a36fc3cc13f0bed895a2d7369.css" as="style" integrity="sha256-nqHZrZCS1c5meVHDZdw9erBbQUo2/DzBPwvtiVotc2k=" crossorigin="anonymous">
 <link href="/edgevpn/scss/main.min.9ea1d9ad9092d5ce667951c365dc3d7ab05b414a36fc3cc13f0bed895a2d7369.css" rel="stylesheet" integrity="sha256-nqHZrZCS1c5meVHDZdw9erBbQUo2/DzBPwvtiVotc2k=" crossorigin="anonymous">
 <script
@@ -43,7 +48,7 @@
   crossorigin="anonymous"></script>
 
   </head>
-  <body class="td-section">
+  <body class="td-page">
     <header>
       <nav class="td-navbar js-navbar-scroll" data-bs-theme="dark">
 <div class="td-navbar-container container-fluid flex-column flex-md-row">
@@ -52,10 +57,7 @@
     <div class="scroll-indicator scroll-left"></div>
     <ul class="navbar-nav">
       <li class="nav-item">
-        <a class="nav-link" href="/edgevpn/docs/"><span>Documentation</span></a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link active" href="/edgevpn/community/"><span>Community</span></a>
+        <a class="nav-link active" href="/edgevpn/docs/"><span>Documentation</span></a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="https://github.com/mudler/edgevpn/contribute" target="_blank" rel="noopener"><i class='fab fa-github'></i><span>Contribution guidelines</span></a>
@@ -73,7 +75,7 @@
     aria-label="Search this site…"
     autocomplete="off"
     
-    data-offline-search-index-json-src="/edgevpn/offline-search-index.16c7b3581958f5598a3a7cfbfc397e22.json"
+    data-offline-search-index-json-src="/edgevpn/offline-search-index.b52a05c16f78a492807c730599676eeb.json"
     data-offline-search-base-href="/"
     data-offline-search-max-results="10"
   >
@@ -82,60 +84,222 @@
 </div>
 </nav>
     </header>
-    <div class="container-fluid td-default td-outer">
-      <main role="main" class="td-main">
-        <div><a class="td-offset-anchor"></a></div>
-<section
-  class="row td-box td-box--primary position-relative td-box--height-auto"
->
-  <div class="col-12">
-    <div class="container text-center td-arrow-down">
-      <span class="h4 mb-0">
-        <h1>Join the EdgeVPN community</h1>
-        <p>EdgeVPN is an open source project that anyone in the community can use, improve, and enjoy. We&#39;d love you to join us! Here&#39;s a few ways to find out what&#39;s happening and get involved.</p>
-      </span>
-    </div>
-  </div>
-</section>
-<section class="row td-box td-box--white td-box--height-auto linkbox">
-  <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
-    <h2>Learn and Connect</h2>
-    <p>Using or want to use EdgeVPN? Find out more here:</p>
-    <ul>
-<li title="GitHub Discussions">
-    <a target="_blank" rel="noopener" href="https://github.com/mudler/edgevpn/discussions"><i class="fab fa-github"></i> GitHub Discussions</a>:
-    Discussion and help from your fellow users
+    <div class="container-fluid td-outer">
+      <div class="td-main" data-bs-spy="scroll" data-bs-target=".td-toc" data-bs-root-margin="0px 0px -10%">
+        <div class="row flex-xl-nowrap">
+          <aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+            <div id="td-sidebar-menu" class="td-sidebar__inner">
+  <form class="td-sidebar__search d-flex align-items-center">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/edgevpn/offline-search-index.b52a05c16f78a492807c730599676eeb.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+    <button class="btn btn-link td-sidebar__toggle" type="button" data-bs-toggle="collapse" data-bs-target="#td-section-nav" aria-controls="td-section-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    </button>
+  </form>
+  <nav class="td-sidebar-nav collapse" id="td-section-nav">
+    <ul class="td-sidebar-nav__section pe-md-3 ul-0">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-edgevpndocs-li">
+    <a href="/edgevpn/docs/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section tree-root" id="m-edgevpndocs"><span class="">Documentation</span></a>
+    <ul class="ul-1">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-edgevpndocstutorials-li">
+    <a href="/edgevpn/docs/tutorials/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocstutorials"><span class="">Tutorials</span></a>
+    <ul class="ul-2 foldable">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocstutorialsinstall-li">
+    <a href="/edgevpn/docs/tutorials/install/" title="Install EdgeVPN" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocstutorialsinstall"><span class="">Install</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocstutorialsyour-first-network-li">
+    <a href="/edgevpn/docs/tutorials/your-first-network/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocstutorialsyour-first-network"><span class="">Your first network</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocstutorialsshare-a-service-li">
+    <a href="/edgevpn/docs/tutorials/share-a-service/" title="Share a service between two hosts" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocstutorialsshare-a-service"><span class="">Share a service</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocstutorialsdecentralized-k3s-cluster-li">
+    <a href="/edgevpn/docs/tutorials/decentralized-k3s-cluster/" title="A network-decentralized k3s test cluster" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocstutorialsdecentralized-k3s-cluster"><span class="">Decentralized k3s cluster</span></a>
   </li>
-<li title="Matrix chat">
-    <a target="_blank" rel="noopener" href="https://matrix.to/#/#edgevpn:matrix.org"><i class="fas fa-comments"></i> Matrix chat</a>:
-    Join us on Matrix!
+    </ul>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-edgevpndocshow-to-li">
+    <a href="/edgevpn/docs/how-to/" title="How-to guides" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocshow-to"><span class="">How-to</span></a>
+    <ul class="ul-2 foldable">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-torun-as-a-vpn-li">
+    <a href="/edgevpn/docs/how-to/run-as-a-vpn/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-torun-as-a-vpn"><span class="">Run as a VPN</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-toaddressing-and-dhcp-li">
+    <a href="/edgevpn/docs/how-to/addressing-and-dhcp/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-toaddressing-and-dhcp"><span class="">Addressing and DHCP</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-toipv6-li">
+    <a href="/edgevpn/docs/how-to/ipv6/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-toipv6"><span class="">IPv6</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-toenable-dns-li">
+    <a href="/edgevpn/docs/how-to/enable-dns/" title="Enable the DNS server" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-toenable-dns"><span class="">Enable DNS</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-tosend-and-receive-files-li">
+    <a href="/edgevpn/docs/how-to/send-and-receive-files/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-tosend-and-receive-files"><span class="">Send and receive files</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-totunnel-tcp-services-li">
+    <a href="/edgevpn/docs/how-to/tunnel-tcp-services/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-totunnel-tcp-services"><span class="">Tunnel TCP services</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-tohttp-egress-and-proxy-li">
+    <a href="/edgevpn/docs/how-to/http-egress-and-proxy/" title="HTTP egress and the proxy" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-tohttp-egress-and-proxy"><span class="">HTTP egress and proxy</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-torelays-and-hop-nodes-li">
+    <a href="/edgevpn/docs/how-to/relays-and-hop-nodes/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-torelays-and-hop-nodes"><span class="">Relays and hop nodes</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-toledger-ownership-li">
+    <a href="/edgevpn/docs/how-to/ledger-ownership/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-toledger-ownership"><span class="">Ledger ownership</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-totrusted-networks-li">
+    <a href="/edgevpn/docs/how-to/trusted-networks/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-totrusted-networks"><span class="">Trusted networks</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-touse-as-a-library-li">
+    <a href="/edgevpn/docs/how-to/use-as-a-library/" title="Use EdgeVPN as a library" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-touse-as-a-library"><span class="">Use as a library</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-torun-with-docker-li">
+    <a href="/edgevpn/docs/how-to/run-with-docker/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-torun-with-docker"><span class="">Run with Docker</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-topersist-node-identity-li">
+    <a href="/edgevpn/docs/how-to/persist-node-identity/" title="Persist node identity and state" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-topersist-node-identity"><span class="">Persist node identity</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-torun-with-systemd-li">
+    <a href="/edgevpn/docs/how-to/run-with-systemd/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-torun-with-systemd"><span class="">Run with systemd</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocshow-totune-for-low-end-devices-li">
+    <a href="/edgevpn/docs/how-to/tune-for-low-end-devices/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocshow-totune-for-low-end-devices"><span class="">Tune for low-end devices</span></a>
   </li>
-
-</ul>
-  </div>
-  <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
-    <h2>Develop and Contribute</h2>
-    <p>If you want to get more involved by contributing to EdgeVPN, join us here:</p>
-    <ul>
-<li title="GitHub">
-    <a target="_blank" rel="noopener" href="https://github.com/mudler/edgevpn"><i class="fab fa-github"></i> GitHub</a>:
-    Development takes place here!
+    </ul>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-edgevpndocsreference-li">
+    <a href="/edgevpn/docs/reference/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocsreference"><span class="">Reference</span></a>
+    <ul class="ul-2 foldable">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-edgevpndocsreferencecli-li">
+    <a href="/edgevpn/docs/reference/cli/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocsreferencecli"><span class="">CLI</span></a>
+    <ul class="ul-3 foldable">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferenceclistart-li">
+    <a href="/edgevpn/docs/reference/cli/start/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferenceclistart"><span class="">start</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferencecliapi-li">
+    <a href="/edgevpn/docs/reference/cli/api/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferencecliapi"><span class="">api</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferencecliservice-add-li">
+    <a href="/edgevpn/docs/reference/cli/service-add/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferencecliservice-add"><span class="">service-add</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferencecliservice-connect-li">
+    <a href="/edgevpn/docs/reference/cli/service-connect/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferencecliservice-connect"><span class="">service-connect</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferenceclifile-receive-li">
+    <a href="/edgevpn/docs/reference/cli/file-receive/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferenceclifile-receive"><span class="">file-receive</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferencecliproxy-li">
+    <a href="/edgevpn/docs/reference/cli/proxy/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferencecliproxy"><span class="">proxy</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferenceclifile-send-li">
+    <a href="/edgevpn/docs/reference/cli/file-send/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferenceclifile-send"><span class="">file-send</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferenceclidns-li">
+    <a href="/edgevpn/docs/reference/cli/dns/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferenceclidns"><span class="">dns</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferenceclipeergater-li">
+    <a href="/edgevpn/docs/reference/cli/peergater/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferenceclipeergater"><span class="">peergater</span></a>
   </li>
+    </ul>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferenceenvironment-variables-li">
+    <a href="/edgevpn/docs/reference/environment-variables/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferenceenvironment-variables"><span class="">Environment variables</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferencenetwork-config-li">
+    <a href="/edgevpn/docs/reference/network-config/" title="Network configuration and tokens" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferencenetwork-config"><span class="">Network config</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferenceapi-li">
+    <a href="/edgevpn/docs/reference/api/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferenceapi"><span class="">WebUI and API</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferenceledger-buckets-li">
+    <a href="/edgevpn/docs/reference/ledger-buckets/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferenceledger-buckets"><span class="">Ledger buckets</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsreferencecompatibility-li">
+    <a href="/edgevpn/docs/reference/compatibility/" title="Version and wire-format compatibility" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsreferencecompatibility"><span class="">Compatibility</span></a>
+  </li>
+    </ul>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-edgevpndocsexplanation-li">
+    <a href="/edgevpn/docs/explanation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocsexplanation"><span class="">Explanation</span></a>
+    <ul class="ul-2 foldable">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsexplanationarchitecture-li">
+    <a href="/edgevpn/docs/explanation/architecture/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsexplanationarchitecture"><span class="">Architecture</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsexplanationsecurity-model-li">
+    <a href="/edgevpn/docs/explanation/security-model/" title="The security model" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsexplanationsecurity-model"><span class="">Security model</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsexplanationthe-ledger-li">
+    <a href="/edgevpn/docs/explanation/the-ledger/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsexplanationthe-ledger"><span class="">The ledger</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsexplanationauthenticated-ledger-li">
+    <a href="/edgevpn/docs/explanation/authenticated-ledger/" title="The authenticated ledger" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsexplanationauthenticated-ledger"><span class="">Authenticated ledger</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsexplanationdiscovery-and-nat-li">
+    <a href="/edgevpn/docs/explanation/discovery-and-nat/" title="Discovery and NAT traversal" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsexplanationdiscovery-and-nat"><span class="">Discovery and NAT</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocsexplanationwhen-not-to-use-edgevpn-li">
+    <a href="/edgevpn/docs/explanation/when-not-to-use-edgevpn/" title="When not to use EdgeVPN" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocsexplanationwhen-not-to-use-edgevpn"><span class="">When not to use it</span></a>
+  </li>
+    </ul>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-edgevpndocstools-li">
+    <a href="/edgevpn/docs/tools/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-edgevpndocstools"><span class="">Tools</span></a>
+    <ul class="ul-2 foldable">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id="m-edgevpndocstoolsdesktop-gui-li">
+    <a href="/edgevpn/docs/tools/desktop-gui/" class="align-left ps-0 active td-sidebar-link td-sidebar-link__page" id="m-edgevpndocstoolsdesktop-gui"><span class="td-sidebar-nav-active-item">Desktop GUI</span></a>
+  </li>
+    </ul>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocstroubleshooting-li">
+    <a href="/edgevpn/docs/troubleshooting/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocstroubleshooting"><span class="">Troubleshooting</span></a>
+  </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-edgevpndocscontributing-li">
+    <a href="/edgevpn/docs/contributing/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-edgevpndocscontributing"><span class="">Contributing</span></a>
+  </li>
+    </ul>
+  </li>
+    </ul>
+  </nav>
+</div>
+          </aside>
+          <aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
+            <div class="td-page-meta ms-2 pb-1 pt-2 mb-0">
+<a href="https://github.com/mudler/edgevpn/tree/main/docs/content/en/docs/tools/desktop-gui.md" class="td-page-meta--view td-page-meta__view" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines fa-fw"></i> View page source</a>
+  <a href="https://github.com/mudler/edgevpn/edit/main/docs/content/en/docs/tools/desktop-gui.md" class="td-page-meta--edit td-page-meta__edit" target="_blank" rel="noopener"><i class="fa-solid fa-pen-to-square fa-fw"></i> Edit this page</a>
+  <a href="https://github.com/mudler/edgevpn/new/main/docs/content/en/docs/tools?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" class="td-page-meta--child td-page-meta__child" target="_blank" rel="noopener"><i class="fa-solid fa-pen-to-square fa-fw"></i> Create child page</a>
+  <a href="https://github.com/mudler/edgevpn/issues/new?title=Desktop%20GUI" class="td-page-meta--issue td-page-meta__issue" target="_blank" rel="noopener"><i class="fa-solid fa-list-check fa-fw"></i> Create documentation issue</a>
+  <a href="https://github.com/mudler/edgevpn/issues/new" class="td-page-meta--project td-page-meta__project-issue" target="_blank" rel="noopener"><i class="fa-solid fa-list-check fa-fw"></i> Create project issue</a>
+  
+</div>
 
-</ul>
-    <p>
-      You can find out how to contribute to EdgeVPN in our
-      <a href="/edgevpn/docs/contribution-guidelines">Contribution Guidelines</a>.
-    </p>
-  </div>
-</section>
+            <div class="td-toc" data-proofer-ignore>
+</div>
 
+            
 
+          </aside>
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+  
+
+            <nav aria-label="breadcrumb" class="td-breadcrumbs">
+  <ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="/edgevpn/docs/">Documentation</a></li>
+  <li class="breadcrumb-item">
+    <a href="/edgevpn/docs/tools/">Tools</a></li>
+  <li class="breadcrumb-item active" aria-current="page">
+    Desktop GUI</li>
+  </ol>
+</nav>
 <div class="td-content">
-<!--add blocks of content here to add more sections to the community page -->
+	<h1>Desktop GUI</h1>
+	<div class="lead">The alpha desktop GUI application for Linux.</div>
+	<header class="article-meta">
+		
+</header>
+	<p>A Desktop GUI application (alpha) for Linux is available <a href="https://github.com/mudler/edgevpn-gui">here</a>.</p>
+<p>Note the GUI doesn&rsquo;t require the CLI to be installed. It will automatically prompt to download the latest available version, and offer a version management option.</p>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: center">Dashboard</th>
+          <th style="text-align: center">Connections index</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: center"><img src="https://user-images.githubusercontent.com/2420543/147854909-a223a7c1-5caa-4e90-b0ac-0ae04dc0949d.png" alt="edgevpn-gui-2"></td>
+          <td style="text-align: center"><img src="https://user-images.githubusercontent.com/2420543/147854904-09d96991-8752-421a-a301-8f0bdd9d5542.png" alt="edgevpn-3"></td>
+      </tr>
+      <tr>
+          <td style="text-align: center"><img src="https://user-images.githubusercontent.com/2420543/147854907-1e4a4715-3181-4dc2-8bc0-d052b3bf46d3.png" alt="edgevpn-gui"></td>
+          <td></td>
+      </tr>
+  </tbody>
+</table>
+
+	<div class="td-page-meta__lastmod">
+  Last modified August 4, 2026: <a data-proofer-ignore href="https://github.com/mudler/edgevpn/commit/cfb9c39ec7d3f0dc074afeafeac6eea577150b02">Fix/proxy egress ownership (#1066) (cfb9c39)</a>
+</div>
 
 </div>
-      </main>
+
+
+          </main>
+        </div>
+      </div>
       <footer class="td-footer row d-print-none">
   <div class="container-fluid">
     <div class="row mx-md-2">
