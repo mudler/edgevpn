@@ -1,4 +1,4 @@
-.PHONY: all build react-ui react-ui-force test clean
+.PHONY: all build react-ui react-ui-force test clean docs-gen
 
 all: build
 
@@ -24,6 +24,12 @@ build: api/react-ui/dist
 
 test: api/react-ui/dist
 	go test ./...
+
+# docs-gen regenerates the CLI and environment-variable reference from the real
+# cli.App. The output is committed; CI re-runs this and fails on a diff, so the
+# docs cannot drift from the binary.
+docs-gen:
+	go run ./internal/docsgen
 
 clean:
 	rm -rf api/react-ui/dist edgevpn

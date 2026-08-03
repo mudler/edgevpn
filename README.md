@@ -32,7 +32,7 @@ It can:
 - **Create a VPN** :  Secure VPN between p2p peers
   - Automatically assign IPs to nodes
   - Embedded tiny DNS server to resolve internal/external IPs
-  - Create trusted zones to prevent network access if token is leaked
+  - Create trusted zones to restrict which peers may join (experimental: it does not currently stop a token holder from entering the zone — see the [security model](https://mudler.github.io/edgevpn/docs/explanation/security-model/))
   - For example, the [Kairos](https://github.com/kairos-io/kairos) CNCF project uses it as a layer for creating decentralized clusters with Kubernetes
 
 - **Act as a reverse Proxy** : Share a tcp service like you would do with `ngrok`. EdgeVPN let expose TCP services to the p2p network nodes without establishing a VPN connection: creates reverse proxy and tunnels traffic into the p2p network.
@@ -74,6 +74,14 @@ Check out [Kairos](https://github.com/kairos-io/kairos) for seeing EdgeVPN in ac
 # :running: Installation
 
 Download the precompiled static release in the [releases page](https://github.com/mudler/edgevpn/releases). You can either install it in your system or just run it.
+
+Or install the latest release with the one-liner:
+
+```bash
+curl -sfL https://raw.githubusercontent.com/mudler/edgevpn/master/install.sh | sh
+```
+
+Every installation route — install script, release archives, Homebrew, the container image and building from source — is covered in [Install EdgeVPN](https://mudler.github.io/edgevpn/docs/tutorials/install/).
 
 # :hammer: Building from source
 
@@ -149,18 +157,7 @@ $ EDGEVPNTOKEN=.. edgevpn --address 10.1.0.13/24
 
 # :question: Is it for me?
 
-EdgeVPN makes VPN decentralization a first strong requirement. 
-
-Its main use is for edge and low-end devices and especially for development.
-
-The decentralized approach has few cons:
-
-- The underlying network is chatty. It uses a Gossip protocol for synchronizing the routing table and p2p. Every blockchain message is broadcasted to all peers, while the traffic is to the host only.
-- Might be not suited for low latency workload.
-
-Keep that in mind before using it for your prod networks!
-
-But it has a strong pro: it just works everywhere libp2p works!
+The decentralized approach is chatty and might not suit low-latency workloads, and this software has not been security audited. Read [when not to use EdgeVPN](https://mudler.github.io/edgevpn/docs/explanation/when-not-to-use-edgevpn/) before you rely on it.
 
 # :question: Why? 
 
@@ -168,71 +165,12 @@ First of all it's my first experiment with libp2p. Second, I always wanted a mor
 
 # :warning: Warning!
 
-I'm not a security expert, and this software didn't went through a full security audit, so don't use and rely on it for sensible traffic and not even for production environment! I did this mostly for fun while I was experimenting with libp2p. 
+This software has not been through a full security audit — don't rely on it for sensitive traffic or production environments. The full caveats are in [when not to use EdgeVPN](https://mudler.github.io/edgevpn/docs/explanation/when-not-to-use-edgevpn/).
 
-## Example use case: network-decentralized [k3s](https://github.com/k3s-io/k3s) test cluster
+# :books: Examples
 
-Let's see a practical example, you are developing something for kubernetes and you want to try a multi-node setup, but you have machines available that are only behind NAT (pity!) and you would really like to leverage HW.
-
-If you are not really interested in network performance (again, that's for development purposes only!) then you could use `edgevpn` + [k3s](https://github.com/k3s-io/k3s) in this way:
-
-1) Generate edgevpn config: `edgevpn -g > vpn.yaml`
-2) Start the vpn:
-
-   on node A: `sudo IFACE=edgevpn0 ADDRESS=10.1.0.3/24 EDGEVPNCONFIG=vpn.yml edgevpn`
-   
-   on node B: `sudo IFACE=edgevpn0 ADDRESS=10.1.0.4/24 EDGEVPNCONFIG=vpm.yml edgevpn`
-3) Start k3s:
- 
-   on node A: `k3s server --flannel-iface=edgevpn0`
-   
-   on node B: `K3S_URL=https://10.1.0.3:6443 K3S_TOKEN=xx k3s agent --flannel-iface=edgevpn0 --node-ip 10.1.0.4`
-
-We have used flannel here, but other CNI should work as well.
-
-
-# :notebook: As a library
-
-EdgeVPN can be used as a library. It is very portable and offers a functional interface.
-
-To join a node in a network from a token, without starting the vpn:
-
-```golang
-
-import (
-    node "github.com/mudler/edgevpn/pkg/node"
-)
-
-e := node.New(
-    node.Logger(l),
-    node.LogLevel(log.LevelInfo),
-    node.MaxMessageSize(2 << 20),
-    node.FromBase64( mDNSEnabled, DHTEnabled, token ),
-    // ....
-  )
-
-e.Start(ctx)
-
-```
-
-or to start a VPN:
-
-```golang
-
-import (
-    vpn "github.com/mudler/edgevpn/pkg/vpn"
-    node "github.com/mudler/edgevpn/pkg/node"
-)
-
-opts, err := vpn.Register(vpnOpts...)
-if err != nil {
-	return err
-}
-
-e := edgevpn.New(append(o, opts...)...)
-
-e.Start(ctx)
-```
+- [A network-decentralized k3s test cluster](https://mudler.github.io/edgevpn/docs/tutorials/decentralized-k3s-cluster/) — a multi-node Kubernetes development cluster across machines behind NAT.
+- [Use EdgeVPN as a library](https://mudler.github.io/edgevpn/docs/how-to/use-as-a-library/) — embed a node in your own Go program.
 
 # 🧑‍💻 Projects using EdgeVPN
 
@@ -259,23 +197,7 @@ and any other way if not mentioned here.
 
 # :notebook: Troubleshooting
 
-If during bootstrap you see messages like:
-
-```
-edgevpn[3679]:             * [/ip4/104.131.131.82/tcp/4001] failed to negotiate stream multiplexer: context deadline exceeded     
-```
-
-or
-
-```
-edgevpn[9971]: 2021/12/16 20:56:34 failed to sufficiently increase receive buffer size (was: 208 kiB, wanted: 2048 kiB, got: 416 kiB). See https://github.com/lucas-clemente/quic-go/wiki/UDP-Receive-Buffer-Size for details.
-```
-
-or generally experiencing poor network performance, it is recommended to increase the maximum buffer size by running:
-
-```
-sysctl -w net.core.rmem_max=2500000
-```
+Bootstrap failures, receive-buffer warnings and poor network performance are covered in [Troubleshooting](https://mudler.github.io/edgevpn/docs/troubleshooting/).
 
 # :notebook: TODO
 
