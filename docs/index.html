@@ -36,7 +36,7 @@ Create a VPN between peers. Each node takes its virtual address from --address; 
   <meta itemprop="description" content="EdgeVPN uses libp2p to build private, decentralized networks that are accessed with a shared secret (a token). There is no VPN server and no central coordinator: every peer that holds the token joins the same network and discovers the others over p2p.
 A single statically compiled binary can:
 Create a VPN between peers. Each node takes its virtual address from --address; an experimental --dhcp mode lets peers negotiate addresses among themselves instead. Serve DNS for the network, if you enable it with --dns. It answers from the records peers announce on the shared ledger, and forwards anything it does not have to an upstream resolver. Act as a reverse proxy, exposing a TCP service to the network the way ngrok would, without bringing up a VPN interface. Send files directly between peers, again without a VPN interface. Be used as a Go library, so you can embed the same distributed ledger and p2p connectivity in your own program. Where to go next Tutorials — start here if you are new. End-to-end walkthroughs that get you from nothing to a working network. How-to guides — task-oriented recipes: expose a service, proxy traffic through another peer, lock a network down. Reference — every command, flag, environment variable and API endpoint. Explanation — how EdgeVPN works and why, including the security model you should read before deploying it. There is also a web UI and HTTP API for inspecting a running network (WebUI/API), and an alpha desktop GUI for Linux.">
-  <meta itemprop="dateModified" content="2026-08-04T00:22:42+02:00">
+  <meta itemprop="dateModified" content="2026-08-11T16:57:18+02:00">
   <meta itemprop="wordCount" content="247">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Documentation">
@@ -362,7 +362,7 @@ security model you should read before deploying it.</li>
             </div>
         </div>
 <div class="td-page-meta__lastmod">
-  Last modified August 4, 2026: <a data-proofer-ignore href="https://github.com/mudler/edgevpn/commit/cfb9c39ec7d3f0dc074afeafeac6eea577150b02">Fix/proxy egress ownership (#1066) (cfb9c39)</a>
+  Last modified August 11, 2026: <a data-proofer-ignore href="https://github.com/mudler/edgevpn/commit/7fa17c52863cc30035918d017b37031ccb813221">fix: correct license badge in README from GPL3 to Apache 2.0 (#1072) (7fa17c5)</a>
 </div>
 </div>
 
