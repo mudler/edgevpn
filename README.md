@@ -9,8 +9,8 @@
 
 <h3 align="center">Create Decentralized private networks </h3>
 <p align="center">
-  <a href="https://opensource.org/licenses/">
-    <img src="https://img.shields.io/badge/licence-GPL3-brightgreen"
+  <a href="https://opensource.org/licenses/Apache-2.0">
+    <img src="https://img.shields.io/badge/license-Apache%202.0-brightgreen"
          alt="license">
   </a>
   <a href="https://github.com/mudler/edgevpn/issues"><img src="https://img.shields.io/github/issues/mudler/edgevpn"></a>
