@@ -1,0 +1,1 @@
+var e=[`B`,`kB`,`MB`,`GB`,`TB`,`PB`];function t(t){if(!Number.isFinite(t)||t<=0)return`0 B`;let n=Math.min(Math.max(Math.floor(Math.log(t)/Math.log(1024)),0),e.length-1),r=t/1024**n;return n===0?`${Math.round(r)} B`:`${r.toFixed(1)} ${e[n]}`}function n(e){return`${t(e)}/s`}function r(e,t=6){return!e||e.length<=t*2+1?e:`${e.slice(0,t)}…${e.slice(-t)}`}export{n,r,t};
