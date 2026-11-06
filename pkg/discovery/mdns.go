@@ -15,6 +15,7 @@ package discovery
 
 import (
 	"context"
+	"net"
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
@@ -25,6 +26,14 @@ import (
 
 type MDNS struct {
 	DiscoveryServiceTag string
+
+	// InterfaceFilter, when set, restricts the network interfaces mDNS runs on and
+	// advertises addresses from. mDNS only considers interfaces that are up and
+	// support multicast; the filter can narrow that set further, for example to
+	// Wi-Fi and Ethernet so that mobile data and VPN addresses are not advertised.
+	// Only the Android implementation uses it. On other platforms go-libp2p's mDNS
+	// service picks the interfaces and this field is ignored.
+	InterfaceFilter func(net.Interface) bool
 }
 
 // discoveryNotifee gets notified when we find a new peer via mDNS discovery
