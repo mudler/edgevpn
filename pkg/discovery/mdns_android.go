@@ -14,8 +14,9 @@ package discovery
 // on the netlink socket.
 //
 // We also avoid h.Addrs() at startup because the address manager's background goroutine
-// may not have populated currentAddrs.localAddrs yet. Instead we derive IPs directly from
-// anet.InterfaceAddrs() and ports from h.Network().ListenAddresses().
+// may not have populated currentAddrs.localAddrs yet. Instead we derive IPs from
+// anet.InterfaceAddrsByInterface() for the interfaces mDNS runs on, and ports from
+// h.Network().ListenAddresses().
 
 import (
 	"context"
@@ -28,7 +29,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/zeroconf/v2"
 	ma "github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr/net"
 	"github.com/wlynxg/anet"
 )
 
@@ -51,81 +51,29 @@ func (d *MDNS) Run(l log.StandardLogger, ctx context.Context, h host.Host) error
 		return err
 	}
 
-	// Keep only interfaces that are up and support multicast.
-	var mcIfaces []net.Interface
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagMulticast == 0 {
-			continue
-		}
-		mcIfaces = append(mcIfaces, iface)
+	// Pick the interfaces that are up, support multicast and pass InterfaceFilter,
+	// and collect the routable IPs of those interfaces only. Addresses come from
+	// anet, which avoids the netlinkrib bind() call.
+	mcIfaces, routableIPs, lookupErrs := selectMDNSInterfaces(ifaces, func(iface net.Interface) ([]net.Addr, error) {
+		return anet.InterfaceAddrsByInterface(&iface)
+	}, d.InterfaceFilter)
+	for _, err := range lookupErrs {
+		l.Warnf("mdns(android): skipping interface: %v", err)
 	}
 	if len(mcIfaces) == 0 {
-		l.Warnf("mdns(android): no multicast-capable interfaces found (WiFi off?), mDNS skipped")
+		l.Warnf("mdns(android): no multicast-capable interfaces found or accepted by InterfaceFilter (WiFi off?), mDNS skipped")
 		return nil
 	}
 	l.Infof("mdns(android): using interfaces: %v", ifaceNames(mcIfaces))
-
-	// Get real interface IPs via anet (avoids netlinkrib bind() call).
-	// These are used both for the mDNS A/AAAA records and for expanding
-	// wildcard/loopback listen addresses into routable addresses.
-	ifAddrs, err := anet.InterfaceAddrs()
-	if err != nil {
-		return err
-	}
-	var routableIPs []net.IP
-	for _, a := range ifAddrs {
-		ipNet, ok := a.(*net.IPNet)
-		if !ok {
-			continue
-		}
-		ip := ipNet.IP
-		if ip.IsLoopback() || ip.IsLinkLocalUnicast() {
-			continue
-		}
-		routableIPs = append(routableIPs, ip)
-	}
 	if len(routableIPs) == 0 {
 		l.Warnf("mdns(android): no routable interface addresses found, mDNS skipped")
 		return nil
 	}
 
-	// Build multiaddrs for each routable IP (without port — used as base for expansion).
-	var routableMaddrs []ma.Multiaddr
-	for _, ip := range routableIPs {
-		maddr, err := manet.FromIP(ip)
-		if err != nil {
-			continue
-		}
-		routableMaddrs = append(routableMaddrs, maddr)
-	}
-
-	// Get the raw listen addresses (e.g. /ip4/0.0.0.0/tcp/PORT or /ip4/127.0.0.1/tcp/PORT).
-	// These may be wildcards or loopback; we expand them to real IPs below.
-	listenAddrs := h.Network().ListenAddresses()
-
-	// Expand wildcard/loopback listen addresses to routable IPs, keeping transport/port.
-	var expandedListenAddrs []ma.Multiaddr
-	for _, la := range listenAddrs {
-		ip, err := manet.ToIP(la)
-		if err != nil {
-			// Non-IP address (e.g. /p2p-circuit); skip for mDNS.
-			continue
-		}
-		if !ip.IsUnspecified() && !ip.IsLoopback() {
-			// Already a routable address.
-			expandedListenAddrs = append(expandedListenAddrs, la)
-			continue
-		}
-		// Wildcard or loopback → expand to real IPs with same transport/port.
-		_, transport := ma.SplitFirst(la)
-		for _, rAddr := range routableMaddrs {
-			expanded := rAddr
-			if transport != nil {
-				expanded = rAddr.Encapsulate(transport)
-			}
-			expandedListenAddrs = append(expandedListenAddrs, expanded)
-		}
-	}
+	// The raw listen addresses may be wildcards (e.g. /ip4/0.0.0.0/tcp/PORT); expand
+	// them to the IPs of the mDNS interfaces, keeping transport and port, and keep
+	// only specific addresses on those interfaces.
+	expandedListenAddrs := expandMDNSListenAddrs(h.Network().ListenAddresses(), routableIPs)
 	if len(expandedListenAddrs) == 0 {
 		l.Warnf("mdns(android): no listen addresses to advertise, mDNS skipped")
 		return nil
