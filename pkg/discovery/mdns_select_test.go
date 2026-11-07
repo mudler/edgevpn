@@ -157,10 +157,28 @@ var _ = Describe("mDNS listen address expansion", func() {
 	It("keeps specific listen addresses and drops non-IP ones", func() {
 		listen := []ma.Multiaddr{
 			ma.StringCast("/ip4/10.0.2.16/tcp/5000"),
+			ma.StringCast("/ip6/fec0::16/tcp/5001"),
 			ma.StringCast("/p2p-circuit"),
 		}
 		Expect(multiaddrStringList(ExpandMDNSListenAddrs(listen, ips))).To(Equal([]string{
 			"/ip4/10.0.2.16/tcp/5000",
+			"/ip6/fec0::16/tcp/5001",
 		}))
+	})
+
+	It("drops specific listen addresses whose IP is not on an mDNS interface", func() {
+		listen := []ma.Multiaddr{
+			ma.StringCast("/ip4/10.1.0.4/tcp/5000"),
+			ma.StringCast("/ip6/fd00::4/tcp/5000"),
+		}
+		Expect(ExpandMDNSListenAddrs(listen, ips)).To(BeEmpty())
+	})
+
+	It("drops loopback listen addresses", func() {
+		listen := []ma.Multiaddr{
+			ma.StringCast("/ip4/127.0.0.1/tcp/5000"),
+			ma.StringCast("/ip6/::1/udp/5000/quic-v1"),
+		}
+		Expect(ExpandMDNSListenAddrs(listen, ips)).To(BeEmpty())
 	})
 })

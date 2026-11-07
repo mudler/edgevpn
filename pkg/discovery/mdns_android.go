@@ -70,8 +70,9 @@ func (d *MDNS) Run(l log.StandardLogger, ctx context.Context, h host.Host) error
 		return nil
 	}
 
-	// The raw listen addresses may be wildcards or loopback (e.g. /ip4/0.0.0.0/tcp/PORT);
-	// expand them to the IPs of the mDNS interfaces, keeping transport and port.
+	// The raw listen addresses may be wildcards (e.g. /ip4/0.0.0.0/tcp/PORT); expand
+	// them to the IPs of the mDNS interfaces, keeping transport and port, and keep
+	// only specific addresses on those interfaces.
 	expandedListenAddrs := expandMDNSListenAddrs(h.Network().ListenAddresses(), routableIPs)
 	if len(expandedListenAddrs) == 0 {
 		l.Warnf("mdns(android): no listen addresses to advertise, mDNS skipped")

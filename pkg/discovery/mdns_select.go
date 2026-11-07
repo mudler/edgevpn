@@ -64,9 +64,11 @@ func selectMDNSInterfaces(
 // expandMDNSListenAddrs turns the host's listen addresses into addresses to
 // advertise over mDNS. A wildcard listen address (/ip4/0.0.0.0 or /ip6/::)
 // becomes one address per IP of the same family in ips, with the same transport
-// and port. A loopback listen address becomes one address per IP in ips. A
-// specific IP address is kept as is, and addresses without an IP (such as
-// /p2p-circuit) are dropped.
+// and port. A specific IP address is kept only when that IP is in ips, so an
+// address on an interface mDNS does not run on is not advertised. Loopback
+// addresses are dropped, because a socket bound to loopback does not accept
+// connections from other hosts, and so are addresses without an IP (such as
+// /p2p-circuit).
 func expandMDNSListenAddrs(listenAddrs []ma.Multiaddr, ips []net.IP) []ma.Multiaddr {
 	var bases []ma.Multiaddr
 	for _, ip := range ips {
@@ -91,18 +93,18 @@ func expandMDNSListenAddrs(listenAddrs []ma.Multiaddr, ips []net.IP) []ma.Multia
 				continue
 			}
 			expanded = append(expanded, resolved...)
-		case ip.IsLoopback():
-			_, transport := ma.SplitFirst(la)
-			for _, base := range bases {
-				addr := base
-				if transport != nil {
-					addr = base.Encapsulate(transport)
-				}
-				expanded = append(expanded, addr)
-			}
-		default:
+		case containsIP(ips, ip):
 			expanded = append(expanded, la)
 		}
 	}
 	return expanded
+}
+
+func containsIP(ips []net.IP, ip net.IP) bool {
+	for _, candidate := range ips {
+		if candidate.Equal(ip) {
+			return true
+		}
+	}
+	return false
 }
