@@ -285,3 +285,50 @@ func TestCloseStopsDeferredDial(t *testing.T) {
 		t.Fatalf("made %d connects in total, want 1", got)
 	}
 }
+
+// The default grace is libp2p's peer dial timeout at the time the watcher
+// is created.
+func TestDefaultGraceIsDialPeerTimeout(t *testing.T) {
+	if got := newStaleConnsWatcher(fakeHost{}).grace; got != network.DialPeerTimeout {
+		t.Fatalf("default grace is %s, want network.DialPeerTimeout %s", got, network.DialPeerTimeout)
+	}
+
+	saved := network.DialPeerTimeout
+	t.Cleanup(func() { network.DialPeerTimeout = saved })
+	network.DialPeerTimeout = 7 * time.Second
+	if got := newStaleConnsWatcher(fakeHost{}).grace; got != 7*time.Second {
+		t.Fatalf("with network.DialPeerTimeout set to 7s the default grace is %s", got)
+	}
+}
+
+// blockingDialHost is a host whose Connect returns only when its context
+// ends.
+type blockingDialHost struct {
+	fakeHost
+	started chan struct{}
+}
+
+func (h blockingDialHost) Connect(ctx context.Context, _ peer.AddrInfo) error {
+	close(h.started)
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+// The watcher sets no dial timeout of its own and relies on the swarm's, so
+// its dial must still end when the watcher closes.
+func TestCloseEndsRunningDial(t *testing.T) {
+	h := blockingDialHost{started: make(chan struct{})}
+	w := newStaleConnsWatcher(h)
+	done := make(chan struct{})
+	go func() {
+		w.dialDirect("peer")
+		close(done)
+	}()
+	<-h.started
+	w.Close()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("the dial still runs after Close")
+	}
+}

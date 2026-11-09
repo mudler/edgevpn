@@ -27,27 +27,31 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-// DefaultStaleConnsGrace is how much older than an incoming relayed
-// connection a direct connection must be before the watcher treats it as
-// stale. It keeps a startup race, where the relayed and the direct
-// connection open at about the same time, from closing a working direct
-// connection.
-const DefaultStaleConnsGrace = 10 * time.Second
-
-// staleConnsDialTimeout bounds the watcher's direct dial to a peer.
-const staleConnsDialTimeout = 30 * time.Second
-
 // staleConnsDialCooldown is the shortest time between two dials of the
 // watcher to the same peer. A relayed connection can stay open for half an
 // hour, and a peer whose direct connections keep dropping would otherwise
 // get a dial each time. A forced direct dial skips the swarm's dial backoff,
-// and on a routed host every failed dial also runs a DHT lookup.
+// and on a routed host every failed dial also runs a DHT lookup. The value
+// is a deliberate rate limit on those dials and lookups; it is not derived
+// from a libp2p setting.
 const staleConnsDialCooldown = time.Minute
 
 // StaleConnsOption configures WatchStaleDirectConns.
 type StaleConnsOption func(*staleConnsWatcher)
 
-// WithStaleConnsGrace sets the grace described in DefaultStaleConnsGrace.
+// WithStaleConnsGrace sets how much older than an incoming relayed
+// connection a direct connection must be before the watcher treats it as
+// stale. The default is network.DialPeerTimeout at the time the watcher is
+// created.
+//
+// A single dial to a peer can open a direct and a relayed connection: the
+// swarm starts relay addresses 500 ms after direct ones (RelayDelay in
+// p2p/net/swarm/dial_ranker.go) and lets a relay dial already in flight
+// finish after a direct connection succeeds (p2p/net/swarm/dial_worker.go).
+// Such a dial ends within the peer dial timeout. A relayed connection that
+// arrives more than DialPeerTimeout after a direct one opened therefore
+// comes from a new dial by the peer, and the peer dials again only when it
+// has no working direct connection.
 func WithStaleConnsGrace(d time.Duration) StaleConnsOption {
 	return func(w *staleConnsWatcher) { w.grace = d }
 }
@@ -97,7 +101,7 @@ func newStaleConnsWatcher(h host.Host, opts ...StaleConnsOption) *staleConnsWatc
 	ctx, cancel := context.WithCancel(context.Background())
 	w := &staleConnsWatcher{
 		h:            h,
-		grace:        DefaultStaleConnsGrace,
+		grace:        network.DialPeerTimeout,
 		log:          noopLogger{},
 		ctx:          ctx,
 		cancel:       cancel,
@@ -133,9 +137,10 @@ func newStaleConnsWatcher(h host.Host, opts ...StaleConnsOption) *staleConnsWatc
 // find the peer's addresses, as edgevpn's routed host does through the DHT. That dial reaches a peer whose new address accepts incoming
 // connections; a peer behind NAT still needs the hole puncher.
 //
-// A stale direct connection younger than the grace stays open. When it, or
-// any other direct connection, closes and leaves the peer with only relayed
-// connections, the watcher dials the peer directly as well.
+// A stale direct connection younger than the grace (see
+// WithStaleConnsGrace) stays open. When it, or any other direct
+// connection, closes and leaves the peer with only relayed connections,
+// the watcher dials the peer directly as well.
 //
 // Close stops the watcher, cancels its dials and waits for them.
 func WatchStaleDirectConns(h host.Host, opts ...StaleConnsOption) io.Closer {
@@ -365,8 +370,9 @@ func (w *staleConnsWatcher) dialDirect(p peer.ID) {
 		w.mu.Unlock()
 	}()
 
-	ctx, cancel := context.WithTimeout(network.WithForceDirectDial(w.ctx, "replace stale direct connection"), staleConnsDialTimeout)
-	defer cancel()
+	// The swarm bounds the dial with its own peer dial timeout, and Close
+	// ends it through w.ctx.
+	ctx := network.WithForceDirectDial(w.ctx, "replace stale direct connection")
 	w.log.Debugf("dialing %s directly to replace a stale connection", p)
 	if err := w.h.Connect(ctx, peer.AddrInfo{ID: p}); err != nil {
 		w.log.Debugf("direct dial to %s failed: %v", p, err)
