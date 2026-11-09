@@ -203,11 +203,13 @@ func (e *Node) startNetwork(ctx context.Context) error {
 	e.host = host
 
 	// The watcher lives as long as the node runs.
-	watcher := WatchStaleDirectConns(host, WithStaleConnsLogger(e.config.Logger))
-	go func() {
-		<-ctx.Done()
-		watcher.Close()
-	}()
+	if !e.config.DisableStaleConnsWatcher {
+		watcher := WatchStaleDirectConns(host, WithStaleConnsLogger(e.config.Logger))
+		go func() {
+			<-ctx.Done()
+			watcher.Close()
+		}()
+	}
 
 	ledger, err := e.Ledger()
 	if err != nil {

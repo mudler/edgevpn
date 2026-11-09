@@ -126,6 +126,13 @@ var EnableGenericHub = func(cfg *Config) error {
 	return nil
 }
 
+// DisableStaleConnsWatcher starts the node without the watcher that
+// replaces stale direct connections, described in WatchStaleDirectConns.
+var DisableStaleConnsWatcher = func(cfg *Config) error {
+	cfg.DisableStaleConnsWatcher = true
+	return nil
+}
+
 func ListenAddresses(ss ...string) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		for _, s := range ss {

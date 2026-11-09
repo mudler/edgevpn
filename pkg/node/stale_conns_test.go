@@ -235,7 +235,39 @@ func TestNodeRedialsPeerWhenOnlyRelayedConnectionRemains(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
+	a, b := newSimNodeWithRelayedAndDirectConn(t, ctx)
 
+	closeDirectConns(a, b.ID())
+
+	waitFor(t, 10*time.Second, func() bool { return hasConn(a, b.ID(), false) }, func() string {
+		return fmt.Sprintf("node did not dial B directly; conns: %v", simConns(a, b.ID()))
+	})
+}
+
+func TestNodeWithoutStaleConnsWatcherDoesNotRedial(t *testing.T) {
+	if testing.Short() {
+		t.Skip("simulated network")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	a, b := newSimNodeWithRelayedAndDirectConn(t, ctx, node.DisableStaleConnsWatcher)
+
+	closeDirectConns(a, b.ID())
+	time.Sleep(2 * time.Second)
+
+	if hasConn(a, b.ID(), false) {
+		t.Fatalf("node dialed B directly with the watcher disabled; conns: %v", simConns(a, b.ID()))
+	}
+	if !hasConn(a, b.ID(), true) {
+		t.Fatalf("the relayed connection is gone, so the test shows nothing; conns: %v", simConns(a, b.ID()))
+	}
+}
+
+// newSimNodeWithRelayedAndDirectConn starts a node with node.New on the
+// simulated network and connects it to peer B both through a relay and
+// directly. It returns the node's host and B.
+func newSimNodeWithRelayedAndDirectConn(t *testing.T, ctx context.Context, opts ...node.Option) (host.Host, host.Host) {
+	t.Helper()
 	router := &simnet.SimpleFirewallRouter{}
 	every := func(*net.UDPAddr) bool { return true }
 	relay := newSimHost(t,
@@ -260,7 +292,7 @@ func TestNodeRedialsPeerWhenOnlyRelayedConnectionRemains(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	n, err := node.New(
+	n, err := node.New(append([]node.Option{
 		node.FromBase64(true, true, node.GenerateNewConnectionData(25).Base64(), nil, nil),
 		node.WithStore(&blockchain.MemoryStore{}),
 		node.Logger(logger.New(log.LevelFatal)),
@@ -272,7 +304,7 @@ func TestNodeRedialsPeerWhenOnlyRelayedConnectionRemains(t *testing.T) {
 			libp2p.ForceReachabilityPrivate(),
 			libp2p.ResourceManager(&network.NullResourceManager{}),
 		),
-	)
+	}, opts...)...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,24 +324,27 @@ func TestNodeRedialsPeerWhenOnlyRelayedConnectionRemains(t *testing.T) {
 	if err := a.Connect(network.WithForceDirectDial(ctx, "test"), peer.AddrInfo{ID: b.ID(), Addrs: b.Addrs()}); err != nil {
 		t.Fatal(err)
 	}
-	hasConn := func(limited bool) bool {
-		for _, c := range a.Network().ConnsToPeer(b.ID()) {
-			if c.Stat().Limited == limited {
-				return true
-			}
-		}
-		return false
-	}
-	waitFor(t, 5*time.Second, func() bool { return hasConn(true) && hasConn(false) }, func() string {
+	waitFor(t, 5*time.Second, func() bool { return hasConn(a, b.ID(), true) && hasConn(a, b.ID(), false) }, func() string {
 		return fmt.Sprintf("node needs a direct and a relayed connection; conns: %v", simConns(a, b.ID()))
 	})
+	return a, b
+}
 
-	for _, c := range a.Network().ConnsToPeer(b.ID()) {
+// hasConn reports whether h has a connection to p that is limited, which
+// here means relayed, or not.
+func hasConn(h host.Host, p peer.ID, limited bool) bool {
+	for _, c := range h.Network().ConnsToPeer(p) {
+		if c.Stat().Limited == limited {
+			return true
+		}
+	}
+	return false
+}
+
+func closeDirectConns(h host.Host, p peer.ID) {
+	for _, c := range h.Network().ConnsToPeer(p) {
 		if !c.Stat().Limited {
 			c.Close()
 		}
 	}
-	waitFor(t, 10*time.Second, func() bool { return hasConn(false) }, func() string {
-		return fmt.Sprintf("node did not dial B directly; conns: %v", simConns(a, b.ID()))
-	})
 }
