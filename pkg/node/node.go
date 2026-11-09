@@ -202,15 +202,6 @@ func (e *Node) startNetwork(ctx context.Context) error {
 	}
 	e.host = host
 
-	// The watcher lives as long as the node runs.
-	if !e.config.DisableStaleConnsWatcher {
-		watcher := WatchStaleDirectConns(host, WithStaleConnsLogger(e.config.Logger))
-		go func() {
-			<-ctx.Done()
-			watcher.Close()
-		}()
-	}
-
 	ledger, err := e.Ledger()
 	if err != nil {
 		return err
@@ -235,6 +226,18 @@ func (e *Node) startNetwork(ctx context.Context) error {
 		} else {
 			e.config.Logger.Warn("ownership enforcement requested but host private key is unavailable; running unsigned")
 		}
+	}
+
+	// The watcher lives as long as the node runs. It is installed after the
+	// last step that can return an error, so a failed start leaves no
+	// watcher behind, and before the streams, pubsub and discovery start
+	// opening connections.
+	if !e.config.DisableStaleConnsWatcher {
+		watcher := WatchStaleDirectConns(host, WithStaleConnsLogger(e.config.Logger))
+		go func() {
+			<-ctx.Done()
+			watcher.Close()
+		}()
 	}
 
 	for pid, strh := range e.config.StreamHandlers {
