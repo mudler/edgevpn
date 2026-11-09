@@ -289,6 +289,13 @@ func (w *staleConnsWatcher) handleIdentify() {
 // closeConns after releasing it. Both goroutines may take the same
 // connection; closing it twice is harmless, and the swarm drops a closing
 // connection from ConnsToPeer before the close returns.
+//
+// Every entry added to closing is removed by Disconnected. The swarm drops
+// a connection from ConnsToPeer before it sends Disconnected, and the
+// caller holds w.mu from ConnsToPeer until the entry is written, which
+// Disconnected needs as well. So a connection that ConnsToPeer returns
+// has its Disconnected handled after the entry exists, even when it closes
+// on its own in between.
 func (w *staleConnsWatcher) takeStaleDirectConns(relayed network.Conn) []network.Conn {
 	arrived := relayed.Stat().Opened
 	var stale []network.Conn
