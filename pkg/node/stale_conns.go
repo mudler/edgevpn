@@ -37,6 +37,13 @@ const DefaultStaleConnsGrace = 10 * time.Second
 // staleConnsDialTimeout bounds the watcher's direct dial to a peer.
 const staleConnsDialTimeout = 30 * time.Second
 
+// staleConnsDialCooldown is the shortest time between two dials of the
+// watcher to the same peer. A relayed connection can stay open for half an
+// hour, and a peer whose direct connections keep dropping would otherwise
+// get a dial each time. A forced direct dial skips the swarm's dial backoff,
+// and on a routed host every failed dial also runs a DHT lookup.
+const staleConnsDialCooldown = time.Minute
+
 // StaleConnsOption configures WatchStaleDirectConns.
 type StaleConnsOption func(*staleConnsWatcher)
 
@@ -78,6 +85,29 @@ type staleConnsWatcher struct {
 	// earlier, on addresses that may be gone.
 	closing map[network.Conn]struct{}
 	dialing map[peer.ID]struct{}
+	// lastDial holds when the watcher last started a dial to each peer.
+	lastDial     map[peer.ID]time.Time
+	dialCooldown time.Duration
+}
+
+func newStaleConnsWatcher(h host.Host, opts ...StaleConnsOption) *staleConnsWatcher {
+	ctx, cancel := context.WithCancel(context.Background())
+	w := &staleConnsWatcher{
+		h:            h,
+		grace:        DefaultStaleConnsGrace,
+		log:          noopLogger{},
+		ctx:          ctx,
+		cancel:       cancel,
+		closedFor:    make(map[network.Conn]struct{}),
+		closing:      make(map[network.Conn]struct{}),
+		dialing:      make(map[peer.ID]struct{}),
+		lastDial:     make(map[peer.ID]time.Time),
+		dialCooldown: staleConnsDialCooldown,
+	}
+	for _, o := range opts {
+		o(w)
+	}
+	return w
 }
 
 // WatchStaleDirectConns closes direct connections that a relayed connection
@@ -104,20 +134,7 @@ type staleConnsWatcher struct {
 //
 // Close stops the watcher, cancels its dials and waits for them.
 func WatchStaleDirectConns(h host.Host, opts ...StaleConnsOption) io.Closer {
-	ctx, cancel := context.WithCancel(context.Background())
-	w := &staleConnsWatcher{
-		h:         h,
-		grace:     DefaultStaleConnsGrace,
-		log:       noopLogger{},
-		ctx:       ctx,
-		cancel:    cancel,
-		closedFor: make(map[network.Conn]struct{}),
-		closing:   make(map[network.Conn]struct{}),
-		dialing:   make(map[peer.ID]struct{}),
-	}
-	for _, o := range opts {
-		o(w)
-	}
+	w := newStaleConnsWatcher(h, opts...)
 	sub, err := h.EventBus().Subscribe(new(event.EvtPeerIdentificationCompleted))
 	if err != nil {
 		w.log.Debugf("stale connection watcher cannot follow identify, it will not dial: %v", err)
@@ -265,14 +282,26 @@ func (w *staleConnsWatcher) closeConns(stale []network.Conn) {
 }
 
 // dialDirect dials p without relays, unless a dial from the watcher to p
-// is already running.
+// is already running or started less than dialCooldown ago.
 func (w *staleConnsWatcher) dialDirect(p peer.ID) {
+	now := time.Now()
 	w.mu.Lock()
 	if _, ok := w.dialing[p]; ok {
 		w.mu.Unlock()
 		return
 	}
+	for id, t := range w.lastDial {
+		if now.Sub(t) >= w.dialCooldown {
+			delete(w.lastDial, id)
+		}
+	}
+	if _, ok := w.lastDial[p]; ok {
+		w.mu.Unlock()
+		w.log.Debugf("not dialing %s directly: the last dial was less than %s ago", p, w.dialCooldown)
+		return
+	}
 	w.dialing[p] = struct{}{}
+	w.lastDial[p] = now
 	w.mu.Unlock()
 	defer func() {
 		w.mu.Lock()

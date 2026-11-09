@@ -15,6 +15,7 @@ package node
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -58,12 +59,18 @@ func (n fakeNetwork) ConnsToPeer(peer.ID) []network.Conn { return n.conns }
 
 type fakeHost struct {
 	host.Host
-	net fakeNetwork
+	net   fakeNetwork
+	dials *atomic.Int32
 }
 
 func (h fakeHost) Network() network.Network { return h.net }
 
-func (h fakeHost) Connect(ctx context.Context, _ peer.AddrInfo) error { return ctx.Err() }
+func (h fakeHost) Connect(ctx context.Context, _ peer.AddrInfo) error {
+	if h.dials != nil {
+		h.dials.Add(1)
+	}
+	return ctx.Err()
+}
 
 type fakeSub struct {
 	event.Subscription
@@ -88,20 +95,10 @@ func TestStaleConnCloseDoesNotHoldLock(t *testing.T) {
 				entered:  make(chan struct{}),
 				release:  make(chan struct{}),
 			}
-			ctx, cancel := context.WithCancel(context.Background())
 			sub := fakeSub{out: make(chan interface{}, 1)}
-			w := &staleConnsWatcher{
-				h:         fakeHost{net: fakeNetwork{conns: []network.Conn{stale, relayed}}},
-				grace:     DefaultStaleConnsGrace,
-				log:       noopLogger{},
-				ctx:       ctx,
-				cancel:    cancel,
-				closedFor: make(map[network.Conn]struct{}),
-				closing:   make(map[network.Conn]struct{}),
-				dialing:   make(map[peer.ID]struct{}),
-			}
+			w := newStaleConnsWatcher(fakeHost{net: fakeNetwork{conns: []network.Conn{stale, relayed}}})
 			// The dial that follows a close fails at once on the cancelled context.
-			cancel()
+			w.cancel()
 			defer func() {
 				close(sub.out)
 				w.wg.Wait()
@@ -155,5 +152,31 @@ func TestIsRelayed(t *testing.T) {
 		if got := isRelayed(tc.conn); got != tc.want {
 			t.Errorf("%s: isRelayed = %v, want %v", tc.name, got, tc.want)
 		}
+	}
+}
+
+// A failed dial on the routed host also runs a DHT lookup, and a forced
+// direct dial skips the swarm's dial backoff, so the watcher limits its own
+// dials to a peer.
+func TestDialDirectCooldown(t *testing.T) {
+	dials := &atomic.Int32{}
+	w := newStaleConnsWatcher(fakeHost{dials: dials})
+	defer w.cancel()
+
+	w.dialDirect("peer")
+	w.dialDirect("peer")
+	if got := dials.Load(); got != 1 {
+		t.Fatalf("two dials to the same peer within the cooldown made %d connects, want 1", got)
+	}
+	w.dialDirect("other")
+	if got := dials.Load(); got != 2 {
+		t.Fatalf("a dial to another peer made %d connects in total, want 2", got)
+	}
+
+	w.dialCooldown = 10 * time.Millisecond
+	time.Sleep(2 * w.dialCooldown)
+	w.dialDirect("peer")
+	if got := dials.Load(); got != 3 {
+		t.Fatalf("a dial after the cooldown made %d connects in total, want 3", got)
 	}
 }
