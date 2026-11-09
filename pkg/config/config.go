@@ -125,6 +125,10 @@ type Connection struct {
 	HolePunch bool
 	AutoRelay bool
 
+	// DisableStaleConnsWatcher turns off the node's watcher that replaces
+	// stale direct connections.
+	DisableStaleConnsWatcher bool
+
 	AutoRelayDiscoveryInterval time.Duration
 	StaticRelays               []string
 	OnlyStaticRelays           bool
@@ -556,6 +560,10 @@ func (c Config) ToOpts(l log.StandardLogger) ([]node.Option, []vpn.Option, error
 		}
 
 		libp2pOpts = append(libp2pOpts, libp2p.ResourceManager(rc))
+	}
+
+	if c.Connection.DisableStaleConnsWatcher {
+		opts = append(opts, node.DisableStaleConnsWatcher)
 	}
 
 	if c.Connection.HolePunch {

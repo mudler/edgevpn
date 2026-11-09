@@ -174,6 +174,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Value:   true,
 	},
 	&cli.BoolFlag{
+		Name:    "disable-stale-conns-watcher",
+		Usage:   "Do not close direct connections that a peer has replaced with a relayed one, and do not redial such peers directly",
+		EnvVars: []string{"EDGEVPNDISABLESTALECONNSWATCHER"},
+	},
+	&cli.BoolFlag{
 		Name:    "natservice",
 		Usage:   "Tries to determine reachability status of nodes",
 		EnvVars: []string{"EDGEVPNNATSERVICE"},
@@ -530,6 +535,7 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 			AutoRelay:                  c.Bool("autorelay"),
 			MaxConnections:             c.Int("max-connections"),
 			HolePunch:                  c.Bool("holepunch"),
+			DisableStaleConnsWatcher:   c.Bool("disable-stale-conns-watcher"),
 			StaticRelays:               c.StringSlice("autorelay-static-peer"),
 			AutoRelayDiscoveryInterval: autorelayInterval,
 			OnlyStaticRelays:           c.Bool("autorelay-static-only"),
