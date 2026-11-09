@@ -125,7 +125,8 @@ func newStaleConnsWatcher(h host.Host, opts ...StaleConnsOption) *staleConnsWatc
 // paths it then finds no direct connection and dials or hole punches. When
 // identify wins that race, nothing in libp2p tries again, so once identify
 // has given this host the peer's new addresses the watcher dials them
-// itself. That dial reaches a peer whose new address accepts incoming
+// itself. It also dials when identify fails, and then relies on the host to
+// find the peer's addresses, as edgevpn's routed host does through the DHT. That dial reaches a peer whose new address accepts incoming
 // connections; a peer behind NAT still needs the hole puncher.
 //
 // A stale direct connection younger than the grace stays open. When it, or
@@ -135,7 +136,10 @@ func newStaleConnsWatcher(h host.Host, opts ...StaleConnsOption) *staleConnsWatc
 // Close stops the watcher, cancels its dials and waits for them.
 func WatchStaleDirectConns(h host.Host, opts ...StaleConnsOption) io.Closer {
 	w := newStaleConnsWatcher(h, opts...)
-	sub, err := h.EventBus().Subscribe(new(event.EvtPeerIdentificationCompleted))
+	sub, err := h.EventBus().Subscribe([]interface{}{
+		new(event.EvtPeerIdentificationCompleted),
+		new(event.EvtPeerIdentificationFailed),
+	})
 	if err != nil {
 		w.log.Debugf("stale connection watcher cannot follow identify, it will not dial: %v", err)
 	} else {
@@ -225,27 +229,54 @@ func (w *staleConnsWatcher) onlyRelayed(p peer.ID) bool {
 }
 
 // handleIdentify dials a peer once identify over a relayed connection
-// completes, if the watcher closed a stale direct connection to that peer.
-// It also closes stale connections itself, because identify can complete
-// before the goroutine started by Connected runs.
+// completes or fails, if the watcher closed a stale direct connection to
+// that peer. A failed identify gives this host no new addresses, but on a
+// routed host a dial that fails on the known addresses looks the peer up
+// in the DHT. handleIdentify also closes stale connections itself, because
+// identify can end before the goroutine started by Connected runs.
 func (w *staleConnsWatcher) handleIdentify() {
 	defer w.wg.Done()
 	for e := range w.sub.Out() {
-		evt := e.(event.EvtPeerIdentificationCompleted)
-		if evt.Conn == nil || !isRelayed(evt.Conn) {
+		var p peer.ID
+		var relayed []network.Conn
+		switch evt := e.(type) {
+		case event.EvtPeerIdentificationCompleted:
+			if evt.Conn == nil || !isRelayed(evt.Conn) {
+				continue
+			}
+			p, relayed = evt.Peer, []network.Conn{evt.Conn}
+		case event.EvtPeerIdentificationFailed:
+			// The event does not name the connection, so every relayed
+			// connection to the peer counts.
+			p = evt.Peer
+			for _, c := range w.h.Network().ConnsToPeer(p) {
+				if isRelayed(c) {
+					relayed = append(relayed, c)
+				}
+			}
+		default:
 			continue
 		}
 		w.mu.Lock()
-		_, closedEarlier := w.closedFor[evt.Conn]
-		delete(w.closedFor, evt.Conn)
-		stale := w.takeStaleDirectConns(evt.Conn)
+		closedEarlier := false
+		var stale []network.Conn
+		for _, c := range relayed {
+			if _, ok := w.closedFor[c]; ok {
+				closedEarlier = true
+				delete(w.closedFor, c)
+			}
+			stale = append(stale, w.takeStaleDirectConns(c)...)
+		}
 		w.mu.Unlock()
 		w.closeConns(stale)
 		if closedEarlier || len(stale) > 0 {
+			// libp2p's hole puncher may dial p at the same time. The swarm
+			// joins concurrent dials to one peer into one (dial_sync.go in
+			// p2p/net/swarm), so the two do not open two connections.
 			w.wg.Add(1)
 			go func() {
 				defer w.wg.Done()
-				w.dialDirect(evt.Peer)
+				w.dialDirect(p)
 			}()
 		}
 	}

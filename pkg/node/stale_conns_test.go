@@ -17,16 +17,19 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	relayclient "github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/client"
 	relayv2 "github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
+	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	libp2pquic "github.com/libp2p/go-libp2p/p2p/transport/quic"
 	"github.com/marcopolo/simnet"
 	ma "github.com/multiformats/go-multiaddr"
@@ -78,6 +81,56 @@ func TestStaleDirectConnReplacedAfterHandoverNoLatency(t *testing.T) {
 		return fmt.Sprintf("A has no direct connection on B's mobile address; A conns: %v", simConns(n.a, n.b.ID()))
 	})
 	t.Logf("direct connection on the mobile address after %s", took)
+}
+
+// When identify over the relayed connection fails, A learns nothing new
+// about B, and libp2p's hole puncher, which runs before the watcher closes
+// the stale connection, sees a direct connection and does nothing. The
+// watcher dials anyway. On edgevpn's routed host a failed dial looks the
+// peer up in the DHT; here the test puts B's mobile address in A's
+// peerstore instead.
+func TestStaleDirectConnReplacedWhenIdentifyFails(t *testing.T) {
+	if testing.Short() {
+		t.Skip("simulated network handover")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	n := newSimHandover(t, ctx, true, noLatency)
+	watch(t, n.a, node.WithStaleConnsGrace(testGrace))
+	time.Sleep(2 * testGrace)
+	// B answers no identify request, and A takes no identify push, which
+	// would also count as a completed identify.
+	n.b.RemoveStreamHandler(identify.ID)
+	n.a.RemoveStreamHandler(identify.IDPush)
+	n.a.Peerstore().AddAddr(n.b.ID(), simBMobileAddr, time.Hour)
+	identifyFailed := identifyFailures(t, n.a)
+
+	n.switchB(t, ctx)
+
+	waitFor(t, 5*time.Second, func() bool { return identifyFailed.Load() > 0 }, func() string {
+		return "identify over the relayed connection did not fail"
+	})
+	took := waitFor(t, 5*time.Second, func() bool { return n.aHasDirectConnOn(simBMobileAddr) }, func() string {
+		return fmt.Sprintf("A has no direct connection on B's mobile address; A conns: %v", simConns(n.a, n.b.ID()))
+	})
+	t.Logf("direct connection on the mobile address after %s", took)
+}
+
+// identifyFailures counts the failed identifies of h.
+func identifyFailures(t *testing.T, h host.Host) *atomic.Int32 {
+	t.Helper()
+	sub, err := h.EventBus().Subscribe(new(event.EvtPeerIdentificationFailed))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { sub.Close() })
+	n := &atomic.Int32{}
+	go func() {
+		for range sub.Out() {
+			n.Add(1)
+		}
+	}()
+	return n
 }
 
 // Neither B's mobile address nor A's address accepts incoming connections,
