@@ -16,11 +16,23 @@ package node_test
 import (
 	"context"
 	"fmt"
+	"net"
 	"testing"
 	"time"
 
+	"github.com/ipfs/go-log"
+	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
+	relayclient "github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/client"
+	relayv2 "github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
+	libp2pquic "github.com/libp2p/go-libp2p/p2p/transport/quic"
+	"github.com/marcopolo/simnet"
+	ma "github.com/multiformats/go-multiaddr"
 
+	"github.com/mudler/edgevpn/pkg/blockchain"
+	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/mudler/edgevpn/pkg/node"
 )
 
@@ -159,4 +171,92 @@ func watch(t *testing.T, h host.Host, opts ...node.StaleConnsOption) {
 	t.Helper()
 	w := node.WatchStaleDirectConns(h, opts...)
 	t.Cleanup(func() { w.Close() })
+}
+
+// A node started with node.New watches its connections: when its last
+// direct connection to a peer closes while a relayed one remains, the node
+// dials the peer directly again. libp2p does not do that by itself.
+func TestNodeRedialsPeerWhenOnlyRelayedConnectionRemains(t *testing.T) {
+	if testing.Short() {
+		t.Skip("simulated network")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	router := &simnet.SimpleFirewallRouter{}
+	every := func(*net.UDPAddr) bool { return true }
+	relay := newSimHost(t,
+		simQUIC(router, noLatency, every),
+		libp2p.ListenAddrs(simRelayAddr),
+		libp2p.DisableRelay(),
+		libp2p.ForceReachabilityPublic(),
+	)
+	if _, err := relayv2.New(relay); err != nil {
+		t.Fatal(err)
+	}
+	relayInfo := peer.AddrInfo{ID: relay.ID(), Addrs: relay.Addrs()}
+	b := newSimHost(t,
+		simQUIC(router, noLatency, every),
+		libp2p.ListenAddrs(simBWifiAddr),
+		libp2p.ForceReachabilityPrivate(),
+	)
+	if err := b.Connect(ctx, relayInfo); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := relayclient.Reserve(ctx, b, relayInfo); err != nil {
+		t.Fatal(err)
+	}
+
+	n, err := node.New(
+		node.FromBase64(true, true, node.GenerateNewConnectionData(25).Base64(), nil, nil),
+		node.WithStore(&blockchain.MemoryStore{}),
+		node.Logger(logger.New(log.LevelFatal)),
+		node.WithLibp2pAdditionalOptions(
+			simQUIC(router, noLatency, every),
+			libp2p.NoTransports,
+			libp2p.Transport(libp2pquic.NewTransport),
+			libp2p.ListenAddrs(simAAddr),
+			libp2p.ForceReachabilityPrivate(),
+			libp2p.ResourceManager(&network.NullResourceManager{}),
+		),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := n.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	a := n.Host()
+
+	circuit := ma.StringCast("/p2p/" + relay.ID().String() + "/p2p-circuit/p2p/" + b.ID().String())
+	var relayed []ma.Multiaddr
+	for _, addr := range relay.Addrs() {
+		relayed = append(relayed, addr.Encapsulate(circuit))
+	}
+	if err := a.Connect(network.WithAllowLimitedConn(ctx, "test"), peer.AddrInfo{ID: b.ID(), Addrs: relayed}); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Connect(network.WithForceDirectDial(ctx, "test"), peer.AddrInfo{ID: b.ID(), Addrs: b.Addrs()}); err != nil {
+		t.Fatal(err)
+	}
+	hasConn := func(limited bool) bool {
+		for _, c := range a.Network().ConnsToPeer(b.ID()) {
+			if c.Stat().Limited == limited {
+				return true
+			}
+		}
+		return false
+	}
+	waitFor(t, 5*time.Second, func() bool { return hasConn(true) && hasConn(false) }, func() string {
+		return fmt.Sprintf("node needs a direct and a relayed connection; conns: %v", simConns(a, b.ID()))
+	})
+
+	for _, c := range a.Network().ConnsToPeer(b.ID()) {
+		if !c.Stat().Limited {
+			c.Close()
+		}
+	}
+	waitFor(t, 10*time.Second, func() bool { return hasConn(false) }, func() string {
+		return fmt.Sprintf("node did not dial B directly; conns: %v", simConns(a, b.ID()))
+	})
 }
