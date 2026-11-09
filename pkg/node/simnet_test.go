@@ -55,24 +55,30 @@ func (s *simSourceIP) PreferredSourceIPForDestination(*net.UDPAddr) (net.IP, err
 	return *s.ip.Load(), nil
 }
 
-// simLatency is the one-way delay of every simulated packet. The watcher
-// races libp2p's hole puncher, which waits for identify over the relayed
-// connection, and on a network without delay identify can finish before
-// the watcher's goroutine runs. Real relayed paths have tens of
-// milliseconds of round trip.
-const simLatency = 10 * time.Millisecond
+// simLatency is the default one-way delay of every simulated packet. The
+// watcher races libp2p's hole puncher, which waits for identify over the
+// relayed connection. With this delay the watcher wins, as on real relayed
+// paths with tens of milliseconds of round trip. With noLatency, identify
+// finishes first.
+const (
+	simLatency = 10 * time.Millisecond
+	noLatency  = 0
+)
 
-// delayed hands each packet to the router after simLatency.
-type delayed struct{ r simnet.PacketReceiver }
+// delayed hands each packet to the router after latency.
+type delayed struct {
+	r       simnet.PacketReceiver
+	latency time.Duration
+}
 
 func (d delayed) RecvPacket(p *simnet.Packet) {
-	time.AfterFunc(simLatency, func() { d.r.RecvPacket(p) })
+	time.AfterFunc(d.latency, func() { d.r.RecvPacket(p) })
 }
 
 // simQUIC puts the host's QUIC sockets on the simulated network. public
 // decides which of the addresses the host listens on accept incoming
 // connections from anyone.
-func simQUIC(router *simnet.SimpleFirewallRouter, public func(*net.UDPAddr) bool) libp2p.Option {
+func simQUIC(router *simnet.SimpleFirewallRouter, latency time.Duration, public func(*net.UDPAddr) bool) libp2p.Option {
 	src := &simSourceIP{}
 	return libp2p.QUICReuse(
 		quicreuse.NewConnManager,
@@ -83,7 +89,7 @@ func simQUIC(router *simnet.SimpleFirewallRouter, public func(*net.UDPAddr) bool
 				router.SetAddrPubliclyReachable(addr)
 			}
 			c := simnet.NewSimConn(addr)
-			c.SetUpPacketReceiver(delayed{router})
+			c.SetUpPacketReceiver(delayed{r: router, latency: latency})
 			router.AddNode(addr, c)
 			return c, nil
 		}))
@@ -147,10 +153,10 @@ type simHandover struct {
 // newSimHandover builds the network and connects A and B directly over B's
 // Wi-Fi address. A holds a relay reservation so B can reach it through the
 // relay later. mobilePublic decides whether B's mobile address accepts
-// incoming connections. Both peers run libp2p's hole puncher with a short
-// direct dial timeout so that a failed direct dial does not delay the hole
-// punch.
-func newSimHandover(t *testing.T, ctx context.Context, mobilePublic bool) *simHandover {
+// incoming connections, and latency is the one-way delay of every packet.
+// Both peers run libp2p's hole puncher with a short direct dial timeout so
+// that a failed direct dial does not delay the hole punch.
+func newSimHandover(t *testing.T, ctx context.Context, mobilePublic bool, latency time.Duration) *simHandover {
 	t.Helper()
 	router := &simnet.SimpleFirewallRouter{}
 	every := func(*net.UDPAddr) bool { return true }
@@ -161,7 +167,7 @@ func newSimHandover(t *testing.T, ctx context.Context, mobilePublic bool) *simHa
 	aHolePunch := &holePunchLog{}
 
 	relay := newSimHost(t,
-		simQUIC(router, every),
+		simQUIC(router, latency, every),
 		libp2p.ListenAddrs(simRelayAddr),
 		libp2p.DisableRelay(),
 		libp2p.ForceReachabilityPublic(),
@@ -170,13 +176,13 @@ func newSimHandover(t *testing.T, ctx context.Context, mobilePublic bool) *simHa
 		t.Fatal(err)
 	}
 	a := newSimHost(t,
-		simQUIC(router, none),
+		simQUIC(router, latency, none),
 		libp2p.ListenAddrs(simAAddr),
 		libp2p.ForceReachabilityPrivate(),
 		libp2p.EnableHolePunching(holepunch.DirectDialTimeout(100*time.Millisecond), holepunch.WithTracer(aHolePunch)),
 	)
 	b := newSimHost(t,
-		simQUIC(router, bPublic),
+		simQUIC(router, latency, bPublic),
 		libp2p.ListenAddrs(simBWifiAddr),
 		libp2p.ForceReachabilityPrivate(),
 		libp2p.EnableHolePunching(holepunch.DirectDialTimeout(100*time.Millisecond)),

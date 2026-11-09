@@ -14,13 +14,17 @@ limitations under the License.
 package node
 
 import (
+	"context"
 	"io"
 	"sync"
 	"time"
 
 	"github.com/ipfs/go-log"
+	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 // DefaultStaleConnsGrace is how much older than an incoming relayed
@@ -29,6 +33,9 @@ import (
 // connection open at about the same time, from closing a working direct
 // connection.
 const DefaultStaleConnsGrace = 5 * time.Second
+
+// staleConnsDialTimeout bounds the watcher's direct dial to a peer.
+const staleConnsDialTimeout = 30 * time.Second
 
 // StaleConnsOption configures WatchStaleDirectConns.
 type StaleConnsOption func(*staleConnsWatcher)
@@ -39,7 +46,7 @@ func WithStaleConnsGrace(d time.Duration) StaleConnsOption {
 }
 
 // WithStaleConnsLogger sets the logger for debug messages about closed
-// connections.
+// connections and dials.
 func WithStaleConnsLogger(l log.StandardLogger) StaleConnsOption {
 	return func(w *staleConnsWatcher) { w.log = l }
 }
@@ -54,14 +61,23 @@ func (noopLogger) Debugf(string, ...interface{}) {}
 
 type staleConnsWatcher struct {
 	network.NoopNotifiee
-	h     host.Host
-	grace time.Duration
-	log   debugLogger
-	wg    sync.WaitGroup
+	h      host.Host
+	grace  time.Duration
+	log    debugLogger
+	ctx    context.Context
+	cancel context.CancelFunc
+	sub    event.Subscription
+	wg     sync.WaitGroup
+
+	mu sync.Mutex
+	// closedFor holds the relayed connections for which the watcher closed
+	// a stale direct connection and still waits for identify.
+	closedFor map[network.Conn]struct{}
+	dialing   map[peer.ID]struct{}
 }
 
 // WatchStaleDirectConns closes direct connections that a relayed connection
-// shows to be dead, so that libp2p's hole puncher can replace them.
+// shows to be dead and dials the peer directly again.
 //
 // A peer that dials through a relay while this host holds a direct
 // connection to it has no working direct connection of its own, because
@@ -69,14 +85,37 @@ type staleConnsWatcher struct {
 // on this side is then dead, for example because the peer changed networks,
 // but it stays open until the QUIC idle timeout. While it is open, the hole
 // puncher that reacts to the relayed connection finds it and does nothing.
-// The watcher closes it first, so the hole puncher dials the peer's new
-// addresses once identify over the relayed connection completes.
 //
-// Close stops the watcher and waits for its work in progress.
+// The watcher closes it as soon as the relayed connection arrives. libp2p's
+// hole puncher waits for identify over the relayed connection, so on most
+// paths it then finds no direct connection and dials or hole punches. When
+// identify wins that race, nothing in libp2p tries again, so once identify
+// has given this host the peer's new addresses the watcher dials them
+// itself. That dial reaches a peer whose new address accepts incoming
+// connections; a peer behind NAT still needs the hole puncher.
+//
+// Close stops the watcher, cancels its dials and waits for them.
 func WatchStaleDirectConns(h host.Host, opts ...StaleConnsOption) io.Closer {
-	w := &staleConnsWatcher{h: h, grace: DefaultStaleConnsGrace, log: noopLogger{}}
+	ctx, cancel := context.WithCancel(context.Background())
+	w := &staleConnsWatcher{
+		h:         h,
+		grace:     DefaultStaleConnsGrace,
+		log:       noopLogger{},
+		ctx:       ctx,
+		cancel:    cancel,
+		closedFor: make(map[network.Conn]struct{}),
+		dialing:   make(map[peer.ID]struct{}),
+	}
 	for _, o := range opts {
 		o(w)
+	}
+	sub, err := h.EventBus().Subscribe(new(event.EvtPeerIdentificationCompleted))
+	if err != nil {
+		w.log.Debugf("stale connection watcher cannot follow identify, it will not dial: %v", err)
+	} else {
+		w.sub = sub
+		w.wg.Add(1)
+		go w.handleIdentify()
 	}
 	h.Network().Notify(w)
 	return w
@@ -84,32 +123,113 @@ func WatchStaleDirectConns(h host.Host, opts ...StaleConnsOption) io.Closer {
 
 func (w *staleConnsWatcher) Close() error {
 	w.h.Network().StopNotify(w)
+	w.cancel()
+	if w.sub != nil {
+		w.sub.Close()
+	}
 	w.wg.Wait()
 	return nil
+}
+
+// isRelayed reports whether c goes through a circuit relay. The circuit
+// client marks a connection limited only when the relay announces limits,
+// so the address is checked as well.
+func isRelayed(c network.Conn) bool {
+	if c.Stat().Limited {
+		return true
+	}
+	_, err := c.RemoteMultiaddr().ValueForProtocol(ma.P_CIRCUIT)
+	return err == nil
 }
 
 // Connected runs inside the swarm's notification path, where closing a
 // connection risks lock trouble, so the work happens in a goroutine.
 func (w *staleConnsWatcher) Connected(_ network.Network, c network.Conn) {
-	if !c.Stat().Limited {
+	if !isRelayed(c) {
 		return
 	}
 	w.wg.Add(1)
 	go func() {
 		defer w.wg.Done()
-		w.closeStaleDirectConns(c)
+		w.mu.Lock()
+		defer w.mu.Unlock()
+		if w.closeStaleDirectConns(c) {
+			w.closedFor[c] = struct{}{}
+		}
 	}()
 }
 
-func (w *staleConnsWatcher) closeStaleDirectConns(relayed network.Conn) {
+func (w *staleConnsWatcher) Disconnected(_ network.Network, c network.Conn) {
+	w.mu.Lock()
+	delete(w.closedFor, c)
+	w.mu.Unlock()
+}
+
+// handleIdentify dials a peer once identify over a relayed connection
+// completes, if the watcher closed a stale direct connection to that peer.
+// It also closes stale connections itself, because identify can complete
+// before the goroutine started by Connected runs.
+func (w *staleConnsWatcher) handleIdentify() {
+	defer w.wg.Done()
+	for e := range w.sub.Out() {
+		evt := e.(event.EvtPeerIdentificationCompleted)
+		if evt.Conn == nil || !isRelayed(evt.Conn) {
+			continue
+		}
+		w.mu.Lock()
+		_, closedEarlier := w.closedFor[evt.Conn]
+		delete(w.closedFor, evt.Conn)
+		closed := w.closeStaleDirectConns(evt.Conn)
+		w.mu.Unlock()
+		if closedEarlier || closed {
+			w.wg.Add(1)
+			go func() {
+				defer w.wg.Done()
+				w.dialDirect(evt.Peer)
+			}()
+		}
+	}
+}
+
+// closeStaleDirectConns closes the direct connections to the peer of
+// relayed that opened at least grace before it, and reports whether it
+// closed any. The caller holds w.mu, so that a close by one goroutine is
+// recorded before the other looks for stale connections.
+func (w *staleConnsWatcher) closeStaleDirectConns(relayed network.Conn) bool {
 	p := relayed.RemotePeer()
 	arrived := relayed.Stat().Opened
+	closed := false
 	for _, c := range w.h.Network().ConnsToPeer(p) {
-		st := c.Stat()
-		if st.Limited || arrived.Sub(st.Opened) < w.grace {
+		if isRelayed(c) || arrived.Sub(c.Stat().Opened) < w.grace {
 			continue
 		}
 		w.log.Debugf("closing stale direct connection to %s on %s: relayed connection arrived", p, c.RemoteMultiaddr())
 		c.Close()
+		closed = true
+	}
+	return closed
+}
+
+// dialDirect dials p without relays, unless a dial from the watcher to p
+// is already running.
+func (w *staleConnsWatcher) dialDirect(p peer.ID) {
+	w.mu.Lock()
+	if _, ok := w.dialing[p]; ok {
+		w.mu.Unlock()
+		return
+	}
+	w.dialing[p] = struct{}{}
+	w.mu.Unlock()
+	defer func() {
+		w.mu.Lock()
+		delete(w.dialing, p)
+		w.mu.Unlock()
+	}()
+
+	ctx, cancel := context.WithTimeout(network.WithForceDirectDial(w.ctx, "replace stale direct connection"), staleConnsDialTimeout)
+	defer cancel()
+	w.log.Debugf("dialing %s directly to replace a stale connection", p)
+	if err := w.h.Connect(ctx, peer.AddrInfo{ID: p}); err != nil {
+		w.log.Debugf("direct dial to %s failed: %v", p, err)
 	}
 }

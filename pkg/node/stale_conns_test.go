@@ -34,7 +34,29 @@ func TestStaleDirectConnReplacedAfterHandover(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	n := newSimHandover(t, ctx, true)
+	n := newSimHandover(t, ctx, true, simLatency)
+	watch(t, n.a, node.WithStaleConnsGrace(testGrace))
+	time.Sleep(2 * testGrace)
+
+	n.switchB(t, ctx)
+
+	took := waitFor(t, 5*time.Second, func() bool { return n.aHasDirectConnOn(simBMobileAddr) }, func() string {
+		return fmt.Sprintf("A has no direct connection on B's mobile address; A conns: %v", simConns(n.a, n.b.ID()))
+	})
+	t.Logf("direct connection on the mobile address after %s", took)
+}
+
+// Without packet delay, identify over the relayed connection finishes
+// before the watcher closes the stale connection, so libp2p's hole puncher
+// sees a direct connection and does nothing. The watcher's own dial brings
+// the direct connection back.
+func TestStaleDirectConnReplacedAfterHandoverNoLatency(t *testing.T) {
+	if testing.Short() {
+		t.Skip("simulated network handover")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	n := newSimHandover(t, ctx, true, noLatency)
 	watch(t, n.a, node.WithStaleConnsGrace(testGrace))
 	time.Sleep(2 * testGrace)
 
@@ -54,7 +76,7 @@ func TestStaleDirectConnReplacedByHolePunch(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	n := newSimHandover(t, ctx, false)
+	n := newSimHandover(t, ctx, false, simLatency)
 	watch(t, n.a, node.WithStaleConnsGrace(testGrace))
 	time.Sleep(2 * testGrace)
 
@@ -75,7 +97,7 @@ func TestDirectConnYoungerThanGraceIsKept(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	n := newSimHandover(t, ctx, true)
+	n := newSimHandover(t, ctx, true, simLatency)
 	watch(t, n.a, node.WithStaleConnsGrace(time.Hour))
 
 	n.switchB(t, ctx)
