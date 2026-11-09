@@ -32,7 +32,7 @@ import (
 // stale. It keeps a startup race, where the relayed and the direct
 // connection open at about the same time, from closing a working direct
 // connection.
-const DefaultStaleConnsGrace = 5 * time.Second
+const DefaultStaleConnsGrace = 10 * time.Second
 
 // staleConnsDialTimeout bounds the watcher's direct dial to a peer.
 const staleConnsDialTimeout = 30 * time.Second
