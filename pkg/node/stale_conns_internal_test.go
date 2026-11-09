@@ -53,9 +53,19 @@ func (c *blockingConn) Close() error {
 type fakeNetwork struct {
 	network.Network
 	conns []network.Conn
+	// live, when set, replaces conns, so a test can change the
+	// connections while the watcher runs.
+	live *atomic.Pointer[[]network.Conn]
 }
 
-func (n fakeNetwork) ConnsToPeer(peer.ID) []network.Conn { return n.conns }
+func (n fakeNetwork) ConnsToPeer(peer.ID) []network.Conn {
+	if n.live != nil {
+		return *n.live.Load()
+	}
+	return n.conns
+}
+
+func (fakeNetwork) StopNotify(network.Notifiee) {}
 
 type fakeHost struct {
 	host.Host
@@ -161,7 +171,7 @@ func TestIsRelayed(t *testing.T) {
 func TestDialDirectCooldown(t *testing.T) {
 	dials := &atomic.Int32{}
 	w := newStaleConnsWatcher(fakeHost{dials: dials})
-	defer w.cancel()
+	defer w.Close()
 
 	w.dialDirect("peer")
 	w.dialDirect("peer")
@@ -178,5 +188,100 @@ func TestDialDirectCooldown(t *testing.T) {
 	w.dialDirect("peer")
 	if got := dials.Load(); got != 3 {
 		t.Fatalf("a dial after the cooldown made %d connects in total, want 3", got)
+	}
+}
+
+// deferredDialSetup returns a watcher with a short cooldown whose fake host
+// counts dials and holds the connections in conns, starting with one
+// relayed connection. One dial has run, so the cooldown is on.
+func deferredDialSetup(t *testing.T) (*staleConnsWatcher, *atomic.Int32, *atomic.Pointer[[]network.Conn], network.Conn, network.Conn) {
+	t.Helper()
+	circuit := ma.StringCast("/ip4/1.2.0.1/udp/8000/quic-v1/p2p/12D3KooWFhw67EU1Th6CSFeQWVRnug3RLVB6LavsNsFrszgkNjzp/p2p-circuit")
+	relayed := fakeConn{stat: network.ConnStats{Stats: network.Stats{Limited: true}}, remote: circuit}
+	direct := fakeConn{remote: ma.StringCast("/ip4/2.2.0.2/udp/8001/quic-v1")}
+	conns := &atomic.Pointer[[]network.Conn]{}
+	conns.Store(&[]network.Conn{relayed})
+	dials := &atomic.Int32{}
+	w := newStaleConnsWatcher(fakeHost{net: fakeNetwork{live: conns}, dials: dials})
+	w.dialCooldown = 50 * time.Millisecond
+	w.dialDirect("peer")
+	if got := dials.Load(); got != 1 {
+		t.Fatalf("first dial made %d connects, want 1", got)
+	}
+	return w, dials, conns, relayed, direct
+}
+
+// A dial that the cooldown blocks runs once the cooldown ends, so a peer
+// whose direct connection went stale twice within the cooldown does not
+// stay relayed until the relayed connection closes.
+func TestBlockedDialRunsAfterCooldown(t *testing.T) {
+	w, dials, _, _, _ := deferredDialSetup(t)
+	defer w.Close()
+
+	w.dialDirect("peer")
+	w.dialDirect("peer")
+	if got := dials.Load(); got != 1 {
+		t.Fatalf("dials within the cooldown made %d connects, want 1", got)
+	}
+	deadline := time.Now().Add(time.Second)
+	for dials.Load() < 2 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if got := dials.Load(); got != 2 {
+		t.Fatalf("after the cooldown the blocked dials made %d connects in total, want 2", got)
+	}
+	time.Sleep(4 * w.dialCooldown)
+	if got := dials.Load(); got != 2 {
+		t.Fatalf("the blocked dials ran %d times in total, want them merged into one", got-1)
+	}
+}
+
+func TestDeferredDialSkipped(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		conns func(relayed, direct network.Conn) []network.Conn
+	}{
+		{"direct connection back", func(relayed, direct network.Conn) []network.Conn { return []network.Conn{relayed, direct} }},
+		{"no connections", func(network.Conn, network.Conn) []network.Conn { return nil }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w, dials, conns, relayed, direct := deferredDialSetup(t)
+			defer w.Close()
+
+			w.dialDirect("peer")
+			now := tc.conns(relayed, direct)
+			conns.Store(&now)
+			time.Sleep(4 * w.dialCooldown)
+			if got := dials.Load(); got != 1 {
+				t.Fatalf("made %d connects in total, want 1", got)
+			}
+		})
+	}
+}
+
+// Close stops a deferred dial and returns without waiting for its timer.
+func TestCloseStopsDeferredDial(t *testing.T) {
+	w, dials, _, _, _ := deferredDialSetup(t)
+	w.dialCooldown = time.Hour
+	w.dialDirect("peer")
+
+	closed := make(chan struct{})
+	go func() {
+		w.Close()
+		close(closed)
+	}()
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("Close waits for the deferred dial's timer")
+	}
+	w.mu.Lock()
+	pending := len(w.deferred)
+	w.mu.Unlock()
+	if pending != 0 {
+		t.Fatalf("%d deferred dials remain after Close", pending)
+	}
+	if got := dials.Load(); got != 1 {
+		t.Fatalf("made %d connects in total, want 1", got)
 	}
 }

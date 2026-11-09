@@ -88,6 +88,9 @@ type staleConnsWatcher struct {
 	// lastDial holds when the watcher last started a dial to each peer.
 	lastDial     map[peer.ID]time.Time
 	dialCooldown time.Duration
+	// deferred holds the timer of the dial to each peer that waits for the
+	// cooldown to end.
+	deferred map[peer.ID]*time.Timer
 }
 
 func newStaleConnsWatcher(h host.Host, opts ...StaleConnsOption) *staleConnsWatcher {
@@ -103,6 +106,7 @@ func newStaleConnsWatcher(h host.Host, opts ...StaleConnsOption) *staleConnsWatc
 		dialing:      make(map[peer.ID]struct{}),
 		lastDial:     make(map[peer.ID]time.Time),
 		dialCooldown: staleConnsDialCooldown,
+		deferred:     make(map[peer.ID]*time.Timer),
 	}
 	for _, o := range opts {
 		o(w)
@@ -154,6 +158,17 @@ func WatchStaleDirectConns(h host.Host, opts ...StaleConnsOption) io.Closer {
 func (w *staleConnsWatcher) Close() error {
 	w.h.Network().StopNotify(w)
 	w.cancel()
+	// dialDirect schedules no deferred dial once the context is cancelled,
+	// so the map holds every timer left to stop. A timer that Stop cannot
+	// stop has fired, and its function returns on the cancelled context.
+	w.mu.Lock()
+	for p, t := range w.deferred {
+		if t.Stop() {
+			w.wg.Done()
+		}
+		delete(w.deferred, p)
+	}
+	w.mu.Unlock()
 	if w.sub != nil {
 		w.sub.Close()
 	}
@@ -320,7 +335,9 @@ func (w *staleConnsWatcher) closeConns(stale []network.Conn) {
 }
 
 // dialDirect dials p without relays, unless a dial from the watcher to p
-// is already running or started less than dialCooldown ago.
+// is already running or started less than dialCooldown ago. A dial the
+// cooldown blocks is deferred to the end of the cooldown, because the
+// event that asked for it does not come again.
 func (w *staleConnsWatcher) dialDirect(p peer.ID) {
 	now := time.Now()
 	w.mu.Lock()
@@ -333,9 +350,10 @@ func (w *staleConnsWatcher) dialDirect(p peer.ID) {
 			delete(w.lastDial, id)
 		}
 	}
-	if _, ok := w.lastDial[p]; ok {
+	if last, ok := w.lastDial[p]; ok {
+		w.deferDialLocked(p, w.dialCooldown-now.Sub(last))
 		w.mu.Unlock()
-		w.log.Debugf("not dialing %s directly: the last dial was less than %s ago", p, w.dialCooldown)
+		w.log.Debugf("deferring the direct dial to %s: the last dial was less than %s ago", p, w.dialCooldown)
 		return
 	}
 	w.dialing[p] = struct{}{}
@@ -353,4 +371,25 @@ func (w *staleConnsWatcher) dialDirect(p peer.ID) {
 	if err := w.h.Connect(ctx, peer.AddrInfo{ID: p}); err != nil {
 		w.log.Debugf("direct dial to %s failed: %v", p, err)
 	}
+}
+
+// deferDialLocked schedules a dial to p after wait, unless one is already
+// scheduled, in which case the requests merge into it. The dial runs only
+// if p then still has relayed connections and no direct one. The caller
+// holds w.mu.
+func (w *staleConnsWatcher) deferDialLocked(p peer.ID, wait time.Duration) {
+	if _, ok := w.deferred[p]; ok || w.ctx.Err() != nil {
+		return
+	}
+	w.wg.Add(1)
+	w.deferred[p] = time.AfterFunc(wait, func() {
+		defer w.wg.Done()
+		w.mu.Lock()
+		delete(w.deferred, p)
+		w.mu.Unlock()
+		if w.ctx.Err() != nil || !w.onlyRelayed(p) {
+			return
+		}
+		w.dialDirect(p)
+	})
 }
