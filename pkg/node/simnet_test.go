@@ -260,6 +260,26 @@ func (n *simHandover) aHasDirectConnOn(addr ma.Multiaddr) bool {
 	return false
 }
 
+// aCloseConnsOn closes A's connections to B on B's address addr.
+func (n *simHandover) aCloseConnsOn(addr ma.Multiaddr) {
+	for _, c := range n.a.Network().ConnsToPeer(n.b.ID()) {
+		if c.RemoteMultiaddr().Equal(addr) {
+			c.Close()
+		}
+	}
+}
+
+// aKnowsBMobileAddr reports whether A's peerstore holds B's mobile address,
+// which A learns from identify over the relayed connection.
+func (n *simHandover) aKnowsBMobileAddr() bool {
+	for _, a := range n.a.Peerstore().Addrs(n.b.ID()) {
+		if a.Equal(simBMobileAddr) {
+			return true
+		}
+	}
+	return false
+}
+
 func (n *simHandover) aHasRelayedConn() bool {
 	for _, c := range n.a.Network().ConnsToPeer(n.b.ID()) {
 		if c.Stat().Limited {

@@ -108,6 +108,53 @@ func TestDirectConnYoungerThanGraceIsKept(t *testing.T) {
 	}
 }
 
+// The fast path leaves a stale direct connection that is younger than
+// grace. When it closes later, for example on the QUIC idle timeout, the
+// watcher dials the peer directly on the addresses identify over the
+// relayed connection announced.
+func TestDirectDialWhenLastDirectConnCloses(t *testing.T) {
+	if testing.Short() {
+		t.Skip("simulated network handover")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	n := newSimHandover(t, ctx, true, simLatency)
+	watch(t, n.a, node.WithStaleConnsGrace(time.Hour))
+
+	n.switchB(t, ctx)
+	waitFor(t, 5*time.Second, n.aKnowsBMobileAddr, func() string {
+		return fmt.Sprintf("identify did not give A B's mobile address; A knows: %v", n.a.Peerstore().Addrs(n.b.ID()))
+	})
+	if !n.aHasDirectConnOn(simBWifiAddr) {
+		t.Fatalf("the fast path closed the Wi-Fi connection that is younger than grace; A conns: %v", simConns(n.a, n.b.ID()))
+	}
+	n.aCloseConnsOn(simBWifiAddr)
+
+	took := waitFor(t, 5*time.Second, func() bool { return n.aHasDirectConnOn(simBMobileAddr) }, func() string {
+		return fmt.Sprintf("A has no direct connection on B's mobile address; A conns: %v", simConns(n.a, n.b.ID()))
+	})
+	t.Logf("direct connection on the mobile address after %s", took)
+}
+
+// A peer that A has no connection to at all is gone, so the watcher does
+// not dial it.
+func TestNoDialWhenLastConnOfAnyKindCloses(t *testing.T) {
+	if testing.Short() {
+		t.Skip("simulated network")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	n := newSimHandover(t, ctx, true, simLatency)
+	watch(t, n.a, node.WithStaleConnsGrace(testGrace))
+
+	n.aCloseConnsOn(simBWifiAddr)
+	time.Sleep(time.Second)
+
+	if conns := simConns(n.a, n.b.ID()); len(conns) != 0 {
+		t.Fatalf("A dialed B after its last connection to B closed; A conns: %v", conns)
+	}
+}
+
 func watch(t *testing.T, h host.Host, opts ...node.StaleConnsOption) {
 	t.Helper()
 	w := node.WatchStaleDirectConns(h, opts...)

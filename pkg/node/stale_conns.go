@@ -73,7 +73,11 @@ type staleConnsWatcher struct {
 	// closedFor holds the relayed connections for which the watcher closed
 	// a stale direct connection and still waits for identify.
 	closedFor map[network.Conn]struct{}
-	dialing   map[peer.ID]struct{}
+	// closing holds the direct connections the watcher closes itself. The
+	// fast path dials after identify, so their Disconnected must not dial
+	// earlier, on addresses that may be gone.
+	closing map[network.Conn]struct{}
+	dialing map[peer.ID]struct{}
 }
 
 // WatchStaleDirectConns closes direct connections that a relayed connection
@@ -94,6 +98,10 @@ type staleConnsWatcher struct {
 // itself. That dial reaches a peer whose new address accepts incoming
 // connections; a peer behind NAT still needs the hole puncher.
 //
+// A stale direct connection younger than the grace stays open. When it, or
+// any other direct connection, closes and leaves the peer with only relayed
+// connections, the watcher dials the peer directly as well.
+//
 // Close stops the watcher, cancels its dials and waits for them.
 func WatchStaleDirectConns(h host.Host, opts ...StaleConnsOption) io.Closer {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -104,6 +112,7 @@ func WatchStaleDirectConns(h host.Host, opts ...StaleConnsOption) io.Closer {
 		ctx:       ctx,
 		cancel:    cancel,
 		closedFor: make(map[network.Conn]struct{}),
+		closing:   make(map[network.Conn]struct{}),
 		dialing:   make(map[peer.ID]struct{}),
 	}
 	for _, o := range opts {
@@ -152,17 +161,50 @@ func (w *staleConnsWatcher) Connected(_ network.Network, c network.Conn) {
 	go func() {
 		defer w.wg.Done()
 		w.mu.Lock()
-		defer w.mu.Unlock()
-		if w.closeStaleDirectConns(c) {
+		stale := w.takeStaleDirectConns(c)
+		if len(stale) > 0 {
 			w.closedFor[c] = struct{}{}
 		}
+		w.mu.Unlock()
+		w.closeConns(stale)
 	}()
 }
 
+// Disconnected dials the peer directly when the last direct connection to
+// it closes while a relayed one remains. Identify over the relayed
+// connection has then normally given this host the peer's current
+// addresses. The check runs in a goroutine, as in Connected.
 func (w *staleConnsWatcher) Disconnected(_ network.Network, c network.Conn) {
 	w.mu.Lock()
 	delete(w.closedFor, c)
+	_, closedByWatcher := w.closing[c]
+	delete(w.closing, c)
 	w.mu.Unlock()
+	if closedByWatcher || isRelayed(c) {
+		return
+	}
+	w.wg.Add(1)
+	go func() {
+		defer w.wg.Done()
+		p := c.RemotePeer()
+		if !w.onlyRelayed(p) {
+			return
+		}
+		w.log.Debugf("last direct connection to %s on %s closed, a relayed one remains", p, c.RemoteMultiaddr())
+		w.dialDirect(p)
+	}()
+}
+
+// onlyRelayed reports whether every connection to p is relayed and there
+// is at least one.
+func (w *staleConnsWatcher) onlyRelayed(p peer.ID) bool {
+	conns := w.h.Network().ConnsToPeer(p)
+	for _, c := range conns {
+		if !isRelayed(c) {
+			return false
+		}
+	}
+	return len(conns) > 0
 }
 
 // handleIdentify dials a peer once identify over a relayed connection
@@ -179,9 +221,10 @@ func (w *staleConnsWatcher) handleIdentify() {
 		w.mu.Lock()
 		_, closedEarlier := w.closedFor[evt.Conn]
 		delete(w.closedFor, evt.Conn)
-		closed := w.closeStaleDirectConns(evt.Conn)
+		stale := w.takeStaleDirectConns(evt.Conn)
 		w.mu.Unlock()
-		if closedEarlier || closed {
+		w.closeConns(stale)
+		if closedEarlier || len(stale) > 0 {
 			w.wg.Add(1)
 			go func() {
 				defer w.wg.Done()
@@ -191,23 +234,34 @@ func (w *staleConnsWatcher) handleIdentify() {
 	}
 }
 
-// closeStaleDirectConns closes the direct connections to the peer of
-// relayed that opened at least grace before it, and reports whether it
-// closed any. The caller holds w.mu, so that a close by one goroutine is
-// recorded before the other looks for stale connections.
-func (w *staleConnsWatcher) closeStaleDirectConns(relayed network.Conn) bool {
-	p := relayed.RemotePeer()
+// takeStaleDirectConns returns the direct connections to the peer of
+// relayed that opened at least grace before it and marks them as closed by
+// the watcher. The caller holds w.mu, so that what one goroutine takes is
+// recorded before the other looks, and closes the connections with
+// closeConns after releasing it. Both goroutines may take the same
+// connection; closing it twice is harmless, and the swarm drops a closing
+// connection from ConnsToPeer before the close returns.
+func (w *staleConnsWatcher) takeStaleDirectConns(relayed network.Conn) []network.Conn {
 	arrived := relayed.Stat().Opened
-	closed := false
-	for _, c := range w.h.Network().ConnsToPeer(p) {
+	var stale []network.Conn
+	for _, c := range w.h.Network().ConnsToPeer(relayed.RemotePeer()) {
 		if isRelayed(c) || arrived.Sub(c.Stat().Opened) < w.grace {
 			continue
 		}
-		w.log.Debugf("closing stale direct connection to %s on %s: relayed connection arrived", p, c.RemoteMultiaddr())
-		c.Close()
-		closed = true
+		w.closing[c] = struct{}{}
+		stale = append(stale, c)
 	}
-	return closed
+	return stale
+}
+
+// closeConns closes stale connections without holding w.mu: a close that
+// blocks would otherwise stop handleIdentify, and identify's event emitter
+// with it.
+func (w *staleConnsWatcher) closeConns(stale []network.Conn) {
+	for _, c := range stale {
+		w.log.Debugf("closing stale direct connection to %s on %s: relayed connection arrived", c.RemotePeer(), c.RemoteMultiaddr())
+		c.Close()
+	}
 }
 
 // dialDirect dials p without relays, unless a dial from the watcher to p
