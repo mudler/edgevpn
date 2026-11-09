@@ -332,3 +332,40 @@ func TestCloseEndsRunningDial(t *testing.T) {
 		t.Fatal("the dial still runs after Close")
 	}
 }
+
+// deadlineHost records the deadline of the context its Connect gets.
+type deadlineHost struct {
+	fakeHost
+	deadline chan time.Time
+}
+
+func (h deadlineHost) Connect(ctx context.Context, _ peer.AddrInfo) error {
+	d, ok := ctx.Deadline()
+	if !ok {
+		d = time.Time{}
+	}
+	h.deadline <- d
+	return nil
+}
+
+// On a routed host a failed dial is followed by a DHT lookup with the same
+// context, so the watcher's Connect needs a deadline. It is
+// network.DialPeerTimeout at the time of the dial.
+func TestDialHasDialPeerTimeoutDeadline(t *testing.T) {
+	saved := network.DialPeerTimeout
+	t.Cleanup(func() { network.DialPeerTimeout = saved })
+	h := deadlineHost{deadline: make(chan time.Time, 1)}
+	w := newStaleConnsWatcher(h)
+	defer w.Close()
+	network.DialPeerTimeout = 7 * time.Second
+
+	start := time.Now()
+	w.dialDirect("peer")
+	d := <-h.deadline
+	if d.IsZero() {
+		t.Fatal("the watcher's Connect has no deadline")
+	}
+	if got := d.Sub(start); got < 6*time.Second || got > 8*time.Second {
+		t.Fatalf("the watcher's Connect has a deadline %s away, want about 7s", got)
+	}
+}

@@ -370,9 +370,12 @@ func (w *staleConnsWatcher) dialDirect(p peer.ID) {
 		w.mu.Unlock()
 	}()
 
-	// The swarm bounds the dial with its own peer dial timeout, and Close
-	// ends it through w.ctx.
-	ctx := network.WithForceDirectDial(w.ctx, "replace stale direct connection")
+	// One dial attempt gets libp2p's peer dial timeout as its budget. It
+	// covers the whole Connect: the dial, and on a routed host the DHT
+	// lookup that follows a failed dial with the same context. Close ends
+	// it earlier through w.ctx.
+	ctx, cancel := context.WithTimeout(network.WithForceDirectDial(w.ctx, "replace stale direct connection"), network.DialPeerTimeout)
+	defer cancel()
 	w.log.Debugf("dialing %s directly to replace a stale connection", p)
 	if err := w.h.Connect(ctx, peer.AddrInfo{ID: p}); err != nil {
 		w.log.Debugf("direct dial to %s failed: %v", p, err)
