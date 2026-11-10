@@ -266,6 +266,12 @@ func (l *Ledger) merge(cur map[string]map[string]SignedData, incoming *Block, no
 					changed = true
 				} else {
 					l.warn("ownership violation (rejected): %s/%s from %s: %s", bucket, key, in.Owner, reason)
+					if reason == reasonForeignTombstone {
+						if d, ok := l.reassert(bucket, key, ex, in, now); ok {
+							cur[bucket][key] = d
+							changed = true
+						}
+					}
 				}
 				continue
 			}
@@ -299,7 +305,7 @@ func (l *Ledger) accept(bucket, key string, in, ex SignedData, exists bool, pol 
 			return "tombstone for unknown key"
 		}
 		if in.Owner != l.ownerOf(key, ex, pol) && !l.expired(bucket, key, ex, pol, health, now) {
-			return "tombstone by non-owner of a live entry"
+			return reasonForeignTombstone
 		}
 		if in.Version <= ex.Version {
 			return "stale tombstone"
@@ -345,6 +351,39 @@ func (l *Ledger) accept(bucket, key string, in, ex SignedData, exists bool, pol 
 		return "lost deterministic tie-break"
 	}
 	return ""
+}
+
+// reasonForeignTombstone is the rejection of a validly signed tombstone that
+// another peer wrote for a live entry it does not own.
+const reasonForeignTombstone = "tombstone by non-owner of a live entry"
+
+// reassert answers a rejected foreign tombstone in for an entry ex that this
+// node owns: it re-signs ex with a version above the tombstone's, so every peer
+// holding the tombstone accepts it as a re-claim. It reports false, leaving ex
+// as it is, when ex is not this node's, or when the tombstone's version lies
+// further in the future than the ownership TTL, which no clock skew between
+// live peers explains and which would otherwise push ex to that version.
+//
+// Another peer writes such a tombstone when it reaps an owner whose heartbeats
+// stopped reaching it. If the owner only rejected it, the two ledgers would
+// disagree until tombstone GC: the reaper refuses the owner's entry as a stale
+// re-claim, and the owner never writes a newer version because, in its own
+// ledger, the entry is unchanged.
+func (l *Ledger) reassert(bucket, key string, ex, in SignedData, now time.Time) (SignedData, bool) {
+	pol := l.registry.Policy(bucket)
+	if l.signer == nil || ex.Deleted || l.ownerOf(key, ex, pol) != l.signer.ID() || in.Owner == l.signer.ID() {
+		return SignedData{}, false
+	}
+	if in.Version > uint64(now.Add(l.ttl).UnixNano()) {
+		return SignedData{}, false
+	}
+	d := SignedData{Value: ex.Value, Version: versionAfter(max(ex.Version, in.Version), now), UpdatedAt: now.Unix(), Owner: l.signer.ID()}
+	sig, err := l.signer.Sign(canonical(bucket, key, d))
+	if err != nil {
+		return SignedData{}, false
+	}
+	d.Sig = sig
+	return d, true
 }
 
 // ownerOf returns the peer an existing entry belongs to.
