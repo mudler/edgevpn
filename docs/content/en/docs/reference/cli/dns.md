@@ -41,6 +41,7 @@ edgevpn dns [options]
 | `--autorelay` | `true` | `EDGEVPNAUTORELAY` | Automatically act as a relay if the node can accept inbound connections |
 | `--concurrency` | `20` | — | Number of concurrent requests to serve |
 | `--holepunch` | `true` | `EDGEVPNHOLEPUNCH` | Automatically try holepunching when possible |
+| `--disable-stale-conns-watcher` | `false` | `EDGEVPNDISABLESTALECONNSWATCHER` | Do not close direct connections that a peer has replaced with a relayed one, and do not redial such peers directly |
 | `--natservice` | `true` | `EDGEVPNNATSERVICE` | Tries to determine reachability status of nodes |
 | `--natmap` | `true` | `EDGEVPNNATMAP` | Tries to open a port in the firewall via upnp |
 | `--dht` | `true` | `EDGEVPNDHT` | Enable DHT for peer discovery |

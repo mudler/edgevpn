@@ -228,6 +228,18 @@ func (e *Node) startNetwork(ctx context.Context) error {
 		}
 	}
 
+	// The watcher lives as long as the node runs. It is installed after the
+	// last step that can return an error, so a failed start leaves no
+	// watcher behind, and before the streams, pubsub and discovery start
+	// opening connections.
+	if !e.config.DisableStaleConnsWatcher {
+		watcher := WatchStaleDirectConns(host, WithStaleConnsLogger(e.config.Logger))
+		go func() {
+			<-ctx.Done()
+			watcher.Close()
+		}()
+	}
+
 	for pid, strh := range e.config.StreamHandlers {
 		host.SetStreamHandler(pid.ID(), network.StreamHandler(strh(e, ledger)))
 	}

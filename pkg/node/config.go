@@ -82,6 +82,10 @@ type Config struct {
 	// entries may be reclaimed/reaped.
 	OwnershipMode blockchain.OwnershipMode
 	OwnershipTTL  time.Duration
+
+	// DisableStaleConnsWatcher keeps the node from installing the watcher
+	// described in WatchStaleDirectConns.
+	DisableStaleConnsWatcher bool
 }
 
 type Gater interface {
