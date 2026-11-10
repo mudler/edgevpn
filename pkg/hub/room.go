@@ -49,6 +49,7 @@ func connect(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName st
 	// and subscribe to it
 	sub, err := topic.Subscribe()
 	if err != nil {
+		topic.Close()
 		return nil, err
 	}
 
@@ -64,6 +65,17 @@ func connect(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, roomName st
 	// start reading messages from the subscription in a loop
 	go cr.readLoop(messageChan)
 	return cr, nil
+}
+
+// leave unsubscribes from the room's topic and releases it, so the pubsub
+// instance tells its peers it left and keeps no state for the topic.
+func (cr *room) leave() {
+	cr.sub.Cancel()
+	// Close fails while the topic has subscriptions, event handlers or relays,
+	// none of which the room creates besides the subscription cancelled above,
+	// and after the pubsub instance has shut down, when nothing is left to
+	// release.
+	_ = cr.Topic.Close()
 }
 
 // publishMessage sends a message to the pubsub topic.

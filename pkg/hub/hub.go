@@ -42,7 +42,7 @@ type MessageHub struct {
 	joinPublic         bool
 	directPeers        []peer.AddrInfo
 
-	ctxCancel                context.CancelFunc
+	ctxCancel, psCancel      context.CancelFunc
 	Messages, PublicMessages chan *Message
 }
 
@@ -81,89 +81,103 @@ func (m *MessageHub) joinRoom(host host.Host) error {
 	m.Lock()
 	defer m.Unlock()
 
+	topic := m.topicKey()
+	if m.blockchain != nil && m.blockchain.roomName == topic {
+		return nil
+	}
+
+	// One pubsub instance serves the hub for as long as it runs, and a key
+	// change only moves it to new topics. A new instance per key would reset
+	// the pubsub streams on every live connection, and two peers never switch
+	// at the same instant: a stream opened by the peer that switched first
+	// lands on the other peer's old instance, which drops what it reads and
+	// later resets it. Gossipsub then reopens the stream but forgets the
+	// peer's subscriptions, which the peer announced once and does not repeat,
+	// so it stops sending to that peer until the next key change.
+	if m.ps == nil {
+		// FloodPublish makes the publisher flood messages to ALL connected peers
+		// rather than only to its mesh. This matters for small clusters (2-3
+		// nodes), where the gossipsub mesh sits below its low-watermark and
+		// mesh-only delivery becomes unreliable or asymmetric.
+		//
+		// PeerExchange lets gossipsub peers gossip about each other, which helps
+		// recover from one-way mesh links and from peer churn.
+		//
+		// DirectPeers (when set, typically from bootstrap peers) pins specific
+		// peers as always-connected, mesh-bypass delivery targets, so
+		// publication is guaranteed to reach them.
+		psOpts := []pubsub.Option{
+			pubsub.WithMaxMessageSize(m.maxsize),
+			pubsub.WithFloodPublish(true),
+			pubsub.WithPeerExchange(true),
+		}
+		if len(m.directPeers) > 0 {
+			psOpts = append(psOpts, pubsub.WithDirectPeers(m.directPeers))
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		ps, err := pubsub.NewGossipSub(ctx, host, psOpts...)
+		if err != nil {
+			cancel()
+			return err
+		}
+		m.ps, m.psCancel = ps, cancel
+	}
+
+	// The new topics are joined before the old ones are left, so the hub
+	// always has a room to publish to.
+	ctx, cancel := context.WithCancel(context.Background())
+	cr, err := connect(ctx, m.ps, host.ID(), topic, m.Messages)
+	if err != nil {
+		cancel()
+		return err
+	}
+	var public *room
+	if m.joinPublic {
+		public, err = connect(ctx, m.ps, host.ID(), m.topicKey("public"), m.PublicMessages)
+		if err != nil {
+			cr.leave()
+			cancel()
+			return err
+		}
+	}
+
+	for _, old := range []*room{m.blockchain, m.public} {
+		if old != nil {
+			old.leave()
+		}
+	}
 	if m.ctxCancel != nil {
 		m.ctxCancel()
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	m.ctxCancel = cancel
-
-	// create a new PubSub service using the GossipSub router.
-	//
-	// FloodPublish makes the publisher flood messages to ALL connected peers
-	// rather than only to its mesh — important for small clusters (2-3 nodes)
-	// where the gossipsub mesh sits below its low-watermark and standard
-	// mesh-only delivery becomes unreliable / asymmetric.
-	//
-	// PeerExchange lets gossipsub peers gossip about each other, which helps
-	// recover from one-way mesh links and from peer churn.
-	//
-	// DirectPeers (when set, typically from bootstrap peers) pins specific
-	// peers as always-connected, mesh-bypass delivery targets — guaranteeing
-	// publication reaches them.
-	psOpts := []pubsub.Option{
-		pubsub.WithMaxMessageSize(m.maxsize),
-		pubsub.WithFloodPublish(true),
-		pubsub.WithPeerExchange(true),
-	}
-	if len(m.directPeers) > 0 {
-		psOpts = append(psOpts, pubsub.WithDirectPeers(m.directPeers))
-	}
-	ps, err := pubsub.NewGossipSub(ctx, host, psOpts...)
-	if err != nil {
-		return err
-	}
-
-	// join the "chat" room
-	cr, err := connect(ctx, ps, host.ID(), m.topicKey(), m.Messages)
-	if err != nil {
-		return err
-	}
-
-	m.blockchain = cr
-
-	if m.joinPublic {
-		cr2, err := connect(ctx, ps, host.ID(), m.topicKey("public"), m.PublicMessages)
-		if err != nil {
-			return err
-		}
-		m.public = cr2
-	}
-
-	m.ps = ps
+	m.blockchain, m.public, m.ctxCancel = cr, public, cancel
 
 	return nil
 }
 
+// Start keeps the hub in the room of the current key until ctx is done. It
+// checks once a second, so a key change, or a join that failed, is picked up
+// within a second.
 func (m *MessageHub) Start(ctx context.Context, host host.Host) error {
-	c := make(chan interface{})
-	go func(c context.Context, cc chan interface{}) {
-		k := ""
-		for {
-			select {
-			default:
-				currentKey := m.topicKey()
-				if currentKey != k {
-					k = currentKey
-					cc <- nil
-				}
-				time.Sleep(1 * time.Second)
-			case <-ctx.Done():
-				close(cc)
-				return
-			}
-		}
-	}(ctx, c)
-
-	for range c {
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
+	for {
 		m.joinRoom(host)
+		select {
+		case <-tick.C:
+		case <-ctx.Done():
+			m.Lock()
+			if m.ctxCancel != nil {
+				m.ctxCancel()
+			}
+			if m.psCancel != nil {
+				m.psCancel()
+			}
+			m.ps, m.psCancel, m.ctxCancel = nil, nil, nil
+			m.blockchain, m.public = nil, nil
+			m.Unlock()
+			return nil
+		}
 	}
-
-	// Close eventual open contexts
-	if m.ctxCancel != nil {
-		m.ctxCancel()
-	}
-	return nil
 }
 
 func (m *MessageHub) PublishMessage(mess *Message) error {
