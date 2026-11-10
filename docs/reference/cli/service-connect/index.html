@@ -27,12 +27,12 @@
   <meta property="og:locale" content="en">
   <meta property="og:type" content="article">
     <meta property="article:section" content="docs">
-    <meta property="article:modified_time" content="2026-11-10T19:51:41+02:00">
+    <meta property="article:modified_time" content="2026-11-10T19:51:58+02:00">
 
   <meta itemprop="name" content="service-connect">
   <meta itemprop="description" content="Connects to a service in the network without creating a VPN">
-  <meta itemprop="dateModified" content="2026-11-10T19:51:41+02:00">
-  <meta itemprop="wordCount" content="982">
+  <meta itemprop="dateModified" content="2026-11-10T19:51:58+02:00">
+  <meta itemprop="wordCount" content="1006">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="service-connect">
   <meta name="twitter:description" content="Connects to a service in the network without creating a VPN">
@@ -75,7 +75,7 @@
     aria-label="Search this site…"
     autocomplete="off"
     
-    data-offline-search-index-json-src="/edgevpn/offline-search-index.b52a05c16f78a492807c730599676eeb.json"
+    data-offline-search-index-json-src="/edgevpn/offline-search-index.7259ee66cebb31af06f28dd7e4cbb6b0.json"
     data-offline-search-base-href="/"
     data-offline-search-max-results="10"
   >
@@ -99,7 +99,7 @@
     aria-label="Search this site…"
     autocomplete="off"
     
-    data-offline-search-index-json-src="/edgevpn/offline-search-index.b52a05c16f78a492807c730599676eeb.json"
+    data-offline-search-index-json-src="/edgevpn/offline-search-index.7259ee66cebb31af06f28dd7e4cbb6b0.json"
     data-offline-search-base-href="/"
     data-offline-search-max-results="10"
   >
@@ -435,6 +435,12 @@ Creates a local listener which connects over the service in the network without 
           <td>Automatically try holepunching when possible</td>
       </tr>
       <tr>
+          <td><code>--disable-stale-conns-watcher</code></td>
+          <td><code>false</code></td>
+          <td><code>EDGEVPNDISABLESTALECONNSWATCHER</code></td>
+          <td>Do not close direct connections that a peer has replaced with a relayed one, and do not redial such peers directly</td>
+      </tr>
+      <tr>
           <td><code>--natservice</code></td>
           <td><code>true</code></td>
           <td><code>EDGEVPNNATSERVICE</code></td>
@@ -720,7 +726,7 @@ Creates a local listener which connects over the service in the network without 
 </table>
 
 	<div class="td-page-meta__lastmod">
-  Last modified November 10, 2026: <a data-proofer-ignore href="https://github.com/mudler/edgevpn/commit/1b46da5f2b4ee31dfb8f2ae1db32f45b7a590e3d">fix: keep ledger updates flowing across room key changes and let reaped owners recover (#1091) (1b46da5)</a>
+  Last modified November 10, 2026: <a data-proofer-ignore href="https://github.com/mudler/edgevpn/commit/4533974923b01a1f564323daf252ff4384897a05">fix(node): replace stale direct connections after a peer changes networks (#1090) (4533974)</a>
 </div>
 
 </div>
