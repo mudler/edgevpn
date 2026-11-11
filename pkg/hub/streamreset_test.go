@@ -27,7 +27,10 @@ import (
 // A pubsub stream can be reset while the connection under it stays up, for
 // example when a phone changes networks and only some of its streams survive.
 // Pubsub then opens a new stream, and the other hub must keep hearing from
-// this one on it.
+// this one on it. That depends on the go-libp2p-pubsub version in go.mod's
+// replace, which must keep a peer's subscriptions across the new stream
+// (libp2p/go-libp2p-pubsub#734), so this test fails if a dependency update
+// moves to a version without that fix.
 func TestMessagesFlowAfterAPubsubStreamIsReset(t *testing.T) {
 	a, b := newLocalHost(t), newLocalHost(t)
 	if err := a.Connect(context.Background(), peer.AddrInfo{ID: b.ID(), Addrs: b.Addrs()}); err != nil {
