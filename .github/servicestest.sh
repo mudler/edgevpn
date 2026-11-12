@@ -30,7 +30,7 @@ else
     ((count = 240))                        
     while [[ $count -ne 0 ]] ; do
         sleep 2
-        curl http://localhost:9090/ | grep "EdgeVPN"
+        curl -L http://localhost:9090/ | grep "EdgeVPN"
         rc=$?
         if [[ $rc -eq 0 ]] ; then
             ((count = 1))
