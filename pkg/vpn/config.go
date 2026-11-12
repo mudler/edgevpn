@@ -60,6 +60,8 @@ func (cfg *Config) Apply(opts ...Option) error {
 	return nil
 }
 
+// WithMaxStreams has no effect on the VPN, which keeps one stream per peer
+// on the framed protocol and one per packet on the unframed one.
 func WithMaxStreams(i int) func(cfg *Config) error {
 	return func(cfg *Config) error {
 		cfg.MaxStreams = i
@@ -67,6 +69,8 @@ func WithMaxStreams(i int) func(cfg *Config) error {
 	}
 }
 
+// LowProfile has no effect on the VPN, which keeps one stream per peer on the
+// framed protocol whatever the profile.
 var LowProfile Option = func(cfg *Config) error {
 	cfg.lowProfile = true
 
