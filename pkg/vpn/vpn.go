@@ -71,6 +71,7 @@ func VPNNetworkService(p ...Option) node.NetworkService {
 		// Peers on the framed protocol get one stream each, kept open.
 		ls := newLinks(n.Host())
 		ls.debug = c.Logger.Debugf
+		go logDrops(ctx, ls, c)
 		go func() {
 			<-ctx.Done()
 			ls.close()
@@ -156,6 +157,27 @@ func framedStreamHandler(allowed func(peer.ID) bool, ifce io.Writer, recheck tim
 			return
 		}
 		stream.Close()
+	}
+}
+
+// logDrops logs, every 10 seconds, the packets dropped per peer because more
+// was waiting in the stream than the path carries.
+func logDrops(ctx context.Context, ls *links, c *Config) {
+	last := map[peer.ID]uint64{}
+	tick := time.NewTicker(10 * time.Second)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+		}
+		for pid, n := range ls.dropped() {
+			if n > last[pid] {
+				c.Logger.Debugf("dropped %d packets to %s in the last 10s: more was waiting than the path carries", n-last[pid], pid)
+			}
+			last[pid] = n
+		}
 	}
 }
 
