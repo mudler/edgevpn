@@ -30,6 +30,7 @@ import (
 	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	connmanager "github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	relayv2 "github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
+	"github.com/libp2p/go-libp2p/p2p/protocol/holepunch"
 	"github.com/mudler/edgevpn/pkg/blockchain"
 	"github.com/mudler/edgevpn/pkg/crypto"
 	"github.com/mudler/edgevpn/pkg/discovery"
@@ -567,7 +568,7 @@ func (c Config) ToOpts(l log.StandardLogger) ([]node.Option, []vpn.Option, error
 	}
 
 	if c.Connection.HolePunch {
-		libp2pOpts = append(libp2pOpts, libp2p.EnableHolePunching())
+		libp2pOpts = append(libp2pOpts, libp2p.EnableHolePunching(holepunch.WithTracer(holePunchLogger{l: llger})))
 	}
 
 	if c.NAT.Service {
