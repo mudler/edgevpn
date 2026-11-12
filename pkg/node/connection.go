@@ -270,7 +270,8 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 			if len(e.config.PeerTable) > 0 {
 				found := false
 				for _, p := range e.config.PeerTable {
-					if p.String() == peer.ID(m.SenderID).String() {
+					// SenderID holds the peer ID in its text form.
+					if p.String() == m.SenderID {
 						found = true
 					}
 				}
