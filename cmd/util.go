@@ -163,9 +163,10 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Value:   true,
 	},
 	&cli.IntFlag{
-		Name:  "concurrency",
-		Usage: "Number of concurrent requests to serve",
-		Value: runtime.NumCPU(),
+		Name:        "concurrency",
+		Usage:       "Number of concurrent requests to serve",
+		Value:       runtime.NumCPU(),
+		DefaultText: "number of CPUs",
 	},
 	&cli.BoolFlag{
 		Name:    "holepunch",
