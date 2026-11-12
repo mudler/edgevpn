@@ -244,7 +244,8 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 			c := m.Copy()
 			str, err := e.config.Sealer.Seal(c.Message, e.sealkey())
 			if err != nil {
-				e.config.Logger.Warnf("%w from %s", err.Error(), c.SenderID)
+				e.config.Logger.Warnf("not publishing a message that could not be sealed: %s", err)
+				continue
 			}
 			c.Message = str
 
@@ -269,7 +270,8 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 			if len(e.config.PeerTable) > 0 {
 				found := false
 				for _, p := range e.config.PeerTable {
-					if p.String() == peer.ID(m.SenderID).String() {
+					// SenderID holds the peer ID in its text form.
+					if p.String() == m.SenderID {
 						found = true
 					}
 				}
@@ -282,7 +284,8 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 			c := m.Copy()
 			str, err := e.config.Sealer.Unseal(c.Message, e.sealkey())
 			if err != nil {
-				e.config.Logger.Warnf("%w from %s", err.Error(), c.SenderID)
+				e.config.Logger.Warnf("dropping a message from %s that could not be unsealed: %s", c.SenderID, err)
+				continue
 			}
 			c.Message = str
 			e.handleReceivedMessage(c, handlers, inputChannel)
