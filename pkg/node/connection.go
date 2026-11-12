@@ -244,7 +244,8 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 			c := m.Copy()
 			str, err := e.config.Sealer.Seal(c.Message, e.sealkey())
 			if err != nil {
-				e.config.Logger.Warnf("%w from %s", err.Error(), c.SenderID)
+				e.config.Logger.Warnf("not publishing a message that could not be sealed: %s", err)
+				continue
 			}
 			c.Message = str
 
@@ -282,7 +283,8 @@ func (e *Node) handleEvents(ctx context.Context, inputChannel chan *hub.Message,
 			c := m.Copy()
 			str, err := e.config.Sealer.Unseal(c.Message, e.sealkey())
 			if err != nil {
-				e.config.Logger.Warnf("%w from %s", err.Error(), c.SenderID)
+				e.config.Logger.Warnf("dropping a message from %s that could not be unsealed: %s", c.SenderID, err)
+				continue
 			}
 			c.Message = str
 			e.handleReceivedMessage(c, handlers, inputChannel)
