@@ -25,6 +25,7 @@ import (
 	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	coreDiscovery "github.com/libp2p/go-libp2p/core/discovery"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -38,14 +39,31 @@ type DHT struct {
 	KeyLength            int
 	RendezvousString     string
 	BootstrapPeers       AddrList
-	rendezvousHistory    Ring
 	RefreshDiscoveryTime time.Duration
 	*dht.IpfsDHT
 	dhtOptions []dht.Option
+	clock      func() time.Time
 }
 
+const (
+	// rendezvousOverlap is how long before a switch a node also meets at the
+	// next meeting point, and how long after it the node also meets at the
+	// previous one. Nodes compute the meeting point from their own clocks,
+	// so around a switch some are on one side of it and some on the other.
+	rendezvousOverlap = 2 * time.Minute
+
+	// rendezvousQueryTimeout bounds one announcement or one search at a
+	// meeting point.
+	rendezvousQueryTimeout = 2 * time.Minute
+
+	// rendezvousDialTimeout bounds a dial to a peer found at a meeting point.
+	// Records of peers that are gone stay in the DHT for hours, and a dial
+	// to one of them only ends when this runs out.
+	rendezvousDialTimeout = 30 * time.Second
+)
+
 func NewDHT(d ...dht.Option) *DHT {
-	return &DHT{dhtOptions: d, rendezvousHistory: Ring{Length: 2}}
+	return &DHT{dhtOptions: d, clock: time.Now}
 }
 
 func (d *DHT) Option(ctx context.Context) func(c *libp2p.Config) error {
@@ -54,13 +72,77 @@ func (d *DHT) Option(ctx context.Context) func(c *libp2p.Config) error {
 		return d.startDHT(ctx, h)
 	})
 }
+
+// Rendezvous returns the current meeting point in the DHT.
 func (d *DHT) Rendezvous() string {
-	if d.OTPKey != "" {
-		totp := internalCrypto.TOTP(sha256.New, d.KeyLength, d.OTPInterval, d.OTPKey)
-		rv := internalCrypto.MD5(totp)
-		return rv
+	return d.rendezvousAt(d.clock())
+}
+
+// rotates reports whether the meeting point changes over time, which it does
+// when it comes from a one-time password.
+func (d *DHT) rotates() bool {
+	return d.OTPKey != "" && d.OTPInterval > 0
+}
+
+// rendezvousAt returns the meeting point at time t.
+func (d *DHT) rendezvousAt(t time.Time) string {
+	if !d.rotates() {
+		return d.RendezvousString
 	}
-	return d.RendezvousString
+	window := uint64(t.Unix()) / uint64(d.OTPInterval)
+	totp := internalCrypto.TOTPAt(sha256.New, d.KeyLength, window, d.OTPKey)
+	return internalCrypto.MD5(totp)
+}
+
+// rendezvousKeys returns the meeting points a round at time t uses, the
+// current one first. Within rendezvousOverlap of a switch it adds the
+// meeting point on the other side of the switch.
+func (d *DHT) rendezvousKeys(t time.Time) []string {
+	keys := []string{d.rendezvousAt(t)}
+	if !d.rotates() {
+		return keys
+	}
+	window, overlap := d.window()
+	start := d.windowStart(t)
+	if start.Add(window).Sub(t) <= overlap {
+		keys = append(keys, d.rendezvousAt(start.Add(window)))
+	} else if t.Sub(start) < overlap {
+		keys = append(keys, d.rendezvousAt(start.Add(-window)))
+	}
+	return keys
+}
+
+// window returns how long one meeting point lasts and how long the overlap
+// around a switch is. The overlap is at most half the window, so that a short
+// interval does not put every moment within the overlap of some switch.
+func (d *DHT) window() (time.Duration, time.Duration) {
+	window := time.Duration(d.OTPInterval) * time.Second
+	return window, min(rendezvousOverlap, window/2)
+}
+
+// windowStart returns the start of the window that contains t. Windows are
+// counted from the Unix epoch, as the one-time password counts them, which
+// time.Time.Truncate does not do.
+func (d *DHT) windowStart(t time.Time) time.Time {
+	interval := int64(d.OTPInterval)
+	return time.Unix(t.Unix()/interval*interval, 0)
+}
+
+// untilNextRound returns how long to wait, from now, for the round that
+// announces the next meeting point before it takes over. It reports false
+// when the meeting point never changes.
+func (d *DHT) untilNextRound(now time.Time) (time.Duration, bool) {
+	if !d.rotates() {
+		return 0, false
+	}
+	window, overlap := d.window()
+	// Halfway into the overlap leaves time for the announcement to finish
+	// before the switch.
+	at := d.windowStart(now).Add(window - overlap/2)
+	if !at.After(now) {
+		at = at.Add(window)
+	}
+	return at.Sub(now), true
 }
 
 func (d *DHT) startDHT(ctx context.Context, h host.Host) (*dht.IpfsDHT, error) {
@@ -82,15 +164,68 @@ func (d *DHT) startDHT(ctx context.Context, h host.Host) (*dht.IpfsDHT, error) {
 
 func (d *DHT) announceRendezvous(c log.StandardLogger, ctx context.Context, host host.Host, kademliaDHT *dht.IpfsDHT) {
 	d.bootstrapPeers(c, ctx, host)
-	rv := d.Rendezvous()
-	d.rendezvousHistory.Add(rv)
+	connect := func(ctx context.Context, p peer.AddrInfo) error { return host.Connect(ctx, p) }
+	connected := func(id peer.ID) bool { return host.Network().Connectedness(id) == network.Connected }
+	d.round(c, ctx, discovery.NewRoutingDiscovery(kademliaDHT), connect, connected, host.ID())
+}
 
-	c.Debugf("The following rendezvous points are being used: %+v", d.rendezvousHistory.Data)
-	for _, r := range d.rendezvousHistory.Data {
-		c.Debugf("Announcing with rendezvous: %s", r)
-		d.announceAndConnect(c, ctx, kademliaDHT, host, r)
+// round announces this node at every meeting point rendezvousKeys gives, all
+// at once, and searches each of them for other peers. It returns when the
+// announcements are done. The searches and the dials to the peers they find
+// go on in the background, each dial on its own, so that one slow meeting
+// point or one peer that is gone holds up nothing else.
+func (d *DHT) round(l log.StandardLogger, ctx context.Context, r coreDiscovery.Discovery, connect func(context.Context, peer.AddrInfo) error, connected func(peer.ID) bool, self peer.ID) {
+	keys := d.rendezvousKeys(d.clock())
+	l.Debugf("The following rendezvous points are being used: %+v", keys)
+
+	var wg sync.WaitGroup
+	for _, rv := range keys {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			l.Debugf("Announcing with rendezvous: %s", rv)
+			actx, cancel := context.WithTimeout(ctx, rendezvousQueryTimeout)
+			if _, err := r.Advertise(actx, rv); err != nil {
+				l.Debugf("Announcing with rendezvous %s failed: %s", rv, err)
+			}
+			cancel()
+		}()
+		go d.search(l, ctx, r, rv, connect, connected, self)
 	}
-	c.Debug("Announcing to rendezvous done")
+	wg.Wait()
+	l.Debug("Announcing to rendezvous done")
+}
+
+// search looks for peers at one meeting point and dials each new one in its
+// own goroutine.
+func (d *DHT) search(l log.StandardLogger, ctx context.Context, r coreDiscovery.Discovery, rv string, connect func(context.Context, peer.AddrInfo) error, connected func(peer.ID) bool, self peer.ID) {
+	sctx, cancel := context.WithTimeout(ctx, rendezvousQueryTimeout)
+	defer cancel()
+	peers, err := r.FindPeers(sctx, rv)
+	if err != nil {
+		l.Debugf("Searching rendezvous %s failed: %s", rv, err)
+		return
+	}
+	for p := range peers {
+		if p.ID == self || len(p.Addrs) == 0 {
+			continue
+		}
+		if connected(p.ID) {
+			l.Debug("Known peer (already connected):", p)
+			continue
+		}
+		l.Debug("Found peer:", p)
+		go func() {
+			dctx, cancel := context.WithTimeout(ctx, rendezvousDialTimeout)
+			defer cancel()
+			if err := connect(dctx, p); err != nil {
+				l.Debugf("Failed connecting to '%s', error: '%s'", p, err.Error())
+			} else {
+				l.Debug("Connected to:", p)
+			}
+		}()
+	}
+	l.Debugf("Finished searching rendezvous %s", rv)
 }
 
 func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) error {
@@ -122,33 +257,29 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 	return nil
 }
 
+// runBackground runs a round right away, then on a backoff ticker that
+// slows down to RefreshDiscoveryTime, and also shortly before each switch of
+// the meeting point, so the next meeting point has this node's record before
+// anyone looks for it there.
 func (d *DHT) runBackground(c log.StandardLogger, ctx context.Context, host host.Host, kademliaDHT *dht.IpfsDHT) {
 	d.announceRendezvous(c, ctx, host, kademliaDHT)
 	t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d.RefreshDiscoveryTime))
 	defer t.Stop()
+
+	var beforeSwitch <-chan time.Time
+	plan := func() {
+		if wait, ok := d.untilNextRound(d.clock()); ok {
+			beforeSwitch = time.After(wait)
+		}
+	}
+	plan()
 	for {
 		select {
 		case <-t.C:
-			// We announce ourselves to the rendezvous point for all the peers.
-			// We have a safeguard of 1 hour to avoid blocking the main loop
-			// in case of network issues.
-			// The TTL of DHT is by default no longer than 3 hours, so we should
-			// be safe by having an entry less than that.
-			safeTimeout, cancel := context.WithTimeout(ctx, time.Hour)
-
-			endChan := make(chan struct{})
-			go func() {
-				d.announceRendezvous(c, safeTimeout, host, kademliaDHT)
-				endChan <- struct{}{}
-			}()
-
-			select {
-			case <-endChan:
-				cancel()
-			case <-safeTimeout.Done():
-				c.Error("Timeout while announcing rendezvous")
-				cancel()
-			}
+			d.announceRendezvous(c, ctx, host, kademliaDHT)
+		case <-beforeSwitch:
+			d.announceRendezvous(c, ctx, host, kademliaDHT)
+			plan()
 		case <-ctx.Done():
 			return
 		}
@@ -220,48 +351,4 @@ func (d *DHT) FindClosePeers(ll log.StandardLogger, onlyStaticRelays bool, stati
 
 		return peerChan
 	}
-}
-
-func (d *DHT) announceAndConnect(l log.StandardLogger, ctx context.Context, kademliaDHT *dht.IpfsDHT, host host.Host, rv string) error {
-	l.Debug("Announcing ourselves...")
-
-	tCtx, c := context.WithTimeout(ctx, time.Second*120)
-	defer c()
-	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
-	routingDiscovery.Advertise(tCtx, rv)
-	l.Debug("Successfully announced!")
-	// Now, look for others who have announced
-	// This is like your friend telling you the location to meet you.
-	l.Debug("Searching for other peers...")
-
-	fCtx, cf := context.WithTimeout(ctx, time.Second*120)
-	defer cf()
-	peerChan, err := routingDiscovery.FindPeers(fCtx, rv)
-	if err != nil {
-		return err
-	}
-
-	for p := range peerChan {
-		// Don't dial ourselves or peers without address
-		if p.ID == host.ID() || len(p.Addrs) == 0 {
-			continue
-		}
-
-		if host.Network().Connectedness(p.ID) != network.Connected {
-			l.Debug("Found peer:", p)
-			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*120)
-			defer cancel()
-			if err := host.Connect(timeoutCtx, p); err != nil {
-				l.Debugf("Failed connecting to '%s', error: '%s'", p, err.Error())
-			} else {
-				l.Debug("Connected to:", p)
-			}
-		} else {
-			l.Debug("Known peer (already connected):", p)
-		}
-	}
-
-	l.Debug("Finished searching for peers.")
-
-	return nil
 }
