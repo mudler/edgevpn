@@ -60,6 +60,11 @@ const (
 	// Records of peers that are gone stay in the DHT for hours, and a dial
 	// to one of them only ends when this runs out.
 	rendezvousDialTimeout = 30 * time.Second
+
+	// defaultRefreshDiscoveryTime is the longest wait between two rounds
+	// when RefreshDiscoveryTime is not set. It is the DiscoveryInterval
+	// that node.New starts with.
+	defaultRefreshDiscoveryTime = 5 * time.Minute
 )
 
 func NewDHT(d ...dht.Option) *DHT {
@@ -263,7 +268,7 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 // anyone looks for it there.
 func (d *DHT) runBackground(c log.StandardLogger, ctx context.Context, host host.Host, kademliaDHT *dht.IpfsDHT) {
 	d.announceRendezvous(c, ctx, host, kademliaDHT)
-	t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d.RefreshDiscoveryTime))
+	t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d.refreshInterval()))
 	defer t.Stop()
 
 	var beforeSwitch <-chan time.Time
@@ -284,6 +289,16 @@ func (d *DHT) runBackground(c log.StandardLogger, ctx context.Context, host host
 			return
 		}
 	}
+}
+
+// refreshInterval is the longest wait between two rounds. The backoff ticker
+// fires again as soon as a round ends when its maximum is zero, so an unset
+// RefreshDiscoveryTime falls back to defaultRefreshDiscoveryTime.
+func (d *DHT) refreshInterval() time.Duration {
+	if d.RefreshDiscoveryTime <= 0 {
+		return defaultRefreshDiscoveryTime
+	}
+	return d.RefreshDiscoveryTime
 }
 
 func (d *DHT) bootstrapPeers(c log.StandardLogger, ctx context.Context, host host.Host) {

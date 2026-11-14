@@ -316,3 +316,17 @@ func TestARoundSkipsItselfAndPeersItIsConnectedTo(t *testing.T) {
 		t.Fatalf("dialed %v, want no dials", dialed)
 	}
 }
+
+// The discovery ticker backs off up to this interval and, at zero, fires again
+// as soon as a round ends. Without a network a round ends in milliseconds, and
+// every round starts searches that run in the background.
+func TestAZeroRefreshTimeUsesTheDefault(t *testing.T) {
+	d := NewDHT()
+	if got := d.refreshInterval(); got != defaultRefreshDiscoveryTime {
+		t.Fatalf("refresh interval with RefreshDiscoveryTime unset = %s, want %s", got, defaultRefreshDiscoveryTime)
+	}
+	d.RefreshDiscoveryTime = 12 * time.Minute
+	if got := d.refreshInterval(); got != 12*time.Minute {
+		t.Fatalf("refresh interval = %s, want the 12m0s that was set", got)
+	}
+}
