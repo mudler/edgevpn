@@ -41,7 +41,7 @@ edgevpn file-send [options]
 | `--ledger-state` | — | `EDGEVPNLEDGERSTATE` | Specify a ledger state directory |
 | `--mdns` | `true` | `EDGEVPNMDNS` | Enable mDNS for peer discovery |
 | `--autorelay` | `true` | `EDGEVPNAUTORELAY` | Automatically act as a relay if the node can accept inbound connections |
-| `--concurrency` | `20` | — | Number of concurrent requests to serve |
+| `--concurrency` | `number of CPUs` | — | Number of concurrent requests to serve |
 | `--holepunch` | `true` | `EDGEVPNHOLEPUNCH` | Automatically try holepunching when possible |
 | `--disable-stale-conns-watcher` | `false` | `EDGEVPNDISABLESTALECONNSWATCHER` | Do not close direct connections that a peer has replaced with a relayed one, and do not redial such peers directly |
 | `--natservice` | `true` | `EDGEVPNNATSERVICE` | Tries to determine reachability status of nodes |

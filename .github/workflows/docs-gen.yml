@@ -17,6 +17,12 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: 1.26
+      # The generator imports the api package, which embeds the built React
+      # UI, so `make docs-gen` builds the UI first.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Regenerate the reference
         run: make docs-gen
       - name: Fail if the generated reference is stale
