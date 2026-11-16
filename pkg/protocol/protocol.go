@@ -22,6 +22,11 @@ const (
 	ServiceProtocol Protocol = "/edgevpn/service/0.1"
 	FileProtocol    Protocol = "/edgevpn/file/0.1"
 	EgressProtocol  Protocol = "/edgevpn/egress/0.1"
+
+	// EdgeVPNFramed carries VPN packets over one stream per peer, with a
+	// length in front of each packet. The receiver reports back how many
+	// bytes it has read, so the sender can limit what waits in the stream.
+	EdgeVPNFramed Protocol = "/edgevpn/0.2"
 )
 
 const (

@@ -34,18 +34,15 @@ import (
 	"github.com/mudler/edgevpn/pkg/logger"
 	"github.com/mudler/edgevpn/pkg/node"
 	"github.com/mudler/edgevpn/pkg/protocol"
-	"github.com/mudler/edgevpn/pkg/stream"
 	"github.com/mudler/edgevpn/pkg/types"
 
 	"github.com/pkg/errors"
 	"github.com/songgao/packets/ethernet"
 )
 
-type streamManager interface {
-	Connected(n network.Network, c network.Stream)
-	Disconnected(n network.Network, c network.Stream)
-	HasStream(n network.Network, pid peer.ID) (network.Stream, error)
-	Close() error
+// packetSender delivers one packet to a peer.
+type packetSender interface {
+	send(ctx context.Context, pid peer.ID, frame []byte) error
 }
 
 func VPNNetworkService(p ...Option) node.NetworkService {
@@ -71,24 +68,18 @@ func VPNNetworkService(p ...Option) node.NetworkService {
 		}
 		defer ifce.Close()
 
-		var err error
-		var mgr streamManager
-
-		if c.lowProfile {
-			// Create stream manager for outgoing connections
-			mgr, err = stream.NewConnManager(10, c.MaxStreams)
-			if err != nil {
-				return err
-			}
-			// Attach it to the same context
-			go func() {
-				<-ctx.Done()
-				mgr.Close()
-			}()
-		}
+		// Peers on the framed protocol get one stream each, kept open.
+		ls := newLinks(n.Host())
+		ls.debug = c.Logger.Debugf
+		go logDrops(ctx, ls, c)
+		go func() {
+			<-ctx.Done()
+			ls.close()
+		}()
 
 		// Set stream handler during runtime
 		n.Host().SetStreamHandler(protocol.EdgeVPN.ID(), streamHandler(b, ifce, c, nc))
+		n.Host().SetStreamHandler(protocol.EdgeVPNFramed.ID(), framedStreamHandler(func(p peer.ID) bool { return peerAllowed(b, nc, p) }, ifce, recheckAllowed))
 
 		// Announce our IP
 		ip, _, err := net.ParseCIDR(c.InterfaceAddress)
@@ -121,7 +112,7 @@ func VPNNetworkService(p ...Option) node.NetworkService {
 		}
 
 		// read packets from the interface
-		return readPackets(ctx, mgr, c, n, b, ifce, nc)
+		return readPackets(ctx, ls, c, n, b, ifce, nc)
 	}
 }
 
@@ -131,28 +122,70 @@ func Register(p ...Option) ([]node.Option, error) {
 	return []node.Option{node.WithNetworkService(VPNNetworkService(p...))}, nil
 }
 
-func streamHandler(l *blockchain.Ledger, ifce io.ReadWriteCloser, c *Config, nc node.Config) func(stream network.Stream) {
+// peerAllowed reports whether VPN packets from the peer are accepted: it must
+// be in the peer table when there is one, or own a machine in the ledger.
+func peerAllowed(l *blockchain.Ledger, nc node.Config, remote peer.ID) bool {
+	if len(nc.PeerTable) > 0 {
+		for _, p := range nc.PeerTable {
+			if p.String() == remote.String() {
+				return true
+			}
+		}
+		return false
+	}
+	return l.Exists(protocol.MachinesLedgerKey,
+		func(d blockchain.Data) bool {
+			machine := &types.Machine{}
+			d.Unmarshal(machine)
+			return machine.PeerID == remote.String()
+		})
+}
+
+// framedStreamHandler writes the packets of a framed stream to ifce while its
+// sender is allowed, checking again every recheck while the stream stays
+// open.
+func framedStreamHandler(allowed func(peer.ID) bool, ifce io.Writer, recheck time.Duration) func(stream network.Stream) {
 	return func(stream network.Stream) {
-		if len(nc.PeerTable) == 0 && !l.Exists(protocol.MachinesLedgerKey,
-			func(d blockchain.Data) bool {
-				machine := &types.Machine{}
-				d.Unmarshal(machine)
-				return machine.PeerID == stream.Conn().RemotePeer().String()
-			}) {
+		pid := stream.Conn().RemotePeer()
+		if !allowed(pid) {
 			stream.Reset()
 			return
 		}
-		if len(nc.PeerTable) > 0 {
-			found := false
-			for _, p := range nc.PeerTable {
-				if p.String() == stream.Conn().RemotePeer().String() {
-					found = true
-				}
+		s := &recheckedStream{rawStream: stream, allowed: func() bool { return allowed(pid) }, every: recheck, checked: time.Now()}
+		if err := receiveFramed(s, ifce); err != nil {
+			stream.Reset()
+			return
+		}
+		stream.Close()
+	}
+}
+
+// logDrops logs, every 10 seconds, the packets dropped per peer because more
+// was waiting in the stream than the path carries.
+func logDrops(ctx context.Context, ls *links, c *Config) {
+	last := map[peer.ID]uint64{}
+	tick := time.NewTicker(10 * time.Second)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+		}
+		for pid, n := range ls.dropped() {
+			if n > last[pid] {
+				c.Logger.Debugf("dropped %d packets to %s in the last 10s: more was waiting than the path carries", n-last[pid], pid)
 			}
-			if !found {
-				stream.Reset()
-				return
-			}
+			last[pid] = n
+		}
+	}
+}
+
+func streamHandler(l *blockchain.Ledger, ifce io.ReadWriteCloser, c *Config, nc node.Config) func(stream network.Stream) {
+	return func(stream network.Stream) {
+		if !peerAllowed(l, nc, stream.Conn().RemotePeer()) {
+			stream.Reset()
+			return
 		}
 		_, err := io.Copy(ifce, stream)
 		if err != nil {
@@ -188,7 +221,7 @@ func getFrame(ifce io.Reader, c *Config) (ethernet.Frame, error) {
 	return frame, nil
 }
 
-func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce io.ReadWriteCloser, nc node.Config) error {
+func handleFrame(sender packetSender, frame ethernet.Frame, c *Config, n *node.Node, ip net.IP, ledger *blockchain.Ledger, ifce io.ReadWriteCloser, nc node.Config) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
 	defer cancel()
 
@@ -251,36 +284,12 @@ func handleFrame(mgr streamManager, frame ethernet.Frame, c *Config, n *node.Nod
 		return errors.Wrap(err, "could not decode peer")
 	}
 
-	var stream network.Stream
-	if mgr != nil {
-		// Open a stream if necessary
-		stream, err = mgr.HasStream(n.Host().Network(), d)
-		if err == nil {
-			_, err = stream.Write(frame)
-			if err == nil {
-				return nil
-			}
-			mgr.Disconnected(n.Host().Network(), stream)
-		}
-	}
-
-	stream, err = n.Host().NewStream(ctx, d, protocol.EdgeVPN.ID())
-	if err != nil {
-		return fmt.Errorf("could not open stream to %s: %w", d.String(), err)
-	}
-	defer stream.Close()
-
-	if mgr != nil {
-		mgr.Connected(n.Host().Network(), stream)
-	}
-
-	_, err = stream.Write(frame)
-	return err
+	return sender.send(ctx, d, frame)
 }
 
 func connectionWorker(
 	p chan ethernet.Frame,
-	mgr streamManager,
+	sender packetSender,
 	c *Config,
 	n *node.Node,
 	ip net.IP,
@@ -290,14 +299,14 @@ func connectionWorker(
 	nc node.Config) {
 	defer wg.Done()
 	for f := range p {
-		if err := handleFrame(mgr, f, c, n, ip, ledger, ifce, nc); err != nil {
+		if err := handleFrame(sender, f, c, n, ip, ledger, ifce, nc); err != nil {
 			c.Logger.Debugf("could not handle frame: %s", err.Error())
 		}
 	}
 }
 
 // readPackets packets from the interface to the node using the routing table in the blockchain
-func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce io.ReadWriteCloser, nc node.Config) error {
+func readPackets(ctx context.Context, sender packetSender, c *Config, n *node.Node, ledger *blockchain.Ledger, ifce io.ReadWriteCloser, nc node.Config) error {
 	ip, _, err := net.ParseCIDR(c.InterfaceAddress)
 	if err != nil {
 		return err
@@ -314,7 +323,7 @@ func readPackets(ctx context.Context, mgr streamManager, c *Config, n *node.Node
 
 	for i := 0; i < c.Concurrency; i++ {
 		wg.Add(1)
-		go connectionWorker(packets, mgr, c, n, ip, wg, ledger, ifce, nc)
+		go connectionWorker(packets, sender, c, n, ip, wg, ledger, ifce, nc)
 	}
 
 	for {
