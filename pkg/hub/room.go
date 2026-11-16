@@ -94,8 +94,8 @@ func (cr *room) readLoop(messageChan chan *Message) {
 		if err != nil {
 			return
 		}
-		// only forward messages delivered by others
-		if msg.ReceivedFrom == cr.self {
+		// only forward messages published by others
+		if msg.GetFrom() == cr.self {
 			continue
 		}
 		cm := new(Message)
@@ -104,7 +104,10 @@ func (cr *room) readLoop(messageChan chan *Message) {
 			continue
 		}
 
-		cm.SenderID = msg.ReceivedFrom.String()
+		// The sender is the peer that published the message, which pubsub
+		// verifies against the message signature. ReceivedFrom is only the
+		// last peer that passed it on.
+		cm.SenderID = msg.GetFrom().String()
 
 		// send valid messages onto the Messages channel
 		messageChan <- cm
