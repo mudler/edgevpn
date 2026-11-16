@@ -39,7 +39,7 @@ Someone who obtains your token can, with no further access:
 
 - **Join the network.** Derive the rendezvous point, find peers on the public
   DHT, and join the gossip topic.
-- **Read the entire ledger.** Every machine's IP and peer ID, every announced
+- **Read the entire ledger.** Every machine's VPN IP and peer ID, every announced
   service, every DNS record, every file announcement.
 - **Write to the ledger.** Claim any unclaimed DNS name, announce services and
   files, and — on a network running `--ownership off` — overwrite anyone's
@@ -87,6 +87,94 @@ behind it carries at most the 128 bits of an MD5 output. This is adequate
 against an eavesdropper who does not have the token, which is what it is there
 for; it is not a reason to relax how you handle the token.
 {{% /alert %}}
+
+## Anyone can find and connect to a node
+
+EdgeVPN puts no network addresses in the ledger. A machine entry carries the
+peer ID, hostname, OS, architecture, EdgeVPN version and VPN IP
+(`pkg/types/machine.go`), and the gossip that carries it is sealed. A node's
+public IP addresses and ports still become known through libp2p itself:
+
+- **The public DHT.** EdgeVPN leaves the DHT in libp2p's automatic mode, in
+  which a node that is reachable from the internet serves DHT queries for
+  other peers. It then sits in the public IPFS routing table with its peer ID
+  and addresses, where anyone crawling that table can list it. Nothing there
+  marks it as an EdgeVPN node, but the entry is enough to connect to it.
+- **The rendezvous.** The DHT nodes that store the current rendezvous
+  announcement see every member's peer ID and addresses, as described under
+  [a compromised or hostile bootstrap peer](#a-compromised-or-hostile-bootstrap-peer).
+- **The handshake.** libp2p's identify protocol sends a node's listen
+  addresses to every peer that connects to it.
+
+Assume the address and port of every reachable node are public. Port
+forwarding rules or an unusual port do not change that.
+
+libp2p accepts a connection from any peer that proves it owns its peer ID,
+and that step needs no token. As a check, a node was started with
+`edgevpn service-add --dht=false --mdns=false --listen-maddrs /ip4/127.0.0.1/tcp/45551 echo 127.0.0.1:9`
+and probed from a libp2p host with a fresh identity and no token. The node
+listed these protocols:
+
+```
+/ipfs/ping/1.0.0
+/meshsub/1.0.0
+/meshsub/1.1.0
+/meshsub/1.2.0
+/floodsub/1.0.0
+/ipfs/id/1.0.0
+/ipfs/id/push/1.0.0
+/libp2p/autonat/1.0.0
+/libp2p/circuit/relay/0.2.0/stop
+/meshsub/1.3.0
+/edgevpn/service/0.1
+```
+
+That node listened on loopback only. A node running the VPN also lists
+`/edgevpn/0.1`, and a node that libp2p finds reachable from the internet
+also lists the DHT protocol and the relay service protocol
+(`/libp2p/circuit/relay/0.2.0/hop`). A stranger can use all of the libp2p
+protocols a node lists. While `--relay-service-network-only` is on, the relay
+service grants reservations only to network members, with the caveats under
+[relay ACLs](#relay-acls-protect-your-bandwidth).
+
+Gossip peers tell each other which topics they are in, so the probe also
+learned the current topic name, a hash of the token's room string that
+changes every OTP interval. A stranger can subscribe to that topic and
+receive its messages, which are sealed. It can also publish to the topic,
+and members forward what it sends to each other. A member logs a warning for
+each message it cannot unseal, but the warning names the peer that delivered
+the message, which may be another member.
+
+EdgeVPN's own services refuse strangers. Each EdgeVPN stream handler checks
+the remote peer before it touches the TUN device, a tunnelled service, a
+shared file or the egress proxy. VPN streams need the peer in the `machines`
+bucket or, when a [static peer table](#static-peer-tables) is set, in that
+table instead. Services, files and egress need the peer in the `users`
+bucket. The probe's `/edgevpn/service/0.1` stream was reset:
+
+```
+stream /edgevpn/service/0.1: read 0 bytes, err=stream reset (remote): code: 0x0: transport error: stream reset by remote, error code: 0
+```
+
+The node is still as exposed as any public libp2p node. Strangers can reach
+any bug in the libp2p code that runs before those checks, and they can use
+up the node's connections, streams and memory. By default EdgeVPN turns off
+both the libp2p resource manager and the connection manager, and logs
+`connmanager disabled` and `go-libp2p resource manager protection disabled`
+at startup. `--limit-enable` turns on the resource manager, which caps
+connections and streams. EdgeVPN always leaves it off on macOS.
+`--connection-low-water` and `--connection-high-water` turn on the
+connection manager, which closes surplus connections once there are more
+than the high-water mark but does not stop new ones from opening. See
+[tune for low-end devices](../../how-to/tune-for-low-end-devices/). Test a
+VPN node under load after turning on stream limits, because the VPN opens
+streams for its own traffic too.
+
+libp2p has a private network mode that refuses any peer without a shared key
+during the handshake, before any protocol runs. EdgeVPN does not offer it. It
+works over TCP and WebSocket but not QUIC, which EdgeVPN relies on for hole
+punching, and nodes using it cannot reach the public DHT or public relays,
+which is how EdgeVPN nodes find each other.
 
 ## Rotation does not revoke
 
@@ -384,6 +472,9 @@ process.
   yet.
 - Keep the API on loopback or, better, a unix socket. Never on a routable
   address.
+- Assume strangers can find and connect to any reachable node. On a node with
+  a public address, consider `--limit-enable` so that libp2p caps the
+  connections and streams a stranger can open.
 - Firewall the `edgevpn0` interface per host. The VPN is a flat network.
 - Leave `--relay-service-network-only` on unless you deliberately want to relay
   for strangers.
