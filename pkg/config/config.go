@@ -118,6 +118,17 @@ type Discovery struct {
 	DHT, MDNS      bool
 	BootstrapPeers []string
 	Interval       time.Duration
+
+	// DHTOptions are passed to the Kademlia DHT after edgevpn's own, for
+	// example dht.RoutingTableRefreshPeriod to refresh the routing table
+	// less often than the library's default of 10 minutes.
+	DHTOptions []dht.Option
+
+	// Pause and Wake let the caller hold back the DHT discovery rounds, for
+	// example while it is connected to every peer it knows, and start one
+	// when it wants. See discovery.DHT for which rounds Pause holds back.
+	Pause func() bool
+	Wake  <-chan struct{}
 }
 
 // Connection is the configuration section
@@ -302,7 +313,11 @@ func (c Config) ToOpts(l log.StandardLogger) ([]node.Option, []vpn.Option, error
 		)
 	}
 
+	dhtOpts = append(dhtOpts, c.Discovery.DHTOptions...)
+
 	d := discovery.NewDHT(dhtOpts...)
+	d.Pause = c.Discovery.Pause
+	d.Wake = c.Discovery.Wake
 	m := &discovery.MDNS{}
 
 	// Already validated above; the error cannot fire here.
