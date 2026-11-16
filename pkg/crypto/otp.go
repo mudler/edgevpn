@@ -21,10 +21,21 @@ import (
 )
 
 func TOTP(f func() hash.Hash, digits int, t int, key string) string {
+	return totp(f, digits, otp.TimeWindow(t), key)
+}
+
+// TOTPAt returns the password TOTP gives during the time window with the
+// given number, where window n covers seconds [n*t, (n+1)*t) of Unix time for
+// an interval of t seconds.
+func TOTPAt(f func() hash.Hash, digits int, window uint64, key string) string {
+	return totp(f, digits, func() uint64 { return window }, key)
+}
+
+func totp(f func() hash.Hash, digits int, step func() uint64, key string) string {
 	cfg := otp.Config{
 		Hash:     f,      // default is sha1.New
 		Digits:   digits, // default is 6
-		TimeStep: otp.TimeWindow(t),
+		TimeStep: step,
 		Key:      key,
 		Format: func(hash []byte, nb int) string {
 			return base64.StdEncoding.EncodeToString(hash)[:nb]
