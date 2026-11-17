@@ -96,7 +96,7 @@ var CommonFlags []cli.Flag = []cli.Flag{
 	},
 	&cli.BoolFlag{
 		Name:    "discovery-pause-when-connected",
-		Usage:   "Skip DHT discovery rounds while this node has a direct connection to every peer that checked in within 5 minutes. A round still runs at least once an hour, when a peer loses its connection and when this node's addresses change. Saves data on metered connections. A node that comes online can then not find this node through the DHT until a round runs, but it finds the peers that do not pause. Needs the aliveness healthchecks on the peers",
+		Usage:   "Skip DHT discovery rounds while this node has a direct connection to every peer that checked in recently (within three aliveness healthcheck intervals, at least 5 minutes). A round still runs at least once an hour, when a peer loses its connection and when this node's addresses change. Saves data on metered connections. A node that comes online can then not find this node through the DHT until a round runs, but it finds the peers that do not pause. Peers that do not write healthchecks, such as `edgevpn api` without --enable-healthchecks, are not waited for",
 		EnvVars: []string{"EDGEVPNDISCOVERYPAUSE"},
 	},
 	&cli.IntFlag{
@@ -751,7 +751,7 @@ func discoveryPauseFromContext(c *cli.Context, nc *config.Config, l log.Standard
 	if !c.Bool("discovery-pause-when-connected") {
 		return nil
 	}
-	p := services.NewDiscoveryPause(l)
+	p := services.NewDiscoveryPause(l, time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second)
 	nc.Discovery.Pause = p.Pause
 	nc.Discovery.Wake = p.Wake()
 	return []node.Option{node.WithNetworkService(p.NetworkService())}

@@ -43,7 +43,7 @@ var _ = Describe("Discovery pause", func() {
 		otherCtx, stopOther := context.WithCancel(ctx)
 		defer stopOther()
 
-		p := NewDiscoveryPause(logg)
+		p := NewDiscoveryPause(logg, 5*time.Second)
 		e1, err := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}), node.WithNetworkService(p.NetworkService()))...)
 		Expect(err).ToNot(HaveOccurred())
 		e2, err := node.New(append(opts, node.WithStore(&blockchain.MemoryStore{}))...)

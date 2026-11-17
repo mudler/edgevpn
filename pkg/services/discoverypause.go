@@ -28,10 +28,10 @@ import (
 )
 
 const (
-	// pauseCheckInAge is how recent a peer's check-in in the health check
-	// bucket must be for the pause to wait for a connection to it. Peers
-	// check in every 2 minutes by default, so a peer that missed two
-	// check-ins is taken as off.
+	// pauseCheckInAge is the shortest time since a peer's last check-in in
+	// the health check bucket after which the pause takes the peer as off
+	// and stops waiting for a connection to it. checkInAgeFor gives longer
+	// times for check-in intervals over 100 seconds.
 	pauseCheckInAge = 5 * time.Minute
 
 	// pauseMax is the longest time without a discovery round. It bounds
@@ -59,11 +59,15 @@ const (
 // connection, when the node's own addresses change, and when WakeUp is
 // called. The pause needs the health check bucket, which the Alive service
 // writes. Without check-ins from other peers it never pauses.
+//
+// A DiscoveryPause serves one node run: create a new one each time a node
+// starts.
 type DiscoveryPause struct {
-	l     log.StandardLogger
-	now   func() time.Time
-	wake  chan struct{}
-	addrs *debouncer
+	l          log.StandardLogger
+	now        func() time.Time
+	checkInAge time.Duration
+	wake       chan struct{}
+	addrs      *debouncer
 
 	mu        sync.Mutex
 	connected func() bool
@@ -75,13 +79,28 @@ type DiscoveryPause struct {
 	sawAddrs bool
 }
 
-// NewDiscoveryPause returns a DiscoveryPause that logs to l.
-func NewDiscoveryPause(l log.StandardLogger) *DiscoveryPause {
-	return newDiscoveryPause(l, time.Now, pauseAddrDelay)
+// NewDiscoveryPause returns a DiscoveryPause that logs to l, for a network
+// whose peers check in every checkInInterval (the Alive service's announce
+// time).
+func NewDiscoveryPause(l log.StandardLogger, checkInInterval time.Duration) *DiscoveryPause {
+	p := newDiscoveryPause(l, time.Now, pauseAddrDelay)
+	p.checkInAge = checkInAgeFor(checkInInterval)
+	return p
+}
+
+// checkInAgeFor returns how old a check-in can be before its peer counts as
+// off. The Alive service's backoff ticker can stretch the gap between two
+// check-ins to 1.5 times the interval, so two late check-ins take 3 times
+// the interval.
+func checkInAgeFor(interval time.Duration) time.Duration {
+	if age := 3 * interval; age > pauseCheckInAge {
+		return age
+	}
+	return pauseCheckInAge
 }
 
 func newDiscoveryPause(l log.StandardLogger, now func() time.Time, addrDelay time.Duration) *DiscoveryPause {
-	p := &DiscoveryPause{l: l, now: now, wake: make(chan struct{}, 1), lastRound: now()}
+	p := &DiscoveryPause{l: l, now: now, checkInAge: pauseCheckInAge, wake: make(chan struct{}, 1), lastRound: now()}
 	p.addrs = newDebouncer(addrDelay, func() { p.WakeUp("this node's addresses changed") })
 	return p
 }
@@ -92,6 +111,8 @@ func (p *DiscoveryPause) Wake() <-chan struct{} {
 }
 
 // Pause reports whether the next regular discovery round can be skipped.
+// When it reports false, it counts the round the caller is about to run
+// towards the hourly cap, so only the discovery loop should call it.
 func (p *DiscoveryPause) Pause() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -119,7 +140,7 @@ func (p *DiscoveryPause) WakeUp(reason string) {
 	p.mu.Unlock()
 	select {
 	case p.wake <- struct{}{}:
-		p.l.Info("Discovery round now: ", reason)
+		p.l.Infof("Discovery round now: %s", reason)
 	default:
 	}
 }
@@ -177,7 +198,7 @@ func (p *DiscoveryPause) NetworkService() node.NetworkService {
 			return everyLivePeerConnected(clock.observe(checkInTimes(ledger.CurrentData()), now), func(id string) bool {
 				pid, err := peer.Decode(id)
 				return err == nil && h.Network().Connectedness(pid) == network.Connected
-			}, now, self)
+			}, now, self, p.checkInAge)
 		})
 		sub, err := h.EventBus().Subscribe(new(event.EvtLocalAddressesUpdated))
 		if err != nil {
@@ -214,12 +235,12 @@ func (p *DiscoveryPause) NetworkService() node.NetworkService {
 }
 
 // everyLivePeerConnected reports whether at least one peer other than self
-// checked in within pauseCheckInAge of now, and connected reports true for
-// each such peer. checkIns maps peer IDs to their last check-in.
-func everyLivePeerConnected(checkIns map[string]time.Time, connected func(string) bool, now time.Time, self string) bool {
+// checked in within maxAge of now, and connected reports true for each such
+// peer. checkIns maps peer IDs to their last check-in.
+func everyLivePeerConnected(checkIns map[string]time.Time, connected func(string) bool, now time.Time, self string, maxAge time.Duration) bool {
 	live := 0
 	for id, at := range checkIns {
-		if id == self || now.Sub(at) > pauseCheckInAge {
+		if id == self || now.Sub(at) > maxAge {
 			continue
 		}
 		if !connected(id) {
@@ -231,9 +252,8 @@ func everyLivePeerConnected(checkIns map[string]time.Time, connected func(string
 }
 
 // checkInClock tells when this node saw each peer's check-in change. A peer
-// whose clock is behind writes check-ins that look old, and a peer with a
-// long check-in interval writes them rarely. Counting the local time of a
-// change as well keeps both from looking off while they check in.
+// whose clock is behind writes check-ins that look old. Counting the local
+// time of a change as well keeps it from looking off while it checks in.
 type checkInClock struct {
 	mu   sync.Mutex
 	last map[string]time.Time

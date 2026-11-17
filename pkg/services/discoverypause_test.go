@@ -20,6 +20,21 @@ import (
 	"github.com/ipfs/go-log"
 )
 
+func TestTheCheckInAgeCoversTwoLateCheckIns(t *testing.T) {
+	for _, c := range []struct {
+		interval, want time.Duration
+	}{
+		{0, pauseCheckInAge},
+		{time.Minute, pauseCheckInAge},
+		{2 * time.Minute, 6 * time.Minute},
+		{4 * time.Minute, 12 * time.Minute},
+	} {
+		if got := checkInAgeFor(c.interval); got != c.want {
+			t.Errorf("checkInAgeFor(%v) = %v, want %v", c.interval, got, c.want)
+		}
+	}
+}
+
 func TestEveryLivePeerConnected(t *testing.T) {
 	now := time.Date(2026, 11, 16, 12, 0, 0, 0, time.UTC)
 	live, stale := now.Add(-time.Minute), now.Add(-pauseCheckInAge-time.Second)
@@ -38,7 +53,7 @@ func TestEveryLivePeerConnected(t *testing.T) {
 		{"two live peers, one connected", map[string]time.Time{"a": live, "b": live}, map[string]bool{"a": true}, false},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			got := everyLivePeerConnected(c.checkIns, func(id string) bool { return c.connected[id] }, now, "self")
+			got := everyLivePeerConnected(c.checkIns, func(id string) bool { return c.connected[id] }, now, "self", pauseCheckInAge)
 			if got != c.want {
 				t.Fatalf("got %t, want %t", got, c.want)
 			}
@@ -56,11 +71,11 @@ func pauseAt(t *testing.T, start time.Time) (*DiscoveryPause, *time.Time, *bool)
 	return p, &now, &connected
 }
 
-// newTestPause returns a DiscoveryPause that waits 20 ms for the addresses
+// newTestPause returns a DiscoveryPause that waits 150 ms for the addresses
 // to settle.
 func newTestPause(t *testing.T, now func() time.Time) *DiscoveryPause {
 	t.Helper()
-	p := newDiscoveryPause(log.Logger("test"), now, 20*time.Millisecond)
+	p := newDiscoveryPause(log.Logger("test"), now, 150*time.Millisecond)
 	t.Cleanup(p.addrs.stop)
 	return p
 }
@@ -183,7 +198,7 @@ func TestTheWatcherEnforcesTheHourCap(t *testing.T) {
 func TestTheFirstAddressEventIsTheStateAtSubscription(t *testing.T) {
 	p := newTestPause(t, time.Now)
 	p.addressEvent(true)
-	if woke(p, 80*time.Millisecond) {
+	if woke(p, 400*time.Millisecond) {
 		t.Fatal("a round for the addresses the node already had")
 	}
 	p.addressEvent(true)
@@ -202,7 +217,7 @@ func TestAddressChangesCloseTogetherStartOneRound(t *testing.T) {
 	if !woke(p, 2*time.Second) {
 		t.Fatal("no round after the addresses changed")
 	}
-	if woke(p, 80*time.Millisecond) {
+	if woke(p, 400*time.Millisecond) {
 		t.Fatal("more than one round for changes close together")
 	}
 }
@@ -211,7 +226,7 @@ func TestAnAddressEventWithoutChangesStartsNoRound(t *testing.T) {
 	p := newTestPause(t, time.Now)
 	p.addressEvent(true)
 	p.addressEvent(false)
-	if woke(p, 80*time.Millisecond) {
+	if woke(p, 400*time.Millisecond) {
 		t.Fatal("a round for an event without changes")
 	}
 }
