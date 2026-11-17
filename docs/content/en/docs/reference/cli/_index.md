@@ -41,6 +41,8 @@ Running `edgevpn` with no subcommand starts the VPN.
 | `--packet-mtu` | `1420` | `EDGEVPNPACKETMTU` | Specify a mtu |
 | `--channel-buffer-size` | `0` | `EDGEVPNCHANNELBUFFERSIZE` | Specify a channel buffer size |
 | `--discovery-interval` | `720` | `EDGEVPNDHTINTERVAL` | DHT discovery interval time |
+| `--discovery-pause-when-connected` | `false` | `EDGEVPNDISCOVERYPAUSE` | Skip DHT discovery rounds while this node has a direct connection to every peer that checked in within 5 minutes. A round still runs at least once an hour, when a peer loses its connection and when this node's addresses change. Saves data on metered connections. A node that comes online can then not find this node through the DHT until a round runs, but it finds the peers that do not pause. Needs the aliveness healthchecks on the peers |
+| `--dht-refresh-interval` | `0` | `EDGEVPNDHTREFRESHINTERVAL` | Seconds between refreshes of the DHT routing table. 0 keeps the library default of 10 minutes. Each refresh talks to a few hundred DHT nodes, so a longer interval saves data on metered connections |
 | `--ledger-announce-interval` | `10` | `EDGEVPNLEDGERINTERVAL` | Ledger announce interval time |
 | `--autorelay-discovery-interval` | `"5m"` | `EDGEVPNAUTORELAYDISCOVERYINTERVAL` | Autorelay discovery interval |
 | `--autorelay-static-only` | `false` | `EDGEVPNAUTORELAYSTATICONLY` | Use only defined static relays |
