@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-log"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
 	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
@@ -36,6 +37,7 @@ import (
 
 	"github.com/mudler/edgevpn/pkg/logger"
 	node "github.com/mudler/edgevpn/pkg/node"
+	"github.com/mudler/edgevpn/pkg/services"
 	"github.com/mudler/edgevpn/pkg/vpn"
 	"github.com/urfave/cli/v2"
 )
@@ -91,6 +93,17 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Usage:   "DHT discovery interval time",
 		EnvVars: []string{"EDGEVPNDHTINTERVAL"},
 		Value:   720,
+	},
+	&cli.BoolFlag{
+		Name:    "discovery-pause-when-connected",
+		Usage:   "Skip DHT discovery rounds while this node has a direct connection to every peer that checked in recently (within three aliveness healthcheck intervals, at least 5 minutes). A round still runs at least once an hour, when a peer loses its connection and when this node's addresses change. Saves data on metered connections. A node that comes online can then not find this node through the DHT until a round runs, but it finds the peers that do not pause. Peers that do not write healthchecks, such as `edgevpn api` without --enable-healthchecks, are not waited for",
+		EnvVars: []string{"EDGEVPNDISCOVERYPAUSE"},
+	},
+	&cli.IntFlag{
+		Name:    "dht-refresh-interval",
+		Usage:   "Seconds between refreshes of the DHT routing table. 0 keeps the library default of 10 minutes. Each refresh talks to a few hundred DHT nodes, so a longer interval saves data on metered connections",
+		EnvVars: []string{"EDGEVPNDHTREFRESHINTERVAL"},
+		Value:   0,
 	},
 	&cli.IntFlag{
 		Name:    "ledger-announce-interval",
@@ -531,6 +544,7 @@ func ConfigFromContext(c *cli.Context) *config.Config {
 			DHT:            c.Bool("dht"),
 			MDNS:           c.Bool("mdns"),
 			Interval:       time.Duration(c.Int("discovery-interval")) * time.Second,
+			DHTOptions:     dhtOptionsFromContext(c),
 		},
 		Connection: config.Connection{
 			AutoRelay:                  c.Bool("autorelay"),
@@ -701,10 +715,13 @@ func cliToOpts(c *cli.Context) ([]node.Option, []vpn.Option, *logger.Logger) {
 		}
 	}
 
+	pauseOpts := discoveryPauseFromContext(c, nc, llger)
+
 	nodeOpts, vpnOpts, err := nc.ToOpts(llger)
 	if err != nil {
 		llger.Fatal(err.Error())
 	}
+	nodeOpts = append(nodeOpts, pauseOpts...)
 
 	return nodeOpts, vpnOpts, llger
 }
@@ -716,4 +733,26 @@ func handleStopSignals() {
 	for range s {
 		os.Exit(0)
 	}
+}
+
+// dhtOptionsFromContext returns the DHT options the flags ask for.
+func dhtOptionsFromContext(c *cli.Context) []dht.Option {
+	var opts []dht.Option
+	if secs := c.Int("dht-refresh-interval"); secs > 0 {
+		opts = append(opts, dht.RoutingTableRefreshPeriod(time.Duration(secs)*time.Second))
+	}
+	return opts
+}
+
+// discoveryPauseFromContext sets up the discovery pause in nc when
+// --discovery-pause-when-connected is set, and returns the node option that
+// feeds it.
+func discoveryPauseFromContext(c *cli.Context, nc *config.Config, l log.StandardLogger) []node.Option {
+	if !c.Bool("discovery-pause-when-connected") {
+		return nil
+	}
+	p := services.NewDiscoveryPause(l, time.Duration(c.Int("aliveness-healthcheck-interval"))*time.Second)
+	nc.Discovery.Pause = p.Pause
+	nc.Discovery.Wake = p.Wake()
+	return []node.Option{node.WithNetworkService(p.NetworkService())}
 }

@@ -40,6 +40,17 @@ type DHT struct {
 	RendezvousString     string
 	BootstrapPeers       AddrList
 	RefreshDiscoveryTime time.Duration
+
+	// Pause, when set, is asked before each regular round and before the
+	// round that announces the next meeting point, and the round is skipped
+	// while it reports true. A paused node is then not findable at a new
+	// meeting point until a round runs again; nodes that keep searching
+	// still announce themselves there, so a paused node that searches finds
+	// them. The first round and the rounds Wake starts run anyway.
+	Pause func() bool
+	// Wake starts a round each time it receives, whatever Pause reports.
+	Wake <-chan struct{}
+
 	*dht.IpfsDHT
 	dhtOptions []dht.Option
 	clock      func() time.Time
@@ -262,14 +273,21 @@ func (d *DHT) Run(c log.StandardLogger, ctx context.Context, host host.Host) err
 	return nil
 }
 
-// runBackground runs a round right away, then on a backoff ticker that
-// slows down to RefreshDiscoveryTime, and also shortly before each switch of
-// the meeting point, so the next meeting point has this node's record before
-// anyone looks for it there.
+// runBackground runs the discovery rounds until ctx ends, on a backoff
+// ticker that slows down to RefreshDiscoveryTime. See loop for when a round
+// runs.
 func (d *DHT) runBackground(c log.StandardLogger, ctx context.Context, host host.Host, kademliaDHT *dht.IpfsDHT) {
-	d.announceRendezvous(c, ctx, host, kademliaDHT)
 	t := utils.NewBackoffTicker(utils.BackoffMaxInterval(d.refreshInterval()))
 	defer t.Stop()
+	d.loop(c, ctx, t.C, func() { d.announceRendezvous(c, ctx, host, kademliaDHT) })
+}
+
+// loop runs round right away, then on every tick and shortly before each
+// switch of the meeting point, so the next meeting point has this node's
+// record before anyone looks for it there, unless Pause reports true. It
+// also runs round each time Wake receives. It returns when ctx ends.
+func (d *DHT) loop(c log.StandardLogger, ctx context.Context, ticks <-chan time.Time, round func()) {
+	round()
 
 	var beforeSwitch <-chan time.Time
 	plan := func() {
@@ -278,17 +296,40 @@ func (d *DHT) runBackground(c log.StandardLogger, ctx context.Context, host host
 		}
 	}
 	plan()
+	wake := d.Wake
 	for {
 		select {
-		case <-t.C:
-			d.announceRendezvous(c, ctx, host, kademliaDHT)
+		case <-ticks:
+			if d.paused(c) {
+				continue
+			}
+			round()
+		case _, ok := <-wake:
+			if !ok {
+				// A closed channel would receive at once forever.
+				wake = nil
+				continue
+			}
+			round()
 		case <-beforeSwitch:
-			d.announceRendezvous(c, ctx, host, kademliaDHT)
 			plan()
+			if d.paused(c) {
+				continue
+			}
+			round()
 		case <-ctx.Done():
 			return
 		}
 	}
+}
+
+// paused reports whether Pause holds back the next round.
+func (d *DHT) paused(c log.StandardLogger) bool {
+	if d.Pause == nil || !d.Pause() {
+		return false
+	}
+	c.Debug("Discovery is paused, skipping a round")
+	return true
 }
 
 // refreshInterval is the longest wait between two rounds. The backoff ticker
