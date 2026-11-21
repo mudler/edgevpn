@@ -20,7 +20,7 @@ jobs:
       # The generator imports the api package, which embeds the built React
       # UI, so `make docs-gen` builds the UI first.
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Regenerate the reference
