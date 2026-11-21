@@ -14,7 +14,7 @@ require (
 	github.com/labstack/echo/v4 v4.16.5
 	github.com/libp2p/go-libp2p v0.51.0
 	github.com/libp2p/go-libp2p-kad-dht v0.41.0
-	github.com/libp2p/go-libp2p-pubsub v0.16.0
+	github.com/libp2p/go-libp2p-pubsub v0.19.0
 	github.com/libp2p/zeroconf/v2 v2.2.0
 	github.com/marcopolo/simnet v0.0.7
 	github.com/miekg/dns v1.1.72
