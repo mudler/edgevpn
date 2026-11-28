@@ -1,0 +1,1 @@
+import{t as e}from"./index-s9Do63Zq.js";var t=e();function n({tone:e,children:n}){return(0,t.jsx)(`span`,{className:`ev-pill ev-pill--${e}`,children:n})}export{n as t};

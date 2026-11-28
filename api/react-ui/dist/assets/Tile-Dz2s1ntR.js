@@ -1,0 +1,1 @@
+import{t as e}from"./index-s9Do63Zq.js";var t=e();function n({label:e,value:n}){return(0,t.jsxs)(`div`,{className:`ev-tile`,children:[(0,t.jsx)(`span`,{className:`ev-tile-k`,children:e}),(0,t.jsx)(`span`,{className:`ev-tile-v tabular`,children:n})]})}export{n as t};
